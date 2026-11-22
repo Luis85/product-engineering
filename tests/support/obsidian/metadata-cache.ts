@@ -26,7 +26,7 @@ function metadata(raw: string): CachedMetadata {
 
 export class MetadataCache extends Events {
   readonly #cache = new WeakMap<TFile, CachedMetadata>();
-  readonly #latest = new WeakMap<TFile, object>();
+  readonly #sources = new Map<TFile, { readonly text: string }>();
   readonly #pending = new Set<Promise<void>>();
 
   getFileCache(file: TFile): CachedMetadata | null {
@@ -34,25 +34,57 @@ export class MetadataCache extends Events {
   }
 
   index(file: TFile, text: string): void {
-    const token = {};
-    this.#latest.set(file, token);
-    const pending = nextTurn().then(() => {
-      if (this.#latest.get(file) !== token) return;
-      const cache = metadata(text);
-      this.#cache.set(file, cache);
-      this.trigger("changed", file, withoutBom(text), cache);
-      this.trigger("resolve", file);
-      this.trigger("resolved");
-    });
+    const source = { text };
+    this.#sources.set(file, source);
+    void this.#track(nextTurn().then(() => this.#indexCurrent(file, source)));
+  }
+
+  #indexCurrent(file: TFile, source: { readonly text: string }): void {
+    if (this.#sources.get(file) !== source) return;
+    const cache = metadata(source.text);
+    this.#cache.set(file, cache);
+    this.trigger("changed", file, withoutBom(source.text), cache);
+    this.trigger("resolve", file);
+    this.trigger("resolved");
+  }
+
+  #track(pending: Promise<void>): Promise<void> {
     this.#pending.add(pending);
     void pending.finally(() => {
       this.#pending.delete(pending);
     });
+    return pending;
+  }
+
+  startCold(): Promise<void> {
+    const files = [...this.#sources].map(([file, previous]) => {
+      const source = { text: previous.text };
+      this.#cache.delete(file);
+      this.#sources.set(file, source);
+      return [file, source] as const;
+    });
+    return this.#track(
+      (async () => {
+        for (const [file, source] of files) {
+          // oxlint-disable-next-line eslint/no-await-in-loop -- Cold indexing advances one file per turn.
+          await nextTurn();
+          this.#indexCurrent(file, source);
+        }
+      })(),
+    );
+  }
+
+  async resolveAll(): Promise<void> {
+    await nextTurn();
+    for (const file of this.#sources.keys()) {
+      if (this.#cache.has(file)) this.trigger("resolve", file);
+    }
+    this.trigger("resolved");
   }
 
   delete(file: TFile): void {
     const old = this.getFileCache(file);
-    this.#latest.delete(file);
+    this.#sources.delete(file);
     this.#cache.delete(file);
     this.trigger("deleted", file, old);
   }

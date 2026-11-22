@@ -109,7 +109,10 @@
           "application-composition"
         ]
       },
-      { "from": "application-module", "allowTypeOnly": ["application/shell", "application/notes"] },
+      {
+        "from": "application-module",
+        "allowTypeOnly": ["application/shell", "domain/notes", "application/notes"]
+      },
       {
         "from": "application-describe-error",
         "allow": ["application", "application-module", "application-composition"]

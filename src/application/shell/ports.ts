@@ -7,7 +7,13 @@ import type { LoggedError } from "./logged-error";
 import type { UserMessage } from "./user-messages";
 
 export type LogEvent =
-  "defect.reported" | "plugin.loaded" | "plugin.unload.failed" | "settings.load.failed";
+  | "defect.reported"
+  | "plugin.loaded"
+  | "plugin.unload.failed"
+  | "settings.load.failed"
+  | "notes.index.built"
+  | "notes.index.build.failed"
+  | "notes.index.read.failed";
 export type LogEntry = {
   readonly level: LogLevel;
   readonly event: LogEvent;

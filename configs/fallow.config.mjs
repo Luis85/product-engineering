@@ -109,6 +109,7 @@ export function fallowConfig({ modules, has }) {
           from: "application-module",
           allowTypeOnly: [
             "application/shell",
+            ...domain.filter((zone) => zone === "domain/notes"),
             ...application.filter((zone) => zone === "application/notes"),
           ],
         },

@@ -1,5 +1,6 @@
 import { Layer } from "effect";
 import type { Effect, Schema } from "effect";
+import type { NoteType } from "../domain/notes";
 import type { Language, RouteLike, UserMessage } from "./shell";
 
 type Tagged = { readonly _tag: string };
@@ -25,6 +26,7 @@ export type PluginCommand<Messages, Route, Services> = {
 };
 
 type CommandPart<Command> = { readonly commands?: readonly Command[] };
+type NoteTypePart = { readonly noteTypes?: readonly NoteType[] };
 
 type ServiceLayer = Layer.Layer<never, never, unknown>;
 type ServicePart<Services extends ServiceLayer> = { readonly services?: Services };
@@ -47,6 +49,7 @@ export type ModuleManifest<
   Sections extends SectionDefinitions = never,
 > = ModuleBase<Name, Catalog> &
   CommandPart<Command> &
+  NoteTypePart &
   ServicePart<Services> &
   RoutingPart<Schemas, Sections> & {
     readonly errors?: ErrorPart<E, Catalog>;
@@ -80,6 +83,7 @@ export function defineModule<
   },
 ): ModuleBase<Name, Catalog> &
   CommandPart<Command> &
+  NoteTypePart &
   ServicePart<Services> &
   RoutingPart<Schemas, Sections>;
 export function defineModule<
@@ -110,6 +114,16 @@ export type ErrorOf<M> = M extends {
 
 export function commandsOf<Command>(modules: readonly CommandPart<Command>[]): readonly Command[] {
   return modules.flatMap(({ commands }) => commands ?? []);
+}
+
+export function noteTypesOf(modules: readonly NoteTypePart[]): readonly NoteType[] {
+  const types = modules.flatMap(({ noteTypes }) => noteTypes ?? []);
+  const names = new Set<string>();
+  for (const { type } of types) {
+    if (names.has(type)) throw new Error(`Duplicate note type ${type}`);
+    names.add(type);
+  }
+  return types;
 }
 
 export type ServicesOf<M> =

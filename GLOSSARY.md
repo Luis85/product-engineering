@@ -22,3 +22,6 @@
 | Write refusal | `writeRefusal` |
 | Record ID | `recordId` |
 | Edit conflict | `conflict` |
+| Vault ready | `VaultReady` |
+| Note index | `NoteIndex` |
+| Unindexed note | `unindexedNote` |

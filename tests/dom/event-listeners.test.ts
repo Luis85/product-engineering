@@ -13,6 +13,7 @@ it("cleans up host listeners synchronously on every plugin unload", async () => 
     vault.listenerCount("delete"),
     vault.listenerCount("rename"),
     metadataCache.listenerCount("changed"),
+    metadataCache.listenerCount("resolved"),
   ];
   const baseline = counts();
 

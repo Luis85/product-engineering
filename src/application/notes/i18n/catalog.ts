@@ -17,6 +17,11 @@ type NoteIssueDescriptions = {
 export type NotesCatalog = {
   readonly errors: Readonly<Record<NamedError, Message>>;
   readonly issues: NoteIssueDescriptions;
+  readonly unindexed: {
+    readonly malformedSchema: string;
+    readonly unknownType: (type: string) => string;
+    readonly unreadableFrontmatter: string;
+  };
   readonly invalidName: {
     readonly title: string;
     readonly details: Readonly<Record<NoteNameIssue, string>>;

@@ -1,1 +1,1 @@
-export { describeNoteIssue, describeNotesError } from "./i18n/describe";
+export { describeNoteIssue, describeNotesError, describeUnindexedIssue } from "./i18n/describe";

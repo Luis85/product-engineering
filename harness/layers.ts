@@ -75,7 +75,12 @@ export function harnessLayer(scenario: Scenario, { language, notify }: HarnessOp
       noteOpener: notes.opener,
       idGenerator: sequentialIdGenerator(),
       hostEvents: Layer.effectDiscard(
-        EventBus.use((events) => events.publish({ _tag: "LayoutReady" })),
+        EventBus.use((events) =>
+          Effect.andThen(
+            events.publish({ _tag: "LayoutReady" }),
+            events.publish({ _tag: "VaultReady" }),
+          ),
+        ),
       ),
     },
     { language, developmentMode: true },

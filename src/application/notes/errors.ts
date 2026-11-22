@@ -40,6 +40,10 @@ export class NoteEditConflictError extends Schema.TaggedError<NoteEditConflictEr
   "NoteEditConflictError",
   { conflicts },
 ) {}
+export class NoteIndexReadError extends Schema.TaggedError<NoteIndexReadError>()(
+  "NoteIndexReadError",
+  {},
+) {}
 
 export type NotesError =
   | NoteNotFoundError
@@ -49,6 +53,7 @@ export type NotesError =
   | NoteWriteError
   | NoteWriteRefusedError
   | NoteEditConflictError
+  | NoteIndexReadError
   | NoteTrashError;
 
 export const NOTES_ERROR_TAG_KEYS = {
@@ -59,5 +64,6 @@ export const NOTES_ERROR_TAG_KEYS = {
   NoteWriteError: true,
   NoteWriteRefusedError: true,
   NoteEditConflictError: true,
+  NoteIndexReadError: true,
   NoteTrashError: true,
 } satisfies ErrorTags<NotesError>;

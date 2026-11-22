@@ -26,6 +26,10 @@ export const de: NotesCatalog = {
       title: "Änderungen stehen im Konflikt",
       detail: "Prüfe die Felder, die während der Bearbeitung im Vault geändert wurden.",
     },
+    NoteIndexReadError: {
+      title: "Datensätze konnten nicht gelesen werden",
+      detail: "Baue den Notizindex neu auf, um es erneut zu versuchen.",
+    },
   },
   issues: {
     fields: {
@@ -47,6 +51,11 @@ export const de: NotesCatalog = {
       `Diese Notiz verwendet ein neueres Datensatzschema (Version ${version}).`,
     failedMigration: (version) =>
       `Der Datensatz konnte nicht von Version ${version} migriert werden.`,
+  },
+  unindexed: {
+    malformedSchema: "Das Datensatzschema hat ein ungültiges Format.",
+    unknownType: (type) => `Der Datensatztyp ${type} ist nicht registriert.`,
+    unreadableFrontmatter: "Öffne die Notiz und korrigiere ihre Frontmatter.",
   },
   invalidName: {
     title: "Ungültiger Notizname",

@@ -4,6 +4,7 @@ import type { App, Plugin, TAbstractFile } from "obsidian";
 import type { AppEvent } from "../../../application/events";
 import { EventBus, reportUnexpected } from "../../../application/shell";
 import type { ShellServices } from "../../../application/shell";
+import { cacheCompleteness } from "./cache-completeness";
 
 export function hostEventsLayer(plugin: Plugin): Layer.Layer<never, never, ShellServices> {
   return Layer.effectDiscard(
@@ -13,7 +14,9 @@ export function hostEventsLayer(plugin: Plugin): Layer.Layer<never, never, Shell
       const run = Effect.runSyncExitWith(context);
       let open = true;
       let ready = false;
+      let vaultReady = false;
       let release: (() => void) | undefined;
+      const cacheComplete = cacheCompleteness(plugin.app);
 
       const close = () => {
         if (!open) return;
@@ -30,6 +33,13 @@ export function hostEventsLayer(plugin: Plugin): Layer.Layer<never, never, Shell
         );
         if (Exit.isFailure(result)) run(reportUnexpected(result.cause));
       };
+      const checkVault = () => {
+        publish(() => {
+          if (vaultReady || !cacheComplete()) return;
+          vaultReady = true;
+          return { _tag: "VaultReady" };
+        });
+      };
       yield* Effect.addFinalizer(() => Effect.sync(close));
 
       yield* Effect.sync(() => {
@@ -38,7 +48,9 @@ export function hostEventsLayer(plugin: Plugin): Layer.Layer<never, never, Shell
           if (!open || ready) return;
           ready = true;
           publish(() => ({ _tag: "LayoutReady" }));
-          if (open) release = listenForFiles(plugin.app, publish);
+          if (!open) return;
+          release = listenForFiles(plugin.app, publish, checkVault);
+          checkVault();
         });
       });
     }),
@@ -48,6 +60,7 @@ export function hostEventsLayer(plugin: Plugin): Layer.Layer<never, never, Shell
 function listenForFiles(
   app: App,
   publish: (event: () => AppEvent | undefined) => void,
+  checkVault: () => void,
 ): () => void {
   const { vault, metadataCache } = app;
   const fileEvent =
@@ -69,8 +82,10 @@ function listenForFiles(
     ),
   ];
   const changed = metadataCache.on("changed", fileEvent("MetadataChanged"));
+  const resolved = metadataCache.on("resolved", checkVault);
   return () => {
     for (const ref of refs) vault.offref(ref);
     metadataCache.offref(changed);
+    metadataCache.offref(resolved);
   };
 }

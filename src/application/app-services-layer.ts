@@ -1,9 +1,12 @@
 import { Layer } from "effect";
+import type { NoteType } from "../domain/notes";
 import { unavailableAgentChat } from "./integrations";
 import type { AgentChat } from "./integrations";
 import { messagesLayer } from "./messages";
 import { servicesLayerOf } from "./module";
 import { APP_MODULES } from "./modules";
+import { appNoteTypes } from "./note-types";
+import { noteIndexLayer } from "./notes";
 import type { IdGenerator, NoteOpener, NoteStore } from "./notes";
 import { EventBusLive, LoggerLive, SettingsServiceLive } from "./shell";
 import type { AppServices } from "./app-services";
@@ -36,6 +39,7 @@ export type AppAdapters = {
 export type AppServiceOptions = {
   readonly language: Language;
   readonly developmentMode: boolean;
+  readonly noteTypes?: readonly NoteType[];
 };
 
 export function appServicesLayer(
@@ -57,6 +61,7 @@ export function appServicesLayer(
   const settings = Layer.provideMerge(SettingsServiceLive, ports);
   const shell = Layer.mergeAll(Layer.provideMerge(LoggerLive(options), settings), EventBusLive);
   const chat = Layer.provideMerge(adapters.agentChat ?? unavailableAgentChat, shell);
-  const services = Layer.provideMerge(servicesLayerOf(APP_MODULES), chat);
+  const withIndex = Layer.provideMerge(noteIndexLayer(options.noteTypes ?? appNoteTypes), chat);
+  const services = Layer.provideMerge(servicesLayerOf(APP_MODULES), withIndex);
   return Layer.provideMerge(adapters.hostEvents, services);
 }

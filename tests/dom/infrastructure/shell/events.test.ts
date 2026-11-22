@@ -25,6 +25,7 @@ it("maps each file event after layout readiness and disposes each listener", asy
     vault.listenerCount("rename"),
     vault.listenerCount("delete"),
     metadataCache.listenerCount("changed"),
+    metadataCache.listenerCount("resolved"),
   ];
   const bus = await fixture.runtime.runPromise(EventBus);
   const publish = vi.spyOn(bus, "publish");
@@ -33,7 +34,7 @@ it("maps each file event after layout readiness and disposes each listener", asy
     await metadataCache.whenIndexed();
     expect(publish).not.toHaveBeenCalled();
     workspace.markLayoutReady();
-    expect(counts()).toEqual([1, 1, 1, 1, 1]);
+    expect(counts()).toEqual([1, 1, 1, 1, 1, 1]);
     await vault.seedFile("Work/Item.md", "Created");
     await metadataCache.whenIndexed();
     await vault.seedFile("Work/Item.md", "Changed");
@@ -45,6 +46,7 @@ it("maps each file event after layout readiness and disposes each listener", asy
     await fixture.fileManager.trashFile(item);
     expect(publish.mock.calls.flat()).toEqual([
       { _tag: "LayoutReady" },
+      { _tag: "VaultReady" },
       { _tag: "FileCreated", path: "Work/Item.md", extension: "md" },
       { _tag: "MetadataChanged", path: "Work/Item.md", extension: "md" },
       { _tag: "FileModified", path: "Work/Item.md", extension: "md" },
@@ -55,7 +57,7 @@ it("maps each file event after layout readiness and disposes each listener", asy
   } finally {
     await fixture.runtime.dispose();
   }
-  expect(counts()).toEqual([0, 0, 0, 0, 0]);
+  expect(counts()).toEqual([0, 0, 0, 0, 0, 0]);
 });
 
 it("publishes layout readiness only once and ignores callbacks after disposal", async () => {
@@ -67,13 +69,12 @@ it("publishes layout readiness only once and ignores callbacks after disposal", 
     expect(fixture.registration).toHaveBeenCalledOnce();
     fixture.workspace.markLayoutReady();
     fixture.registration.mock.calls[0]?.[0]();
-    expect(publish).toHaveBeenCalledTimes(1);
-    expect(publish).toHaveBeenCalledWith({ _tag: "LayoutReady" });
+    expect(publish.mock.calls.flat()).toEqual([{ _tag: "LayoutReady" }, { _tag: "VaultReady" }]);
   } finally {
     await fixture.runtime.dispose();
   }
   fixture.registration.mock.calls[0]?.[0]();
-  expect(publish).toHaveBeenCalledTimes(1);
+  expect(publish).toHaveBeenCalledTimes(2);
 });
 
 it("ignores a first layout callback after shutdown", async () => {

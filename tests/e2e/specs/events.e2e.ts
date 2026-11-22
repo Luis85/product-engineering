@@ -20,6 +20,7 @@ function listenerCounts(): Promise<number[]> {
       count(app.vault, "delete"),
       count(app.vault, "rename"),
       count(app.metadataCache, "changed"),
+      count(app.metadataCache, "resolved"),
     ];
   });
 }

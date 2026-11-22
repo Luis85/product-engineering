@@ -1,6 +1,7 @@
 import type { CoreFieldIssue, NoteIssue } from "../../../domain/notes";
 import type { UserMessage } from "../../shell";
 import type { NotesError } from "../errors";
+import type { UnindexedIssue } from "../note-index";
 import type { NotesCatalog } from "./catalog";
 
 export function describeNotesError(error: NotesError, catalog: NotesCatalog): UserMessage {
@@ -41,4 +42,15 @@ export function describeNoteIssue(
   if (issue.code === "schema.newer") return messages.newerSchema(issue.version);
   if (issue.code === "migration.failed") return messages.failedMigration(issue.version);
   return messages.identity[issue.code];
+}
+
+export function describeUnindexedIssue(issue: UnindexedIssue, catalog: NotesCatalog): string {
+  switch (issue.code) {
+    case "schema.malformed":
+      return catalog.unindexed.malformedSchema;
+    case "schema.unknown-type":
+      return catalog.unindexed.unknownType(issue.type);
+    case "frontmatter.unreadable":
+      return catalog.unindexed.unreadableFrontmatter;
+  }
 }

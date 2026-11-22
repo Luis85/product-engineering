@@ -5,7 +5,15 @@ export type { CoreFieldIssue } from "./fields";
 export { sameFrontmatter } from "./frontmatter-equality";
 export { editNoteText, frontmatterYaml, newNoteText, splitNoteText } from "./note-text";
 export type { SplitNoteText } from "./note-text";
-export type { Frontmatter, FrontmatterPatch, NoteIssue, NoteType } from "./note-type";
+export type {
+  EditableNote,
+  Frontmatter,
+  FrontmatterPatch,
+  NoteFields,
+  NoteIssue,
+  NoteType,
+  ReadOnlyNote,
+} from "./note-type";
 export {
   clashKey,
   clashName,

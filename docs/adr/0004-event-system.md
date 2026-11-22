@@ -22,6 +22,20 @@ The live Task 13 run passed the note-store and event specs on Windows on 22 Nove
 - The Task 14 live probe matched the metadata cache across 22 fence and line-ending cases. A line starting with three dashes can close the indexed block. Updates accept the standard fence, three dashes with trailing horizontal whitespace, and four dashes. The native `Vault.process` callback preserves the raw BOM and line endings, so edits to the two alternate closing fences retained those bytes and the edited property's trailing comment. The same host round-tripped 900 generated and special YAML values. [Live write fidelity spec](../../tests/e2e/specs/note-write-fidelity.e2e.ts)
 - The Windows host reused the existing capitalization of nested folders during creation. Case-sensitive and case-insensitive doubles also run the folder contract. A live macOS check of the spelling of a matching decomposed Unicode folder remains open. [Live note-store spec](../../tests/e2e/specs/note-store.e2e.ts), [Folder contract](../../tests/support/notes/contract-folders.ts)
 
+### Vault readiness
+
+The Task 16 raw measurement used Obsidian 1.15.1 on Windows and a deterministic reference vault with 2,200 Markdown files, including 2,000 records with frontmatter. [Reference vault generator](../../scripts/reference-vault.mjs), [Startup measurement](../../tests/e2e/specs/vault-ready.e2e.ts)
+
+| Startup | Markdown files cached at layout | Metadata activity |
+| --- | ---: | --- |
+| Cold | 1 of 2,200 after about 205 ms | The first `resolved` fired at about 199 ms. The cache filled in about 24.9 s. The recorder saw 2,200 `changed`, 2,200 `resolve`, and 2,163 `resolved` events. |
+| Warm | 2,200 of 2,200 after about 166 ms | The recorder saw 2,200 `resolve` events and one `resolved` event. |
+| Plugin enabled in a running vault | 2,200 of 2,200 | The recorder saw zero metadata events. |
+
+The adapter publishes `VaultReady` after `LayoutReady` when every current Markdown file has a cache entry. It checks at layout and on subsequent `resolved` callbacks. The index subscribes before the adapter starts, builds at that edge, and re-reads changed paths in batches after it. [Cache completeness](../../src/infrastructure/obsidian/shell/cache-completeness.ts), [Index worker](../../src/application/notes/index-live.ts)
+
+In one live Windows run the index built in 32.1 ms from the cold readiness edge and 33 ms from the warm edge. Three outside edits appeared in the index 141 to 153 ms after their writes. The counted-work test separately checks one decode per record on the first build, zero extra decodes on an unchanged rebuild, and one read and one decode for a single outside edit. [Native index spec](../../tests/e2e/specs/note-index.e2e.ts), [Counted-work test](../../tests/unit/application/notes/note-index-budget.test.ts)
+
 ## Consequences
 
 Each file event describes a write or path change. Consumers that require indexed data use metadata readiness and reread from the store. An unbounded bus preserves observations for a slow subscriber while its scope is active, so subscribers release their scopes promptly. [Application event bus](../../src/application/shell/event-bus.ts)

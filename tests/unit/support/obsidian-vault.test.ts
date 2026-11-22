@@ -173,3 +173,54 @@ it("indexes YAML frontmatter in a note with legacy CR line endings", async () =>
     status: "open",
   });
 });
+
+it("re-indexes a cold vault one file at a time on separate turns", async () => {
+  const { metadataCache, vault } = new App({ layoutReady: false });
+  const files = [
+    await vault.seedFile("One.md", "---\ntitle: First\n---\nBody"),
+    await vault.seedFile("Two.md", "No frontmatter."),
+  ];
+  await metadataCache.whenIndexed();
+  expect(files.map((file) => metadataCache.getFileCache(file))).toEqual([
+    expect.objectContaining({ frontmatter: { title: "First" } }),
+    {},
+  ]);
+
+  const trace: string[] = [];
+  metadataCache.on("changed", () => trace.push("changed"));
+  metadataCache.on("resolve", () => trace.push("resolve"));
+  metadataCache.on("resolved", () => {
+    const count = files.filter((file) => metadataCache.getFileCache(file) !== null).length;
+    trace.push(`resolved ${count}`);
+    queueMicrotask(() => trace.push("turn ended"));
+  });
+  const cold = metadataCache.startCold();
+  expect(files.map((file) => metadataCache.getFileCache(file))).toEqual([null, null]);
+  await cold;
+  expect(trace).toEqual([
+    "changed",
+    "resolve",
+    "resolved 1",
+    "turn ended",
+    "changed",
+    "resolve",
+    "resolved 2",
+    "turn ended",
+  ]);
+});
+
+it("emits one vault resolution on warm startup without changing the cache", async () => {
+  const { metadataCache, vault } = new App();
+  const first = await vault.seedFile("One.md", "---\ntitle: First\n---\nBody");
+  const second = await vault.seedFile("Two.md", "No frontmatter.");
+  await metadataCache.whenIndexed();
+  const cached = metadataCache.getFileCache(first);
+
+  const trace: unknown[] = [];
+  metadataCache.on("changed", () => trace.push("changed"));
+  metadataCache.on("resolve", (file) => trace.push(file));
+  metadataCache.on("resolved", () => trace.push("resolved"));
+  await metadataCache.resolveAll();
+  expect(trace).toEqual([first, second, "resolved"]);
+  expect(metadataCache.getFileCache(first)).toBe(cached);
+});
