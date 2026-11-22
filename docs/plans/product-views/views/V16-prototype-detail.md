@@ -1,0 +1,23 @@
+# V16 · Prototype brief and HTML preview
+
+**Entry** `#/project/kundenportal/prototype/PT-03` → selected prototype. Use a new V15 brief for the complete authoring flow and the original `PT-03` to exercise legacy preview behavior. Depends on V03–V10, V13 and V15. Ship the full manual authoring/import/export loop in V16. V23 supplies the global opt-in and V24 connects the generation job to an enabled provider. Until then, exercise the generation contract using a fake in tests and expose the working manual actions. Read the [shared contracts](../contracts.md), [groundwork intake](../groundwork.md) and [shell blueprint](../../obsidian-plugin-shell-blueprint/README.md).
+
+### Build the flow
+
+1. Show source, requested behavior, optional reusable Styleguide/Designsystem and their links. **Briefing bearbeiten** returns to the V15 editor. Provide **Briefing exportieren** and **HTML übernehmen** independently of AI settings.
+2. Resolve current scope on read and again at export/generation. For maps include the ordered journey, slices, cards, linked backlog records and foundation references. For items include their hierarchy, relevant linked work, knowledge and criteria. Include applicable NFR text, taxonomy, provenance and acceptance criteria. Include scoped domain entities, attributes, one-hop relationships with both endpoint names, direction and cardinality. Deduplicate shared records and preserve useful missing-reference labels.
+3. A saved brief has state **Briefing**. On import, paste or choose a local HTML file, validate it, then store its exact contents, origin and input fingerprint. Present **Klickbar** with a browser-window frame, labeled embedded preview and **HTML exportieren**. If current inputs change, show **Briefing geändert**, keep the last preview and allow exporting its original bytes. Preserve the seeded legacy interactive preview and its download behavior.
+4. With AI enabled, show the generation destination and the brief to be sent before starting a job. Cancellation, provider failure or invalid output keeps the previous saved artifact. Replacing imported HTML requires a deliberate action. Generated content and the local simulator carry distinct provenance. **Briefing exportieren** produces a portable Markdown agent task including the output format and expected offline behavior.
+
+### Data and native boundaries
+
+Keep the editable brief, the latest resolved input signature and the versioned HTML result distinct. Fetch attachments only for the selected scope. Match the reference export’s explicit text excerpts for map foundations, its 512 KiB excerpt limit and labels for unreadable/binary material. Do not silently send attachments through the provider. Validate project, prototype ID and input signature again when a pending run completes. Prefer V01 artifact/file and dialog adapters, V06/V10 scope queries and the existing [provider port](../../../../src/application/integrations/chat/index.ts). Keep the preview in an isolated iframe with scripts only where necessary for the clickdummy, no same-origin access, no Obsidian/Node bridge and no external resource access. Use a verified host isolation boundary before enabling interactive HTML in the native app.
+
+### Red-first acceptance and handoff
+
+- Start with a failing native test for `SM-01` → brief export including mapped stories, one linked NFR criterion and one scoped relationship. Change an applicable source, then an unrelated source. Only the applicable change marks existing output stale.
+- Import HTML containing a working local button and Unicode. Verify the browser-frame preview and exact exported source after editing the brief, cancellation, invalid input and reopening the vault. In a disposable native-host test verify the embedded document cannot access vault or host APIs or fetch remote assets.
+- Exercise AI disabled, success via a deterministic fake provider, late response after scope change and replacement of imported content. Keep the brief, source rows and preview controls usable by keyboard and in a narrow split.
+- Hand V23/V24 the explicit generation contract and disclosure payload. Report red/green evidence, legacy coverage and the `npm run verify` exit code.
+
+[Clickdummy](../../../concept/Product-Engineering-Clickdummy-Story-Maps.html) symbols include `prototypeInputs`, `prototypeBasis`, `agentBriefing`, `briefPrototypeView`, `acceptPrototypeHTML`, `prototypeView`. Compare [output](../../../concept/tests/test_prototype_output.py), [NFRs](../../../concept/tests/test_prototype_nfrs.py), [domain](../../../concept/tests/test_prototype_domain.py), [scoped previews](../../../concept/tests/test_prototype_sources.py), [explicit generation](../../../concept/tests/test_ai_prototype_endpoint.py).

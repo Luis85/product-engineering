@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Product Engineering × Factory · Architektur und Workflow</title>
+<style>
+:root{color-scheme:dark;--bg:#101615;--surface:#16201d;--panel:#1a2522;--stroke:#384942;--text:#f1f3eb;--muted:#b5c5bd;--mint:#9fe7c7;--amber:#ffbf85;--neutral:#cbd6ed;--sans:Inter,'Segoe UI',system-ui,sans-serif;--mono:'Cascadia Mono',Consolas,monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:5rem}body{margin:0;background:var(--bg);color:var(--text);font:1rem/1.55 var(--sans)}h1,h2,h3,h4,p{margin:0}a{color:var(--mint);text-underline-offset:.23em}button{font:inherit;color:inherit;cursor:pointer}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--mint);outline-offset:4px}button:disabled{cursor:default;opacity:.5}::selection{background:var(--mint);color:var(--bg)}[hidden]{display:none!important}.skip{position:absolute;z-index:5;top:.7rem;left:.7rem;transform:translateY(-200%);background:var(--bg);padding:.7rem}.skip:focus{transform:none}.shell{width:min(1320px,calc(100% - 5rem));margin:auto}.top{border-bottom:1px solid var(--stroke);background:#101615f7;position:sticky;top:0;z-index:4}.top .shell{display:flex;justify-content:space-between;align-items:center;gap:1rem;min-height:64px}.wordmark{color:var(--text);text-decoration:none;font-weight:700;font-size:.92rem;display:flex;align-items:center;gap:.7rem;white-space:nowrap}.mark{position:relative;width:23px;height:23px;display:inline-block}.mark::before,.mark::after{position:absolute;content:'';width:12px;height:12px;border:1.5px solid var(--mint);left:1px;top:1px;border-radius:3px}.mark::after{left:8px;top:8px;border-color:var(--amber);background:var(--bg)}nav{display:flex;gap:clamp(.75rem,2.3vw,2rem);align-items:center;flex-wrap:wrap}nav a{color:var(--muted);font-weight:600;font-size:.88rem;text-decoration:none}nav a:hover{color:var(--text)}
+.hero{padding:3.55rem 0 2.9rem;background:radial-gradient(ellipse at 18% 0%,#1c352c 0%,transparent 61%);border-bottom:1px solid var(--stroke)}.hero-lead{display:grid;grid-template-columns:1.55fr 1fr;align-items:end;gap:2.3rem;margin-bottom:1.8rem}.eyebrow,.tag,.lane-label,.node-type,.mini-label{font-family:var(--mono);font-size:.76rem;font-weight:600;letter-spacing:.075em;text-transform:uppercase}.eyebrow{color:var(--mint);margin-bottom:.8rem}h1{max-width:18ch;font-size:clamp(2.55rem,5.5vw,5.5rem);line-height:1.02;letter-spacing:-.064em;font-weight:720;text-wrap:balance}h1 em{color:var(--mint);font-style:normal}.hero-desc{max-width:45ch;color:var(--muted);font-size:clamp(1.04rem,1.45vw,1.23rem);margin:0 0 .2rem}.hero-desc strong{color:var(--text);font-weight:650}
+.diagram{background-color:#131d19;background-image:radial-gradient(#42564b 1px,transparent 1px);background-size:20px 20px;border:1px solid var(--stroke);border-radius:17px;overflow:hidden}.diagram-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;background:#18231f;border-bottom:1px solid var(--stroke);padding:.8rem 1.1rem}.diagram-head h2{font-size:1rem;letter-spacing:-.01em}.legend{display:flex;flex-wrap:wrap;gap:1rem;color:var(--muted);font-size:.81rem}.legend span{display:inline-flex;align-items:center;gap:.45rem}.legend i{width:9px;height:9px;border:1px solid currentColor;border-radius:2px}.mint{color:var(--mint)}.amber{color:var(--amber)}.neutral{color:var(--neutral)}
+.map{padding:1rem 1.1rem 1.05rem;display:grid;grid-template-columns:minmax(0,1.03fr) minmax(88px,.50fr) minmax(0,1.12fr) minmax(118px,.70fr) minmax(0,1.03fr);align-items:stretch;gap:.55rem}.zone{--accent:var(--mint);background:#192822;border:1px solid #486658;border-radius:11px;min-width:0;padding:.85rem;display:flex;flex-direction:column;gap:.55rem}.zone.factory{--accent:var(--amber);background:#29241d;border-color:#785a42}.zone.pool{--accent:var(--neutral);background:#202731;border-color:#515c70}.lane-label{color:var(--accent);min-height:1.2rem;font-size:.71rem}.node{width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:7px;padding:.45rem .52rem;transition:border-color .15s,background .15s}.node:hover,.node[aria-pressed=true]{border-color:var(--accent);background:#ffffff0a}.node strong,.node small{display:block}.node strong{font-size:.98rem;line-height:1.22;color:var(--text)}.node small{font-size:.81rem;color:var(--muted);margin-top:.24rem;line-height:1.35}.node-main{min-height:4.4rem}.node-main strong{font-size:clamp(1.12rem,1.6vw,1.48rem);letter-spacing:-.035em}.node-stack{display:grid;gap:.16rem;border-top:1px solid #ffffff21;padding-top:.43rem}.connector{min-width:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;text-align:center;color:var(--muted);gap:.44rem;font-size:.77rem;line-height:1.28}.connector strong{color:var(--text);font-weight:650}.connector .wire,.callback .wire{display:block;position:relative;height:1px;background:currentColor;margin:0 5px}.wire::after{content:'';position:absolute;width:7px;height:7px;border-top:1px solid currentColor;border-right:1px solid currentColor;right:0;top:-3px;transform:rotate(45deg)}.wire.left::after{right:auto;left:0;transform:rotate(-135deg)}.connector .forward{color:var(--mint)}.connector .pull{color:var(--neutral)}.connector .return{color:var(--amber);margin-top:.45rem}.callback{grid-column:1/4;color:var(--mint);display:flex;align-items:center;gap:.75rem;padding:.35rem .35rem 0;font-size:.81rem;line-height:1.35}.callback .wire{flex:1;min-width:1rem;background:repeating-linear-gradient(90deg,currentColor 0 5px,transparent 5px 9px)}.map-note{grid-column:4/6;color:var(--muted);font-size:.79rem;padding:.35rem 0 0;text-align:right}.inspector{background:#18231f;border-top:1px solid var(--stroke);min-height:5.3rem;padding:.9rem 1.1rem;display:grid;grid-template-columns:minmax(180px,1fr) 2.5fr;gap:1.15rem;align-items:start}.inspector h3{font-size:1.03rem}.node-type{color:var(--mint);margin-bottom:.15rem}.inspector p{font-size:.91rem;color:var(--muted);max-width:91ch}
+.section{padding:4rem 0;border-bottom:1px solid var(--stroke)}.section-head{display:grid;grid-template-columns:1.25fr 1fr;align-items:end;gap:1rem 2.5rem;margin-bottom:1.75rem}.section-head p{color:var(--muted);max-width:55ch}.section h2{font-size:clamp(1.95rem,3.8vw,3.45rem);line-height:1.04;letter-spacing:-.05em;text-wrap:balance}.section h3{line-height:1.25;letter-spacing:-.022em}.section .eyebrow{margin-bottom:.5rem}.pair{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.card{padding:1.2rem 1.35rem;border:1px solid var(--stroke);background:var(--surface);border-radius:.8rem}.card h3{font-size:1.28rem;margin-bottom:.65rem}.card p,.card li{color:var(--muted)}.card ul{padding-left:1.15rem;margin:.55rem 0 0}.card li+li{margin-top:.38rem}.card strong{color:var(--text)}.pin{border-left:3px solid var(--mint)}.card.limit{border-left:3px solid var(--amber)}.triplet{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1rem}.triplet .card{padding:1rem 1.05rem}.triplet h3{font-size:1rem}.triplet p{font-size:.91rem}.triplet .tag{display:block;color:var(--mint);margin-bottom:.4rem}.triplet .card:nth-child(2) .tag{color:var(--amber)}
+.workflow{background:#121b18}.workflow-controls{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.15rem}.choice,.control{border:1px solid var(--stroke);background:var(--panel);border-radius:6px;padding:.48rem .78rem;font-size:.89rem;font-weight:650}.choice:hover,.control:hover:not(:disabled){border-color:var(--mint)}.choice[aria-pressed=true]{background:var(--mint);border-color:var(--mint);color:#12251e}.flow-layout{display:grid;grid-template-columns:1fr 1fr;gap:1rem}.steps{display:grid;gap:.44rem;align-content:start;margin:0;padding:0;list-style:none}.step{display:grid;grid-template-columns:2rem minmax(0,1fr) auto;gap:.6rem;align-items:center;width:100%;padding:.65rem .78rem;border:1px solid var(--stroke);border-radius:.6rem;background:var(--surface);text-align:left;min-height:3.25rem}.step:hover,.step[aria-current=step]{border-color:var(--mint);background:#22362e}.step-index{color:var(--mint);font:600 .83rem var(--mono)}.step h3{font-size:1rem}.step-owner{font-size:.77rem;color:var(--muted);text-align:right}.step-panel{padding:1.15rem 1.35rem;border:1px solid var(--stroke);background:#1a2922;border-radius:.75rem;display:flex;flex-direction:column;min-width:0}.step-panel h3{font-size:clamp(1.3rem,2vw,1.7rem);margin:.3rem 0 .7rem}.step-panel p{color:var(--muted)}.step-data{margin:1.15rem 0;display:grid;gap:.7rem}.step-data div{border-top:1px solid var(--stroke);padding-top:.6rem}.step-data dt{color:var(--mint);font:600 .75rem var(--mono);letter-spacing:.05em;text-transform:uppercase}.step-data dd{margin:.22rem 0 0;color:var(--text);font-size:.94rem}.step-controls{margin-top:auto;padding-top:.6rem;display:flex;justify-content:space-between;gap:.5rem}.example{padding:.78rem 1rem;border:1px dashed var(--stroke);border-radius:.68rem;margin-top:1rem;color:var(--muted);font-size:.9rem}.example strong{color:var(--amber)}
+.table-wrap{overflow:auto;border:1px solid var(--stroke);border-radius:.75rem;margin-top:1rem}table{border-collapse:collapse;width:100%;min-width:610px;background:var(--surface);text-align:left}caption{text-align:left;padding:.85rem 1rem;background:var(--panel);font-weight:700}th,td{padding:.66rem 1rem;border-top:1px solid var(--stroke);vertical-align:top}th{font-size:.89rem}td{color:var(--muted);font-size:.89rem}tbody th{color:var(--text);min-width:135px}.fine{font-size:.88rem;color:var(--muted);margin-top:.8rem}.research-layout{display:grid;gap:.55rem}.research-layout details,.sources-panel{border:1px solid var(--stroke);background:var(--surface);border-radius:.62rem}.research-layout details[open],.sources-panel[open]{border-color:#5b7569}.research-layout summary,.sources-panel>summary{padding:.83rem 1rem;cursor:pointer;list-style:none;display:flex;align-items:center;gap:.8rem;min-height:3.35rem;font-weight:700}.research-layout summary::-webkit-details-marker,.sources-panel summary::-webkit-details-marker{display:none}.research-layout summary::before,.sources-panel>summary::before{content:'+';font:700 1.1rem var(--mono);color:var(--mint);min-width:1rem}.research-layout details[open]>summary::before,.sources-panel[open]>summary::before{content:'−'}.research-layout summary:hover,.sources-panel>summary:hover{background:#ffffff07}.research-layout summary span{font-weight:500;font-size:.88rem;color:var(--muted);margin-left:auto;text-align:right}.research-copy{border-top:1px solid var(--stroke);padding:1rem 1rem 1rem 2.8rem;display:grid;gap:.6rem;color:var(--muted);max-width:105ch}.research-copy strong{color:var(--text)}.refs{font-size:.84rem}.refs a{display:inline-block;margin-right:.75rem}.research-actions{margin-bottom:.8rem;display:flex;gap:.5rem}.sources-panel{margin-top:1rem}.sources{display:grid;grid-template-columns:1fr 1fr;gap:.65rem 1.5rem;padding:1rem 1.4rem 1rem 3.2rem;margin:0;border-top:1px solid var(--stroke)}.sources li{font-size:.87rem;color:var(--muted);scroll-margin-top:1rem}.sources li:target{outline:1px solid var(--mint);outline-offset:3px}.sources li span{display:block;color:var(--muted);font-size:.79rem}.footer{padding:1.35rem 0;color:var(--muted);font-size:.83rem}.footer .shell{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.8rem}
+@media(max-width:1100px){.shell{width:calc(100% - 3rem)}.map{grid-template-columns:minmax(0,1fr) minmax(76px,.53fr) minmax(0,1fr) minmax(94px,.65fr) minmax(0,1fr);padding:.8rem;gap:.35rem}.zone{padding:.52rem}.node{padding:.38rem}.connector{font-size:.71rem}.node-main{min-height:4.2rem}}
+@media(max-width:815px){.hero-lead,.section-head{grid-template-columns:1fr;gap:1rem}.hero{padding-top:2.3rem}.hero-desc{max-width:60ch}.map{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.65rem}.zone.platform{grid-column:1}.zone.factory{grid-column:1;grid-row:3}.zone.pool{grid-column:2;grid-row:3}.connector.handoff{grid-column:1;grid-row:2}.connector.dispatch{grid-column:2;grid-row:2}.connector{padding:.2rem .3rem;gap:.32rem}.connector .wire{margin:0 18%}.callback{grid-column:1/-1}.map-note{grid-column:1/-1;text-align:left}.section{padding:3rem 0}.triplet{grid-template-columns:1fr}.step{grid-template-columns:1.45rem minmax(0,1fr)}.step-owner{grid-column:2;text-align:left}.step h3{overflow-wrap:anywhere}.node-main{min-height:auto}}
+@media(max-width:580px){html{scroll-padding-top:6.6rem}.shell{width:calc(100% - 1.5rem)}.top .shell{display:block;padding:.65rem 0}.wordmark{margin-bottom:.45rem}.top nav{gap:.45rem 1.05rem}.top nav a{font-size:.82rem}.hero{padding:1.75rem 0 2rem}.diagram-head{padding:.65rem .75rem}.legend{gap:.65rem;font-size:.75rem}.map{display:flex;flex-direction:column;padding:.65rem;gap:.55rem}.connector{align-items:center}.connector .wire{width:1px;height:20px;margin:0}.connector .wire::after{right:-3px;top:auto;bottom:0;transform:rotate(135deg)}.connector .wire.left::after{right:-3px;left:auto;top:0;transform:rotate(-45deg)}.connector.dispatch{display:grid;grid-template-columns:1fr 1fr;justify-items:center;gap:.25rem}.connector.dispatch .return{margin:0;grid-column:2;grid-row:2}.connector.dispatch .pull{grid-column:1;grid-row:2}.connector.dispatch .forward-label{grid-column:1;grid-row:1}.connector.dispatch .return-label{grid-column:2;grid-row:1}.callback{font-size:.75rem}.inspector{grid-template-columns:1fr;gap:.4rem;padding:.75rem}.pair,.flow-layout,.sources{grid-template-columns:1fr}.step{grid-template-columns:1.55rem minmax(0,1fr) auto}.step-owner{grid-column:auto;text-align:right}.research-layout summary{align-items:baseline;flex-wrap:wrap;gap:.12rem .65rem}.research-layout summary span{width:100%;text-align:left;padding-left:1.65rem}.research-copy{padding-left:1rem}.step-panel{min-height:19rem}}
+.hero-desc+.hero-desc{margin-top:.7rem}.zone.external{grid-column:5;--accent:var(--neutral);background:#1b2229;border-color:#515c70;padding:.54rem .8rem}.zone.external .lane-label{font-size:.65rem}.external-link{grid-column:5;align-items:center;justify-content:center;font-size:.72rem}.external-link .wire{color:var(--neutral);width:1px;height:14px;margin:0}.external-link .wire::after{right:-3px;top:auto;bottom:0;transform:rotate(135deg)}.callback{grid-column:1/5;align-self:center}.step-name{font-weight:650;line-height:1.28}.steps li{position:relative}.steps li:not(:last-child)::after{content:'';position:absolute;width:1px;height:.45rem;background:#688d7a;left:1.26rem;bottom:-.45rem}.step-panel{align-self:start;min-height:22rem}.step-panel [aria-live]{min-height:15rem}
+@media(max-width:815px){.map{display:flex;flex-direction:column}.node-main{min-height:auto}.connector{align-items:center;padding:.15rem .3rem}.connector .wire{width:1px;height:19px;margin:0}.connector .wire::after{right:-3px;top:auto;bottom:0;transform:rotate(135deg)}.connector .wire.left::after{right:-3px;left:auto;top:0;transform:rotate(-45deg)}.connector.dispatch{display:grid;grid-template-columns:1fr 1fr;justify-items:center;gap:.25rem}.connector.dispatch .return{margin:0;grid-column:2;grid-row:2}.connector.dispatch .pull{grid-column:1;grid-row:2}.connector.dispatch .forward-label{grid-column:1;grid-row:1}.connector.dispatch .return-label{grid-column:2;grid-row:1}.callback{order:1;align-self:stretch}.external-link{padding:.15rem}.external-link .wire.left::after{top:auto;bottom:0;transform:rotate(135deg)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+@media print{:root{color-scheme:light;--bg:white;--surface:white;--panel:#f2f5f3;--stroke:#a4ada8;--text:#17231f;--muted:#354840;--mint:#126449;--amber:#8a480f;--neutral:#384e72}body,.hero,.workflow,.top,.diagram,.diagram-head,.zone,.zone.factory,.zone.pool,.inspector,.step,.step-panel,.choice,.control{background:white!important;color:var(--text)!important}.top{position:static}.top nav,.workflow-controls,.step-controls,.research-actions,.skip{display:none}.shell{width:100%}.hero,.section{padding:1.2rem 0}.card,.zone,.step,.research-layout details{break-inside:avoid}.map{font-size:.9rem}.section h2{font-size:1.75rem}}
+</style>
+</head>
+<body id="top">
+<a class="skip" href="#main">Zum Inhalt</a>
+<header class="top"><div class="shell">
+  <a class="wordmark" href="#top"><span class="mark" aria-hidden="true"></span> Product Engineering × Factory</a>
+  <nav aria-label="Abschnitte"><a href="#problem">Problem</a><a href="#architektur">Architektur</a><a href="#workflow">Workflow</a><a href="#recherche">Recherche</a><a href="#pilot">Pilot</a></nav>
+</div></header>
+<main id="main">
+<section class="hero" id="architektur"><div class="shell">
+  <div class="hero-lead">
+    <div><p class="eyebrow">Zielarchitektur für projektbasierte Softwareentwicklung</p><h1>Vom Kundenproblem zur <em>finalen Review.</em></h1></div>
+    <div><p class="hero-desc">Verteilter Projektkontext erschwert es, Features umzusetzen und ihre Abnahme vorzubereiten.</p><p class="hero-desc"><strong>Product Engineering</strong> bündelt das Wissen in einem Feature Request. Der <strong>Factory-Server</strong> koordiniert die Arbeit. Auf angemeldeten <strong>Worker-Clients</strong> setzen KI-Agenten sie um.</p></div>
+  </div>
+  <figure class="diagram" style="margin:0" aria-labelledby="diagram-title">
+    <div class="diagram-head"><h2 id="diagram-title">Systemarchitektur</h2><div class="legend" aria-label="Legende"><span><i class="mint"></i> Produktplattform</span><span><i class="amber"></i> Factory-Server</span><span><i class="neutral"></i> Ausführung auf Clients</span></div></div>
+    <div class="map">
+      <section class="zone platform" aria-label="Product Engineering Platform">
+        <p class="lane-label">Product Engineering</p>
+        <button class="node node-main" type="button" data-node="platform" aria-pressed="true" aria-controls="architecture-detail"><strong>Product Engineering Platform</strong><small>Projekte, Applikationen und Fachlichkeit</small></button>
+        <div class="node-stack">
+          <button class="node" type="button" data-node="knowledge" aria-pressed="false" aria-controls="architecture-detail"><strong>Knowledge Base</strong><small>Kontext, Anforderungen, UX und Architektur</small></button>
+          <button class="node" type="button" data-node="review" aria-pressed="false" aria-controls="architecture-detail"><strong>Finale Review</strong><small>Akzeptanz, Entscheidung und Rückfluss</small></button>
+        </div>
+      </section>
+      <div class="connector handoff" role="group" aria-label="Von der Produktplattform an den Factory-Server"><strong>Feature<br>Request</strong><i class="wire forward" aria-hidden="true"></i><span>freigegeben und versioniert</span></div>
+      <section class="zone factory" aria-label="Factory-Server">
+        <p class="lane-label">Factory Engineering</p>
+        <button class="node node-main" type="button" data-node="factory" aria-pressed="false" aria-controls="architecture-detail"><strong>Factory-Server</strong><small>Zentrale Koordination und Leitstand</small></button>
+        <div class="node-stack">
+          <button class="node" type="button" data-node="orchestrator" aria-pressed="false" aria-controls="architecture-detail"><strong>Orchestrator</strong><small>Auftragswarteschlange, Zuteilung und Status</small></button>
+          <button class="node" type="button" data-node="manifest" aria-pressed="false" aria-controls="architecture-detail"><strong>Manifest &amp; Leitstand</strong><small>Regeln, Worker-Pool und Telemetrie</small></button>
+        </div>
+      </section>
+      <div class="connector dispatch" role="group" aria-label="Clients melden sich beim Server an und fragen Jobs ab. Server liefert den Auftrag als Antwort."><span class="forward-label"><strong>Client fragt an</strong><br>Anmeldung, Job-Abruf, Status</span><i class="wire left pull" aria-hidden="true"></i><i class="wire return" aria-hidden="true"></i><span class="return-label"><strong>Server antwortet</strong><br>Auftrag mit Lease</span></div>
+      <section class="zone pool" aria-label="Ausführung auf Worker-Clients">
+        <p class="lane-label">Rechner der Teilnehmenden</p>
+        <button class="node node-main" type="button" data-node="clients" aria-pressed="false" aria-controls="architecture-detail"><strong>Worker-Clients</strong><small>Angemeldete Rechner im Factory-Pool</small></button>
+        <div class="node-stack">
+          <button class="node" type="button" data-node="agents" aria-pressed="false" aria-controls="architecture-detail"><strong>KI-Agenten je Auftrag</strong><small>Umsetzung in isolierten Arbeitsumgebungen</small></button>
+          <button class="node" type="button" data-node="enrolment" aria-pressed="false" aria-controls="architecture-detail"><strong>Anmeldung &amp; Kapazität</strong><small>Profil, Projektfreigabe, verfügbar oder pausiert</small></button>
+        </div>
+      </section>
+      <div class="callback"><i class="wire left" aria-hidden="true"></i><span>Factory → Produktplattform · Status, Prüfnachweise, Review-Paket</span><i class="wire left" aria-hidden="true"></i></div>
+      <div class="connector external-link" role="group" aria-label="Worker liefern Änderungen an Git und CI"><span>Änderung und PR</span><i class="wire" aria-hidden="true"></i></div>
+      <section class="zone external" aria-label="Angebundene Dienste">
+        <p class="lane-label">Angebundene Dienste</p>
+        <button class="node" type="button" data-node="git" aria-pressed="false" aria-controls="architecture-detail"><strong>Git &amp; CI</strong><small>PR und unabhängige Prüfungen</small></button>
+      </section>
+    </div>
+    <figcaption id="architecture-detail" class="inspector" aria-live="polite" aria-atomic="true"><div><div class="node-type" id="node-type">Produktplattform</div><h3 id="node-title">Projekt- und Produktarbeit</h3></div><p id="node-copy">Im Projekt werden die betroffene Applikation, ihre Anforderungen, UX-Entwürfe und Architekturentscheidungen zusammengeführt. Product Engineering priorisiert und versioniert Feature Requests und dokumentiert die fachliche Abnahme.</p></figcaption>
+  </figure>
+</div></section>
+
+<section class="section" id="problem"><div class="shell">
+  <div class="section-head"><div><p class="eyebrow">Ausgangslage und Zielbild</p><h2>Was an der Übergabe verloren gehen kann</h2></div><p>Die Ausgangslage ist eine Hypothese für den Pilot. Besonders wichtig ist, wo Rückfragen, Wartezeit und Nacharbeit heute entstehen.</p></div>
+  <div class="pair">
+    <article class="card limit"><h3>Problem</h3><ul><li><strong>Kontext ist verteilt.</strong> Kundenbedarf, Designs und Entscheidungen liegen in verschiedenen Ablagen. Rückfragen kosten Zeit.</li><li><strong>Prüfmaßstäbe variieren.</strong> Ein Ticket kann für Menschen verständlich sein und dem Agenten trotzdem den notwendigen Projektkontext vorenthalten.</li><li><strong>Fortschritt ist schwer einschätzbar.</strong> Ein PR sagt allein wenig darüber aus, welche Kriterien geprüft wurden und wer entscheiden muss.</li></ul></article>
+    <article class="card pin"><h3>Lösung</h3><ul><li><strong>Projektwissen bündeln.</strong> Die Knowledge Base verknüpft Bedarf, Designs, Geschäftsregeln und Architektur mit Projekt und Applikation.</li><li><strong>Aufträge verlässlich vergeben.</strong> Der Orchestrator übergibt eine eingefrorene Request-Revision an einen passenden angemeldeten Worker mit freier Kapazität.</li><li><strong>Abnahme vorbereiten.</strong> Die Factory liefert Änderung, Prüfergebnisse und offene Risiken. Die Entscheidung fließt in die Produktplattform zurück.</li></ul></article>
+  </div>
+  <div class="triplet">
+    <article class="card"><span class="tag">Product Engineering</span><h3>Fachliche Verantwortung</h3><p>Kundenproblem verstehen, Lösung entwerfen, Scope und Risiken abwägen, Akzeptanzkriterien definieren und fachlich abnehmen. Requirements Engineering, UX und Solution Architecture arbeiten daran zusammen.</p></article>
+    <article class="card"><span class="tag">Factory Engineering</span><h3>Technische Verantwortung</h3><p>Worker, Agenten und Pipelines betreiben, Projektgrenzen und Qualitätsregeln mitgestalten, Störungen handhaben und Factory-Leistung verbessern. Benannte Code-Owner prüfen Änderungen technisch.</p></article>
+    <article class="card"><span class="tag">Gemeinsame Arbeit</span><h3>Vor Übergabe und nach Review</h3><p>Machbarkeit und kritische Regeln früh gemeinsam klären. Rückfragen, Review-Befunde und Betriebssignale in Spezifikation, Tests und Factory-Regeln zurückführen.</p></article>
+  </div>
+</div></section>
+
+<section class="section workflow" id="workflow"><div class="shell">
+  <div class="section-head"><div><p class="eyebrow">End-to-End-Workflow</p><h2>So läuft ein Auftrag durch</h2></div><p>Wähle einen Verlauf und öffne einen Schritt. Die Detailansicht zeigt, was übergeben wird und wann der nächste Schritt beginnen kann.</p></div>
+  <div class="workflow-controls" aria-label="Workflow-Verlauf" role="group">
+    <button class="choice" type="button" data-scenario="happy" aria-pressed="true">Regulärer Ablauf</button>
+    <button class="choice" type="button" data-scenario="offline" aria-pressed="false">Worker fällt aus</button>
+    <button class="choice" type="button" data-scenario="question" aria-pressed="false">Rückfrage oder Änderungsbedarf</button>
+  </div>
+  <div class="flow-layout">
+    <ol class="steps" id="steps" aria-label="Workflow-Schritte"></ol>
+    <article class="step-panel" aria-labelledby="step-title">
+      <div aria-live="polite" aria-atomic="true"><div class="node-type" id="step-meta"></div><h3 id="step-title"></h3><p id="step-copy"></p><dl class="step-data"><div><dt>Ergebnis</dt><dd id="step-output"></dd></div><div><dt>Voraussetzung für den nächsten Schritt</dt><dd id="step-gate"></dd></div></dl></div>
+      <div class="step-controls"><button type="button" class="control" id="previous">Zurück</button><button type="button" class="control" id="next">Weiter</button></div>
+    </article>
+  </div>
+  <noscript><p class="example">Kundenproblem → Projektwissen → Feature Request → Zuteilung → Worker-Ausführung → CI-Nachweise → finale menschliche Review. Bei einem Ausfall läuft die Reservierung aus. Fachliche Rückfragen werden in der Produktplattform geklärt.</p></noscript>
+  <p class="example"><strong>Beispiel aus einem Kundenportal</strong> · Projekt „Serviceportal“, Applikation „Kundenportal“, FR-024 Rev. 2 · „Kunden können offene Serviceanfragen als CSV exportieren.“ Die Abnahme prüft unter anderem Filterwirkung, Mandantentrennung und deutsche Sonderzeichen.</p>
+</div></section>
+
+<section class="section" id="vertraege"><div class="shell">
+  <div class="section-head"><div><p class="eyebrow">Systemgrenzen und Verträge</p><h2>Was die beiden Anwendungen austauschen</h2></div><p>Der Feature Request beschreibt das Vorhaben. Das Factory-Manifest legt die Ausführungsregeln fest. Das Review-Paket dokumentiert das Ergebnis.</p></div>
+  <div class="table-wrap" tabindex="0" role="region" aria-label="Führende Systeme und Datenverträge"><table>
+    <caption>Führende Systeme und Datenverträge</caption>
+    <thead><tr><th scope="col">Objekt</th><th scope="col">Führendes System</th><th scope="col">Inhalt und Grenze</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Projekt und Applikation</th><td>Product Engineering Platform</td><td>Stabile Projekt- und Applikations-ID. Ein Projekt kann im Zielbild mehrere Applikationen betreuen. Jeder Auftrag hat eine Zielapplikation und ein zugelassenes Ziel-Repository.</td></tr>
+      <tr><th scope="row">Feature Request</th><td>Product Engineering Platform → Factory</td><td>Request-ID und Revision, Ziel und Kundennutzen, Umfang, referenzierter Kontext in fester Version, Akzeptanzkriterien mit IDs, relevante Risiken und Datenklasse. Fachlich freigegebene Revisionen sind unveränderlich.</td></tr>
+      <tr><th scope="row">Factory-Manifest und Run</th><td>Factory-Server</td><td>Versioniertes Manifest mit Repo-Zuordnung, Worker-Profil, Werkzeug-, Netzwerk- und Modellregeln, Prüfungen und Budget. Der Run bindet Request-Revision, Manifest-Version und Basis-Commit. Versuche hängen am Run.</td></tr>
+      <tr><th scope="row">Review-Paket</th><td>Factory → Product Engineering Platform</td><td>PR und geprüfter Commit, Kriterien mit Prüfergebnis und Nachweislink, offene Risiken, Review-Hinweise sowie Laufzeit und verfügbare Kosten-/Nutzungsdaten. Git und CI führen Code und Prüfergebnisse.</td></tr>
+      <tr><th scope="row">Review-Entscheidung</th><td>Product Engineering Platform und Git</td><td>Fachliche Entscheidung in der Plattform. Technische Zustimmung und Merge-Gate in Git. Beide verweisen auf dieselbe Request-Revision und denselben geprüften Commit.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="triplet">
+    <article class="card"><h3>Registrierung</h3><p>Ein Teilnehmer meldet sich am Leitstand an und koppelt einen Client. Der Server vergibt eine widerrufbare Worker-Identität und weist freigegebene Projekte und Profile zu. Der Teilnehmer steuert Verfügbarkeit und Parallelität.</p></article>
+    <article class="card"><h3>Zuteilung und Ausfall</h3><p>Der Client fragt über ausgehendes HTTPS nach einem Auftrag. Die Factory reserviert ihn atomar über eine befristete Lease. Heartbeats erneuern sie. Der Server akzeptiert Ergebnisse nur für den aktuell gültigen Versuch.</p></article>
+    <article class="card"><h3>Rückmeldung</h3><p>Ereignisse tragen eindeutige IDs, eine Version je Request oder Run und eine Statussequenz. Empfänger verarbeiten Duplikate idempotent. Fehlende Statusstände lassen sich über eine Statusabfrage abgleichen.</p></article>
+  </div>
+</div></section>
+
+<section class="section" id="recherche"><div class="shell">
+  <div class="section-head"><div><p class="eyebrow">Webrecherche · Stand 22. November 2026</p><h2>Was die Recherche für den Entwurf bedeutet</h2></div><p>Primärquellen aus Produktentwicklung, Plattform- und Tool-Dokumentation, Standards, EU-Recht und empirischer Forschung. Jede Perspektive verbindet den Befund mit einer Entwurfsentscheidung und einer Frage für die Validierung.</p></div>
+  <div class="research-actions"><button class="control" id="expand" type="button">Alle Perspektiven öffnen</button></div>
+  <div class="research-layout" id="research"><details><summary>Produktstrategie und Discovery <span>Kundennutzen vor Freigabe belegen</span></summary><div class="research-copy"><p><strong>Befund.</strong> SVPG benennt Wert, Nutzbarkeit, Machbarkeit und geschäftliche Tragfähigkeit als Discovery-Risiken. Product Talk beschreibt regelmäßigen Nutzerkontakt als Grundlage kontinuierlicher Discovery.</p><p><strong>Entwurfsentscheidung.</strong> Pro Request gehören Problem, betroffene Rolle, beobachtete Ausgangslage, erwartete Wirkung und relevante Randbedingungen ins Projekt. Fachliche Discovery läuft auch während der Umsetzung weiter. Factory Engineering klärt früh kritische Machbarkeit und Prüfbarkeit.</p><p><strong>Im Pilot prüfen.</strong> Für drei oder mehr repräsentative Anfragen verfolgen, ob Nutzerbelege die Priorisierung oder den Scope ändern und welche Rückfragen erst in der Umsetzung auftreten.</p><div class="refs" aria-label="Quellen"><a href="#quelle-1">[1] SVPG</a><a href="#quelle-2">[2] Product Talk</a></div></div></details>
+<details><summary>Requirements Engineering und Knowledge Base <span>Projektwissen referenzierbar machen</span></summary><div class="research-copy"><p><strong>Befund.</strong> IREB bietet Vorgehensweisen zur Ermittlung, Dokumentation, Validierung und Verwaltung von Anforderungen. arc42 strukturiert Architekturwissen und dokumentiert Entscheidungen über ADRs.</p><p><strong>Entwurfsentscheidung.</strong> Struktur: Projekt → Applikation → Feature Request. Requests referenzieren Geschäftsregeln, UX-Designs, ADRs und Qualitätsziele in festen Versionen. Pro Kriterium gibt es eine ID und prüfbare Beispiele. Kontextzugriffe werden pro Projekt und Datenklasse beschränkt.</p><p><strong>Im Pilot prüfen.</strong> Kann ein anderer Mensch oder Worker dieselbe Revision mit demselben Kontext verstehen? Werden fachliche Änderungen von reinen Umsetzungsdetails zuverlässig unterschieden?</p><div class="refs" aria-label="Quellen"><a href="#quelle-3">[3] IREB</a><a href="#quelle-7">[7] arc42</a><a href="#quelle-8">[8] arc42</a></div></div></details>
+<details><summary>UX, Barrierefreiheit und Adoption <span>Nächste Aktion in jeder Rolle sichtbar machen</span></summary><div class="research-copy"><p><strong>Befund.</strong> CNCF beschreibt interne Plattformen als Produkt für konkrete Nutzergruppen. WCAG 2.2 gibt unter anderem Kriterien für Tastaturbedienung, Fokusdarstellung und Statusmeldungen.</p><p><strong>Entwurfsentscheidung.</strong> Drei Aufgaben prägen die Oberflächen: Requests mit Kriterien freigeben, Worker koppeln und verwalten, Review-Pakete prüfen. Statusanzeigen nennen Ursache, betroffene Revision, verantwortliche Rolle und nächste Aktion. Die Review führt pro Kriterium zum Nachweis und zum geprüften Commit.</p><p><strong>Im Pilot prüfen.</strong> Aufgabenbasierte Tests mit Product Ownern, Worker-Teilnehmenden und Reviewern. Erfolgsquote, Zeit bis zur nächsten Aktion, Tastaturbedienbarkeit und Verständnis von Blockaden beobachten.</p><div class="refs" aria-label="Quellen"><a href="#quelle-4">[4] W3C</a><a href="#quelle-6">[6] CNCF</a></div></div></details>
+<details><summary>Organisation und Delivery <span>Verantwortung teilen und Übergaben verkürzen</span></summary><div class="research-copy"><p><strong>Befund.</strong> Team Topologies beschreibt Plattformteams als Anbieter interner Produkte für liefernde Teams. CNCF legt den Schwerpunkt auf nutzerorientierte Plattformfähigkeiten. Eine starre Übergabe zwischen zwei Teams wäre aus dieser Perspektive ein Diagnosepunkt im Pilot.</p><p><strong>Entwurfsentscheidung.</strong> Product Engineering verantwortet fachliche Akzeptanz und Priorisierung. Factory Engineering betreibt die Factory und stellt technische Qualitätsregeln bereit. Code-Owner verantworten die technische Review. Gemeinsames Refinement und sichtbare Rückfragen halten die Abstimmung kurz.</p><p><strong>Im Pilot prüfen.</strong> Zeit in Warteschlange, Zeit bis zur fachlichen Klärung und Zeit in Review getrennt messen. Für die Pilot-Applikation Entscheidungswege und Eskalationsverantwortung benennen.</p><div class="refs" aria-label="Quellen"><a href="#quelle-5">[5] Team Topologies</a><a href="#quelle-6">[6] CNCF</a></div></div></details>
+<details><summary>Worker-Architektur und Verlässlichkeit <span>Ausführung auf angemeldeten Clients</span></summary><div class="research-copy"><p><strong>Befund.</strong> Azure Pipelines dokumentiert ausgehende Agent-Kommunikation und Job-Abruf. Temporal beschreibt pollende Worker. SQS veranschaulicht zeitlich begrenzte Reservierungen und wieder lieferbare Nachrichten. GitHub zeigt Muster für kurzlebige Runner.</p><p><strong>Entwurfsentscheidung.</strong> Ein zentraler Server koordiniert dauerhaft, Clients führen Aufträge aus. Worker-ID, Projektfreigabe und Profil bestimmen die Eignung. Eine atomare Lease mit Heartbeat und Versuch-ID begrenzt die Gültigkeit. Seiteneffekte wie Branches und Uploads sind versuchsspezifisch. Kanonische Ergebnisse übernimmt nur der Server für den gültigen Versuch.</p><p><strong>Im Pilot prüfen.</strong> Offline während der Umsetzung, Cancel, veralteter Worker, zwei gleichzeitige Abrufe und verspätetes Ergebnis simulieren. Maßgeblich sind ein eindeutiges kanonisches Ergebnis und die nachvollziehbare Behandlung verbliebener Artefakte.</p><div class="refs" aria-label="Quellen"><a href="#quelle-13">[13] Microsoft Learn</a><a href="#quelle-14">[14] GitHub Docs</a><a href="#quelle-15">[15] Temporal</a><a href="#quelle-16">[16] AWS</a></div></div></details>
+<details><summary>Integration und Interoperabilität <span>Verträge zwischen den Anwendungen stabil halten</span></summary><div class="research-copy"><p><strong>Befund.</strong> CloudEvents spezifiziert einen gemeinsamen Ereignisumschlag. Transactional Outbox verkoppelt das Persistieren einer Entscheidung mit der zuverlässigen Veröffentlichung. Azure DevOps Service Hooks bieten einen Anschluss an bestehende Delivery-Signale.</p><p><strong>Entwurfsentscheidung.</strong> Versionierte API für Request-Freigabe und Statusabfrage. Ausführungsstatus und Review-Paket werden als Ereignisse zurückgegeben. Outbox und Empfänger-Deduplizierung sichern Wiederholungen ab. Architektur, Projektwissen und Runtime-Status behalten jeweils ihr führendes System.</p><p><strong>Im Pilot prüfen.</strong> Kompatibilität bei älterer Schemaversion, doppelte und verspätete Ereignisse, Ausfall der Zielplattform, Wiederanlauf und Wiederaufbau einer Statusprojektion aus autoritativen Daten testen.</p><div class="refs" aria-label="Quellen"><a href="#quelle-7">[7] arc42</a><a href="#quelle-17">[17] Microsoft Learn</a><a href="#quelle-18">[18] CNCF</a><a href="#quelle-39">[39] Microsoft Learn</a></div></div></details>
+<details><summary>Agenten, Modellwahl und Arbeitsablauf <span>Kleine, nachvollziehbare Schritte</span></summary><div class="research-copy"><p><strong>Befund.</strong> Anthropic unterscheidet gesteuerte Workflows und stärker selbststeuernde Agenten. Spec Kit demonstriert getrennte Spezifikations-, Planungs- und Aufgabenschritte. Böckeler beschreibt Grenzen der untersuchten Tools und unterschiedliche Bedeutungen von Spec-Driven Development.</p><p><strong>Entwurfsentscheidung.</strong> Mit einem gesteuerten Ablauf beginnen: Planung, begrenzte Umsetzung, lokale Prüfung und Handoff. Worker erhalten auftragsbezogenen Kontext. Agent, Modell und Manifest-Version werden protokolliert. Schritt- und Kostenbudgets sowie ein Klärungspfad begrenzen Wiederholungen.</p><p><strong>Im Pilot prüfen.</strong> Auf einem Satz repräsentativer Aufgaben Kriterienabdeckung, Nacharbeit, Laufzeit und Kosten vergleichen. Weitere Agentenrollen erst einführen, wenn sie einen beobachteten Engpass verbessern.</p><div class="refs" aria-label="Quellen"><a href="#quelle-9">[9] MartinFowler.com</a><a href="#quelle-10">[10] GitHub</a><a href="#quelle-11">[11] Anthropic</a><a href="#quelle-12">[12] Anthropic</a></div></div></details>
+<details><summary>Qualität, Review und Lieferkette <span>Belege an den geprüften Commit binden</span></summary><div class="research-copy"><p><strong>Befund.</strong> ISO/IEC 25010 beschreibt Qualitätsmerkmale eines Softwareprodukts. NIST SSDF bündelt sichere Entwicklungspraktiken. SLSA beschreibt überprüfbare Herkunftsinformationen. GitHub und Azure Repos dokumentieren technische Merge-Regeln.</p><p><strong>Entwurfsentscheidung.</strong> CI schützt die verbindlichen Prüfungen und bindet sie an den PR-Commit. Kriterien-Nachweis-Matrix, Tests und risikobasierte Sicherheitsprüfungen gehören ins Paket. Produktabnahme und Code-Owner-Review ergänzen einander. Für neue Commits sind die Regeln zur erneuten Freigabe explizit.</p><p><strong>Im Pilot prüfen.</strong> In Stichproben mit grüner CI Kriterien-Nachweise und negative Fälle manuell prüfen. Für Release-Artefakte Herkunft vom Commit bis zum Build nachweisen.</p><div class="refs" aria-label="Quellen"><a href="#quelle-19">[19] ISO</a><a href="#quelle-20">[20] NIST</a><a href="#quelle-21">[21] SLSA</a><a href="#quelle-22">[22] GitHub Docs</a><a href="#quelle-23">[23] Microsoft Learn</a></div></div></details>
+<details><summary>Sicherheit der Worker und Modellzugriffe <span>Endgeräte als eigene Vertrauensgrenze behandeln</span></summary><div class="research-copy"><p><strong>Befund.</strong> OWASP beschreibt Risiken durch manipulierte Eingaben, übermäßige Berechtigungen und Werkzeuge. GitHub dokumentiert Risiken persistenter selbstgehosteter Runner. NIST Zero Trust bindet Zugriff an Identität, Gerät und Ressource.</p><p><strong>Entwurfsentscheidung.</strong> Pilot auf verwalteten Endgeräten. Separater Benutzer-Login und widerrufbare Dienstidentität je Worker. Auftragsbezogene, kurzlebige Rechte und getrennte Projektprofile. Isolierte, kurzlebige Ausführung, erlaubte Netzwerkziele und geschützte Secrets. Eingebundene Tickets, Dateien und Modellantworten gelten als Daten. Verbindliche Tool- und Datenregeln erzwingt die Ausführungsumgebung.</p><p><strong>Im Pilot prüfen.</strong> Prüfen, ob ein gekoppelter Client nur freigegebene Projekte erreicht und ein widerrufener Client keine neuen Aufträge erhält. Datei- und Netzwerkgrenzen, Entfernung temporärer Secrets und App-/Repo-Rechte im Pilot verifizieren.</p><div class="refs" aria-label="Quellen"><a href="#quelle-24">[24] OWASP</a><a href="#quelle-25">[25] GitHub Docs</a><a href="#quelle-26">[26] NIST</a><a href="#quelle-40">[40] IETF</a><a href="#quelle-41">[41] OpenAI</a><a href="#quelle-42">[42] OWASP</a></div></div></details>
+<details><summary>Datenschutz, Verträge und AI Governance <span>Kundendaten und Provider nach Zweck freigeben</span></summary><div class="research-copy"><p><strong>Befund.</strong> Die DSGVO behandelt bei personenbezogenen Daten unter anderem Datenminimierung, Datenschutz durch Technikgestaltung, Auftragsverarbeitung, Sicherheit und Drittlandtransfers. Beim AI Act hängt die Einordnung vom Zweck und der Rolle ab. Art. 4 adressiert KI-Kompetenz im einschlägigen Anwendungsbereich. Art. 6 und Anhang III sind für die Hochrisiko-Einordnung relevant.</p><p><strong>Entwurfsentscheidung.</strong> Pro Projekt Datenfluss zu Endgeräten, Modellanbietern, CI und Logs dokumentieren. Datenschutz, Kundenfreigaben, Geheimhaltung, Auftragsverarbeitung, Unterauftragnehmer, Löschfristen, IP und Lizenzregeln mit den Verantwortlichen klären. Telemetrie standardmäßig ohne Rohprompts und Code.</p><p><strong>Im Pilot prüfen.</strong> Für eine konkrete Kundenklassifikation den vollständigen Datenfluss sowie zulässige Geräte, Anbieter, Regionen, Vertragsgrundlagen und Aufbewahrungszeiten gegen die Projektauflagen prüfen.</p><div class="refs" aria-label="Quellen"><a href="#quelle-27">[27] EUR-Lex</a><a href="#quelle-28">[28] EUR-Lex</a><a href="#quelle-29">[29] NIST</a></div></div></details>
+<details><summary>Betrieb, Observability und Support <span>Den gesamten Run diagnostizierbar machen</span></summary><div class="research-copy"><p><strong>Befund.</strong> Google SRE empfiehlt betriebliche Ziele anhand beobachtbarer Indikatoren. OpenTelemetry dokumentiert GenAI-Konventionen einschließlich Token-Metriken. Die verfügbaren Felder hängen von Provider und Integration ab.</p><p><strong>Entwurfsentscheidung.</strong> Im Leitstand Worker- und Run-Status, Wartegründe, Heartbeat, Budget, Abbrüche und Wiederholungen sichtbar machen. Projekt, Request, Run und Versuch korrelieren. Je Modellaufruf Modell, Latenz, berichtete Token, berichtete Kosten und Abrechnungsquelle erfassen, soweit verfügbar. Schätzungen und unbekannte Werte kennzeichnen.</p><p><strong>Im Pilot prüfen.</strong> Ein messbares SLO für Sichtbarkeit des Auftragsstatus und eines für Bereitstellung bei verfügbarer Kapazität definieren. Wiederanlauf, Status-Reconciliation und Alarmqualität im Pilot prüfen.</p><div class="refs" aria-label="Quellen"><a href="#quelle-15">[15] Temporal</a><a href="#quelle-30">[30] OpenTelemetry</a><a href="#quelle-31">[31] Google SRE</a></div></div></details>
+<details><summary>Wirtschaftlichkeit und Wirkungsmessung <span>Kosten pro akzeptiertem Feature messen</span></summary><div class="research-copy"><p><strong>Befund.</strong> FinOps setzt Kosten in Bezug zu einer nutzungs- oder wertbezogenen Einheit. DORA betrachtet Lieferleistung und Stabilität je Applikation. METR fand bei erfahrenen Open-Source-Entwicklern in einer frühen Studie längere Bearbeitungszeiten mit KI. Das Follow-up diskutiert Schwierigkeiten bei der Verallgemeinerung. SPACE empfiehlt mehrere Perspektiven auf Produktivität.</p><p><strong>Entwurfsentscheidung.</strong> Mit vergleichbaren kleinen Änderungen starten. Zeit vom Bedarf bis zur fachlichen Abnahme sowie aktive Zeit, Review-Aufwand und Rework messen. Kosten umfassen Modelle, Worker-Betrieb, Factory Engineering und menschliche Prüfarbeit, einschließlich Fehlversuchen. DORA-Metriken ergänzen die Messung für ausgelieferte Änderungen.</p><p><strong>Im Pilot prüfen.</strong> Je Feature-Typ Bearbeitungszeit, Qualität, Wartezeit und Gesamtkosten mit der Baseline vergleichen. Unterschiede im Schwierigkeitsgrad und in der Verfügbarkeit von Kostendaten offen ausweisen.</p><div class="refs" aria-label="Quellen"><a href="#quelle-32">[32] FinOps Foundation</a><a href="#quelle-33">[33] DORA</a><a href="#quelle-34">[34] DORA</a><a href="#quelle-35">[35] METR</a><a href="#quelle-36">[36] METR</a><a href="#quelle-37">[37] Microsoft Research</a></div></div></details>
+<details><summary>Marktvergleich und Build-or-Buy <span>Eigenentwicklung auf den Projektkontext konzentrieren</span></summary><div class="research-copy"><p><strong>Befund.</strong> GitHub zeigt repo-nahe Agenten und reviewbare PRs. Azure Pipelines demonstriert selbstgehostete Ausführung. Temporal zeigt ein Workflow-Modell mit Workern und Task Queues. Spec Kit liefert Muster für den Übergang von Spezifikation zu Aufgaben.</p><p><strong>Entwurfsentscheidung.</strong> Repo und CI wiederverwenden. Als eigenes Produkt zuerst projektbezogene Knowledge Base, Versionierung der Übergabe, regelgesteuerten Worker-Zugriff und Review-Rückfluss bewerten. Für den Orchestrator eine einfache dauerhafte Queue und eine Workflow-Engine anhand realer Fehlerpfade und Betriebsaufwand vergleichen.</p><p><strong>Im Pilot prüfen.</strong> Für drei Alternativen denselben Request vom Projektkontext bis zur Review durchspielen: repo-naher Agent, vorhandener CI-Runner und kleiner Factory-Server mit Worker-Client. Kontexttreue, Freigaben, Integration, Betrieb und Anbieterwechsel vergleichen.</p><div class="refs" aria-label="Quellen"><a href="#quelle-10">[10] GitHub</a><a href="#quelle-13">[13] Microsoft Learn</a><a href="#quelle-15">[15] Temporal</a><a href="#quelle-23">[23] Microsoft Learn</a><a href="#quelle-38">[38] GitHub Docs</a><a href="#quelle-39">[39] Microsoft Learn</a></div></div></details></div>
+  <details class="sources-panel" id="quellen"><summary>Quellenverzeichnis · 42 Quellen</summary><ol class="sources"><li id="quelle-1"><a href="https://www.svpg.com/four-big-risks/" target="_blank" rel="noopener noreferrer">SVPG · The Four Big Risks</a><span>Wert, Nutzbarkeit, Machbarkeit und geschäftliche Tragfähigkeit</span></li>
+<li id="quelle-2"><a href="https://www.producttalk.org/getting-started-with-discovery/" target="_blank" rel="noopener noreferrer">Product Talk · Getting Started with Discovery</a><span>Kontinuierliches Nutzerfeedback</span></li>
+<li id="quelle-3"><a href="https://cpre.ireb.org/en/downloads-and-resources/downloads" target="_blank" rel="noopener noreferrer">IREB · CPRE Foundation Level</a><span>Lehrplan und Handbuch zu Anforderungen</span></li>
+<li id="quelle-4"><a href="https://www.w3.org/TR/WCAG22/" target="_blank" rel="noopener noreferrer">W3C · WCAG 2.2</a><span>Barrierefreiheit und Bedienung</span></li>
+<li id="quelle-5"><a href="https://teamtopologies.com/key-concepts" target="_blank" rel="noopener noreferrer">Team Topologies · Key Concepts</a><span>Plattform als internes Produkt, Interaktionsmodi und Teamgrenzen</span></li>
+<li id="quelle-6"><a href="https://tag-app-delivery.cncf.io/whitepapers/platforms/" target="_blank" rel="noopener noreferrer">CNCF · Platforms White Paper</a><span>Interne Plattformen und Nutzerorientierung</span></li>
+<li id="quelle-7"><a href="https://docs.arc42.org/home/" target="_blank" rel="noopener noreferrer">arc42 · Dokumentation</a><span>Kontext, Bausteine, Laufzeit und Deployment</span></li>
+<li id="quelle-8"><a href="https://docs.arc42.org/examples/decision-use-adrs/" target="_blank" rel="noopener noreferrer">arc42 · Nygard-ADRs</a><span>Architekturentscheidungen nachvollziehbar dokumentieren</span></li>
+<li id="quelle-9"><a href="https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html" target="_blank" rel="noopener noreferrer">MartinFowler.com · Understanding Spec-Driven Development</a><span>Vergleich und Grenzen spezifikationsgetriebener Agenten-Tools</span></li>
+<li id="quelle-10"><a href="https://github.github.com/spec-kit/" target="_blank" rel="noopener noreferrer">GitHub · Spec Kit</a><span>Offener Workflow von Spezifikation über Plan zu Aufgaben</span></li>
+<li id="quelle-11"><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener noreferrer">Anthropic · Building Effective Agents</a><span>Workflow-Muster, Agenten und Komplexitätskosten</span></li>
+<li id="quelle-12"><a href="https://www.anthropic.com/research/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener noreferrer">Anthropic · Effective Harnesses for Long-Running Agents</a><span>Fortsetzbare Arbeit und dokumentierter Fortschritt</span></li>
+<li id="quelle-13"><a href="https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/agents?view=azure-devops" target="_blank" rel="noopener noreferrer">Microsoft Learn · Azure Pipelines Agents</a><span>Registrierte Agents, ausgehende Kommunikation und Job-Abruf</span></li>
+<li id="quelle-14"><a href="https://docs.github.com/en/actions/reference/runners/self-hosted-runners" target="_blank" rel="noopener noreferrer">GitHub Docs · Self-hosted Runners Reference</a><span>Selbstgehostete Runner und kurzlebige Ausführungsumgebungen</span></li>
+<li id="quelle-15"><a href="https://docs.temporal.io/task-queue" target="_blank" rel="noopener noreferrer">Temporal · Task Queues</a><span>Worker-Polling und Auftragswarteschlangen</span></li>
+<li id="quelle-16"><a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html" target="_blank" rel="noopener noreferrer">AWS · SQS Visibility Timeout</a><span>Zeitlich begrenzte Reservierung und erneute Zustellung</span></li>
+<li id="quelle-17"><a href="https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-out-box-cosmos" target="_blank" rel="noopener noreferrer">Microsoft Learn · Transactional Outbox</a><span>Verlässliche Veröffentlichung nach lokaler Transaktion</span></li>
+<li id="quelle-18"><a href="https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md" target="_blank" rel="noopener noreferrer">CNCF · CloudEvents Specification</a><span>Ereignisformat und Identifikation</span></li>
+<li id="quelle-19"><a href="https://www.iso.org/standard/78176.html" target="_blank" rel="noopener noreferrer">ISO · ISO/IEC 25010:2023</a><span>Produktqualitätsmodell, öffentliche Normbeschreibung</span></li>
+<li id="quelle-20"><a href="https://csrc.nist.gov/projects/ssdf" target="_blank" rel="noopener noreferrer">NIST · Secure Software Development Framework</a><span>Sichere Entwicklungspraktiken</span></li>
+<li id="quelle-21"><a href="https://slsa.dev/spec/v1.2/provenance" target="_blank" rel="noopener noreferrer">SLSA · Provenance v1.2</a><span>Nachvollziehbare Artefaktherkunft</span></li>
+<li id="quelle-22"><a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" target="_blank" rel="noopener noreferrer">GitHub Docs · Protected Branches</a><span>Technische Prüfungen und erforderliche Reviews</span></li>
+<li id="quelle-23"><a href="https://learn.microsoft.com/en-us/azure/devops/repos/git/branch-policies-overview?view=azure-devops" target="_blank" rel="noopener noreferrer">Microsoft Learn · Azure Repos Branch Policies</a><span>Review- und Build-Regeln für Azure Repos</span></li>
+<li id="quelle-24"><a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener noreferrer">OWASP · Top 10 for Agentic Applications</a><span>Risiken bei Werkzeugen, Aufgaben, Identitäten und Agenten</span></li>
+<li id="quelle-25"><a href="https://docs.github.com/en/actions/reference/security/secure-use" target="_blank" rel="noopener noreferrer">GitHub Docs · Secure Use Reference</a><span>Vertrauensgrenzen bei selbstgehosteten Runnern und Workflows</span></li>
+<li id="quelle-26"><a href="https://www.nist.gov/publications/zero-trust-architecture" target="_blank" rel="noopener noreferrer">NIST · Zero Trust Architecture</a><span>Zugriff pro Ressource und Geräteidentität</span></li>
+<li id="quelle-27"><a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj" target="_blank" rel="noopener noreferrer">EUR-Lex · Datenschutz-Grundverordnung</a><span>Art. 5, 25, 28, 32 und 44 ff.</span></li>
+<li id="quelle-28"><a href="https://eur-lex.europa.eu/eli/reg/2024/1689" target="_blank" rel="noopener noreferrer">EUR-Lex · Verordnung (EU) 2024/1689</a><span>Praxisbezug von Art. 4 und Art. 6 sowie Anhang III</span></li>
+<li id="quelle-29"><a href="https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence" target="_blank" rel="noopener noreferrer">NIST · Generative AI Profile</a><span>Risikomanagement für generative KI</span></li>
+<li id="quelle-30"><a href="https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-token-metrics.md" target="_blank" rel="noopener noreferrer">OpenTelemetry · GenAI Token Metrics</a><span>Erfassung von Token-Nutzung</span></li>
+<li id="quelle-31"><a href="https://sre.google/workbook/implementing-slos/" target="_blank" rel="noopener noreferrer">Google SRE · Implementing SLOs</a><span>Messbare Betriebsziele und Fehlerbudgets</span></li>
+<li id="quelle-32"><a href="https://www.finops.org/framework/capabilities/unit-economics/" target="_blank" rel="noopener noreferrer">FinOps Foundation · Unit Economics</a><span>Kosten im Verhältnis zu einer resultierenden Leistung</span></li>
+<li id="quelle-33"><a href="https://dora.dev/guides/dora-metrics/" target="_blank" rel="noopener noreferrer">DORA · Software Delivery Performance Metrics</a><span>Softwarelieferleistung und Stabilität je Anwendung</span></li>
+<li id="quelle-34"><a href="https://dora.dev/research/2025/dora-report/" target="_blank" rel="noopener noreferrer">DORA · State of AI-assisted Software Development</a><span>Organisations- und Systemfähigkeiten bei KI-gestützter Arbeit</span></li>
+<li id="quelle-35"><a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/" target="_blank" rel="noopener noreferrer">METR · Early-2025 Developer Study</a><span>Kontrollierte Studie mit erfahrenen Open-Source-Entwicklern</span></li>
+<li id="quelle-36"><a href="https://metr.org/blog/2026-02-24-uplift-update/" target="_blank" rel="noopener noreferrer">METR · Follow-up zum Studiendesign</a><span>Grenzen des Follow-ups und Änderung des Studiendesigns</span></li>
+<li id="quelle-37"><a href="https://www.microsoft.com/en-us/research/publication/the-space-of-developer-productivity-theres-more-to-it-than-you-think/" target="_blank" rel="noopener noreferrer">Microsoft Research · SPACE of Developer Productivity</a><span>Mehrdimensionale Messung von Entwicklerproduktivität</span></li>
+<li id="quelle-38"><a href="https://docs.github.com/en/copilot/concepts/security-governance-and-network-settings/risks-and-mitigations" target="_blank" rel="noopener noreferrer">GitHub Docs · Copilot Cloud Agent Risks and Mitigations</a><span>Repo-naher Coding-Agent und Review-Schutzmaßnahmen</span></li>
+<li id="quelle-39"><a href="https://learn.microsoft.com/en-us/azure/devops/service-hooks/overview?view=azure-devops" target="_blank" rel="noopener noreferrer">Microsoft Learn · Azure DevOps Service Hooks</a><span>Integration über Ereignisse aus Azure DevOps</span></li>
+<li id="quelle-40"><a href="https://www.rfc-editor.org/rfc/rfc8628" target="_blank" rel="noopener noreferrer">IETF · RFC 8628</a><span>Browsergestützte Autorisierung eines Clients ohne bequemes Eingabegerät</span></li>
+<li id="quelle-41"><a href="https://openai.com/index/running-codex-safely/" target="_blank" rel="noopener noreferrer">OpenAI · Running Codex Safely</a><span>Schutzprinzipien bei Coding-Agenten und Tool-Zugriffen</span></li>
+<li id="quelle-42"><a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener noreferrer">OWASP · LLM Top 10</a><span>Prompt Injection und übermäßige Handlungsrechte</span></li></ol></details>
+</div></section>
+
+<section class="section" id="pilot"><div class="shell">
+  <div class="section-head"><div><p class="eyebrow">Vorgeschlagener Pilot</p><h2>Eine Applikation, ein prüfbarer Durchstich</h2></div><p>Mit einem bestehenden Kundenprojekt, einem Repo, einer CI-Pipeline und wenigen verwalteten Worker-Clients beginnen. Vergleichbare kleine Features aus dem heutigen Prozess als Baseline erfassen.</p></div>
+  <div class="triplet">
+    <article class="card"><span class="tag">Durchstich</span><h3>Vom Request zur Review</h3><p>Versionsfixierte Übergabe, Worker-Anmeldung und Job-Abruf, isolierte Ausführung, PR, CI-Ergebnisse und Rückmeldung. In der Review fachliche Akzeptanz und technische Freigabe am selben Commit erfassen.</p></article>
+    <article class="card"><span class="tag">Probeläufe</span><h3>Störungen gezielt auslösen</h3><p>Worker offline, verspätetes Ergebnis, doppeltes Ereignis, fachliche Rückfrage und fehlerhafte CI prüfen. Nachweisen, dass ein unberechtigter Worker keinen Projektauftrag erhält und ein neuer Commit die verbindlichen Prüfungen erneut durchläuft.</p></article>
+    <article class="card"><span class="tag">Entscheidung</span><h3>Nutzen und Betriebsaufwand bewerten</h3><p>Durchlaufzeit und Nacharbeit sinken idealerweise bei stabiler Qualität und tragbaren Kosten pro akzeptiertem Feature. Ergebnisse nach Feature-Typ vergleichen. Zielwerte erst anhand der eigenen Baseline vereinbaren.</p></article>
+  </div>
+  <p class="fine">Entwurfsannahmen für den Pilot: Die Clients werden verwaltet. Der Orchestrator gehört zum Factory-Server. Die Clients initiieren die Verbindung. Die finale Review verbindet fachliche Abnahme und technische Freigabe. Repository-Anbieter, Agenten-Stack und Betrieb der Produktplattform bleiben als Architekturentscheidungen offen.</p>
+</div></section>
+</main>
+<footer class="footer"><div class="shell"><span>Architekturkonzept · Product Engineering Platform und Factory</span><a href="#top">Zum Seitenanfang</a></div></footer>
+
+<script>
+'use strict';
+const architecture = {
+  "platform": [
+    "Produktplattform",
+    "Projekt- und Produktarbeit",
+    "Im Projekt werden die betroffene Applikation, ihre Anforderungen, UX-Entwürfe und Architekturentscheidungen zusammengeführt. Product Engineering priorisiert und versioniert Feature Requests und dokumentiert die fachliche Abnahme."
+  ],
+  "knowledge": [
+    "Produktplattform",
+    "Projektbezogene Knowledge Base",
+    "Requirements Engineering, UX und Solution Architecture pflegen verlinkte Artefakte. Für den Auftrag wird ein zugriffsgeprüfter Ausschnitt in festen Versionen zusammengestellt. Geänderte Artefakte bleiben in der Knowledge Base bearbeitbar."
+  ],
+  "review": [
+    "Produktplattform und Git",
+    "Fachliche und technische Entscheidung",
+    "Product Engineering prüft Kundennutzen und Akzeptanzkriterien. Der zuständige Code-Owner prüft technische Risiken und Codequalität. Das Paket verweist auf den geprüften Commit. Änderungen am Commit lösen die erforderlichen Prüfungen und Freigaben erneut aus."
+  ],
+  "factory": [
+    "Factory-Server",
+    "Zentrale Koordination",
+    "Der Server nimmt freigegebene Requests entgegen, speichert Auftrag und Ausführungsstatus und stellt Leitstand und Worker-Schnittstelle bereit. Die KI-Agenten laufen auf den angemeldeten Worker-Clients."
+  ],
+  "orchestrator": [
+    "Factory-Server",
+    "Orchestrator und Auftragswarteschlange",
+    "Der Orchestrator prüft Request und Manifest, gleicht Berechtigung, Fähigkeiten und Kapazität ab und vergibt eine Lease. Er verarbeitet Heartbeats, koordiniert Wiederholungen und verknüpft das Ergebnis mit dem aktuellen Versuch."
+  ],
+  "manifest": [
+    "Factory-Server",
+    "Ausführungsregeln und Leitstand",
+    "Factory Engineering versioniert je Projekt oder Applikation die zugelassenen Repositories, Worker-Profile, Werkzeuge, Provider und Pflichtprüfungen. Im Leitstand sieht das Team Auftragsstatus, Worker-Verfügbarkeit, Budget und Blockaden."
+  ],
+  "clients": [
+    "Rechner der Teilnehmenden",
+    "Registrierte Worker-Clients",
+    "Teilnehmende koppeln zugelassene Clients mit dem Server und können deren Verfügbarkeit pausieren. Ein berechtigter freier Client ruft Arbeit ab und erhält einen zeitlich reservierten Auftrag. Der Server kann eine Worker-Identität widerrufen."
+  ],
+  "enrolment": [
+    "Rechner der Teilnehmenden",
+    "Worker anmelden und Kapazität steuern",
+    "Die Person meldet sich am Leitstand an und koppelt den Client. Die Worker-Identität erhält die zugewiesenen Projektfreigaben. Der Client meldet Fähigkeiten und freie Kapazität. Pausieren stoppt neue Zuteilungen. Laufende Arbeit wird geordnet beendet oder ausdrücklich abgebrochen."
+  ],
+  "agents": [
+    "Ausführung auf Clients",
+    "Auftragsbezogene Agenten",
+    "Der Worker richtet eine isolierte Umgebung für genau einen Versuch ein. Agenten setzen die Spezifikation um und führen lokale Checks aus. Kontext und Repository-Zugriff sind auf den Auftrag begrenzt. Freigegebene Modellanbieter können extern oder lokal sein."
+  ],
+  "git": [
+    "Angebundene Dienste",
+    "Versionsverwaltung und unabhängige CI",
+    "Der Worker veröffentlicht Änderungen auf einem zugewiesenen Branch und erstellt einen Pull Request. Vertrauenswürdige CI prüft den Commit mit geschützten Regeln. Das Review-Paket verknüpft Commit und CI-Nachweise mit jedem relevanten Akzeptanzkriterium."
+  ]
+};
+const journeys = {
+  "happy": [
+    [
+      "Kundenproblem erfassen",
+      "Product Engineering",
+      "Delivery und Product Engineering klären den Nutzerbedarf und ordnen ihn einem Projekt und einer konkreten Applikation zu. Der Bedarf für den CSV-Export wird mit betroffenen Nutzern und dem heutigen Ablauf abgeglichen.",
+      "Problem, Zielgruppe, Ausgangslage und angestrebte Wirkung.",
+      "Ein Product Owner priorisiert die weitere Ausarbeitung."
+    ],
+    [
+      "Lösung und Kriterien entwerfen",
+      "Product Engineering",
+      "Requirements Engineering, UX und Solution Architecture skizzieren Ablauf, Design, Datenzugriffe und Prüfbeispiele. Factory Engineering wird bei Machbarkeit oder fehlenden Prüfpfaden früh einbezogen.",
+      "Verlinkte Artefakte in der Knowledge Base und testbare Kriterien mit IDs.",
+      "Scope, Randbedingungen und kritische Sonderfälle sind geklärt."
+    ],
+    [
+      "Feature Request freigeben",
+      "Product Engineering",
+      "Der Request bündelt die Zielapplikation, den Umfang, die Kriterien, freigegebene Kontextversionen und die Datenklasse. Die Freigabe friert die Revision ein.",
+      "FR-024 Rev. 2 als versionierter Übergabestand.",
+      "Ziel-Repository ist zugeordnet und der Kontext für die Verarbeitung zugelassen."
+    ],
+    [
+      "Auftrag zuteilen",
+      "Factory-Server",
+      "Der Orchestrator validiert die Übergabe und stellt den Run in die Warteschlange. Ein freier, berechtigter Client ruft einen Auftrag ab. Der Server reserviert ihn und verknüpft die Lease mit genau einem Versuch.",
+      "Run mit Manifest-Version, Basis-Commit und aktuellem Versuch.",
+      "Worker-Profil, Berechtigungen und Budget passen. Fehlt ein geeigneter Client, bleibt der Auftrag sichtbar in der Warteschlange."
+    ],
+    [
+      "Auf dem Worker umsetzen",
+      "Worker-Client",
+      "Der Worker richtet seine isolierte Arbeitsumgebung ein. KI-Agenten planen, ändern Code, prüfen Akzeptanzbeispiele und melden den Fortschritt. Arbeit bleibt an das zugewiesene Repo und den Versuch gebunden.",
+      "Pull Request mit nachvollziehbarem Änderungsumfang und lokalen Prüfergebnissen.",
+      "Der Server akzeptiert den Abschluss nur für den aktuellen Versuch."
+    ],
+    [
+      "Commit prüfen und Paket bereitstellen",
+      "Factory und CI",
+      "Die unabhängige CI prüft den Commit mit den für das Projekt festgelegten Gates. Die Factory verknüpft die Ergebnisse mit Kriterien-IDs, ergänzt Abweichungen und meldet die Review-Bereitschaft zurück.",
+      "Review-Paket mit PR, Commit, Nachweisen, offenen Risiken und Aufwandssignalen.",
+      "Pflichtprüfungen sind bestanden. Blockaden bleiben mit Ursache und Zuständigkeit sichtbar."
+    ],
+    [
+      "Finale Review entscheiden",
+      "Product Engineering und Code-Owner",
+      "Product Engineering nimmt die Fachlichkeit ab. Der Code-Owner entscheidet über die technische Freigabe auf demselben Commit. Die Entscheidung und neue Erkenntnisse fließen in das Projekt zurück.",
+      "Dokumentierte Abnahme und technische Freigabe oder konkrete Änderungsaufträge.",
+      "Ein Merge kann nach den Repo-Regeln erfolgen. Produktionseinführung folgt dem Projektprozess."
+    ]
+  ],
+  "offline": [
+    [
+      "Client übernimmt den Auftrag",
+      "Worker-Client und Factory",
+      "Der Server registriert den Versuch mit Worker-ID, Basis-Commit und Ablaufzeit. Heartbeats verlängern die Reservierung, solange der Worker verfügbar bleibt.",
+      "Aktiver Versuch mit befristeter Lease.",
+      "Für die Bearbeitung muss der Versuch aktiv bleiben."
+    ],
+    [
+      "Heartbeat bleibt aus",
+      "Factory-Server",
+      "Der Client verliert etwa durch Standby die Verbindung. Nach Ablauf der Lease markiert der Server den Versuch als abgelaufen. Ein verspäteter Abschluss kann den aktuellen Run-Status nicht überschreiben.",
+      "Abgelaufener Versuch und sichtbarer Grund im Leitstand.",
+      "Wiederholungsbudget und zulässige Kapazität entscheiden über einen neuen Versuch."
+    ],
+    [
+      "Arbeit erneut vergeben",
+      "Factory-Server",
+      "Die Factory stellt denselben Run wieder bereit. Der neue Versuch nutzt einen eigenen Branch oder Namespace. Ein später zurückkehrender Client beendet seinen alten Versuch. Bereits erzeugte Artefakte bleiben anhand der alten Versuchs-ID nachvollziehbar.",
+      "Neue Versuch-ID und Lease oder Eskalation an Factory Engineering.",
+      "Der neue oder manuell übernommene Versuch durchläuft die regulären Gates."
+    ],
+    [
+      "Ergebnis verifizieren",
+      "Factory und CI",
+      "Die Factory übernimmt nur Ergebnisse des gültigen Versuchs. Es werden keine Nachweise vom alten Versuch auf einen abweichenden neuen Commit übertragen.",
+      "Eindeutiges Review-Paket für den aktuellen Commit.",
+      "Finale Review beginnt nach den regulären Pflichtprüfungen."
+    ]
+  ],
+  "question": [
+    [
+      "Blockade mit Beleg melden",
+      "Worker-Client oder Review",
+      "Ein Worker oder Reviewer beschreibt die offene Frage mit betroffener Kriterien-ID und Konsequenz. Beispiel: Soll der CSV-Export nur die aktuelle Seite oder alle gefilterten Ergebnisse enthalten?",
+      "Strukturierte Rückfrage mit verantwortlicher Rolle.",
+      "Die Entscheidung wird zur fachlichen Klärung an die Produktplattform gegeben."
+    ],
+    [
+      "Fachliche Entscheidung treffen",
+      "Product Engineering",
+      "Die Knowledge Base erhält die Entscheidung. Ändert die Klärung das Verhalten oder den vertraglichen Kontext, veröffentlicht Product Engineering eine neue Request-Revision. Reine Implementierungskorrekturen können dieselbe Revision behalten.",
+      "Ergänzter fachlicher Kontext und gegebenenfalls FR-024 Rev. 3.",
+      "Die relevante Revision ist ausdrücklich freigegeben."
+    ],
+    [
+      "Umsetzung wieder aufnehmen",
+      "Factory-Server",
+      "Eine neue Revision ersetzt die alte im aktiven Ablauf. Die Factory hebt die alte Zuteilung auf und startet einen Run für die neue Revision. Bei gleicher Revision wird die Korrektur mit einem neuen Versuch oder einem neuen Commit gemäß Projektregeln verfolgt.",
+      "Zugeordneter Versuch mit unveränderlichem Ausführungsstand und neuer Evidenz.",
+      "Die Pflichtprüfungen laufen für den aktualisierten Commit erneut."
+    ],
+    [
+      "Änderung erneut bewerten",
+      "Product Engineering und Code-Owner",
+      "Die Review betrachtet die betroffenen Kriterien und erneut erzeugte Nachweise. Die ursprüngliche Frage bleibt mit Entscheidung und Nachfolgeartefakt verknüpft.",
+      "Fachliche und technische Entscheidung mit durchgängiger Historie.",
+      "Der geprüfte Stand kann nach Projektregeln zur Integration weitergegeben werden."
+    ]
+  ]
+};
+
+const byId = (id) => document.getElementById(id);
+const architectureButtons = Array.from(document.querySelectorAll('[data-node]'));
+architectureButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const detail = architecture[button.dataset.node];
+    architectureButtons.forEach((entry) => entry.setAttribute('aria-pressed', String(entry === button)));
+    byId('node-type').textContent = detail[0];
+    byId('node-title').textContent = detail[1];
+    byId('node-copy').textContent = detail[2];
+  });
+});
+
+const scenarioButtons = Array.from(document.querySelectorAll('[data-scenario]'));
+const previous = byId('previous');
+const next = byId('next');
+const stepList = byId('steps');
+let scenario = 'happy';
+let stepIndex = 0;
+
+function selectStep(index) {
+  stepIndex = index;
+  const [title, owner, description, output, gate] = journeys[scenario][index];
+  Array.from(stepList.querySelectorAll('button')).forEach((button, position) => {
+    if (position === index) button.setAttribute('aria-current', 'step');
+    else button.removeAttribute('aria-current');
+  });
+  byId('step-meta').textContent = `Schritt ${index + 1} von ${journeys[scenario].length} · ${owner}`;
+  byId('step-title').textContent = title;
+  byId('step-copy').textContent = description;
+  byId('step-output').textContent = output;
+  byId('step-gate').textContent = gate;
+  previous.disabled = index === 0;
+  next.disabled = index === journeys[scenario].length - 1;
+}
+
+function renderJourney() {
+  const nodes = journeys[scenario].map(([title, owner], index) => {
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'step';
+    button.setAttribute('aria-controls', 'step-title step-copy');
+    const number = document.createElement('span');
+    number.className = 'step-index';
+    number.setAttribute('aria-hidden', 'true');
+    number.textContent = String(index + 1).padStart(2, '0');
+    const name = document.createElement('span');
+    name.className = 'step-name';
+    name.textContent = title;
+    const team = document.createElement('span');
+    team.className = 'step-owner';
+    team.textContent = owner;
+    button.append(number, name, team);
+    button.addEventListener('click', () => selectStep(index));
+    item.append(button);
+    return item;
+  });
+  stepList.replaceChildren(...nodes);
+  selectStep(0);
+}
+
+scenarioButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    if (scenario === button.dataset.scenario) return;
+    scenario = button.dataset.scenario;
+    scenarioButtons.forEach((entry) => entry.setAttribute('aria-pressed', String(entry === button)));
+    renderJourney();
+  });
+});
+
+function moveStep(index, button) {
+  selectStep(index);
+  if (button.disabled) stepList.querySelector('[aria-current="step"]').focus();
+}
+
+previous.addEventListener('click', () => moveStep(stepIndex - 1, previous));
+next.addEventListener('click', () => moveStep(stepIndex + 1, next));
+renderJourney();
+
+const researchDetails = Array.from(byId('research').querySelectorAll('details'));
+const expand = byId('expand');
+function updateExpand() {
+  expand.textContent = researchDetails.every((entry) => entry.open) ? 'Alle Perspektiven schließen' : 'Alle Perspektiven öffnen';
+}
+expand.addEventListener('click', () => {
+  const open = researchDetails.some((entry) => !entry.open);
+  researchDetails.forEach((entry) => { entry.open = open; });
+  updateExpand();
+});
+researchDetails.forEach((entry) => entry.addEventListener('toggle', updateExpand));
+
+function openSourceIndex() {
+  if (/^#quelle-\d+$/.test(location.hash)) {
+    const source = byId(location.hash.slice(1));
+    if (source) {
+      byId('quellen').open = true;
+      source.scrollIntoView({block: 'center'});
+    }
+  }
+}
+window.addEventListener('hashchange', openSourceIndex);
+openSourceIndex();
+</script>
+</body>
+</html>
