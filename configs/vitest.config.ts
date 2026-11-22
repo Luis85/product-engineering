@@ -2,6 +2,7 @@ process.env.TZ = "UTC";
 
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+import { sharedConfig } from "./vite.shared.ts";
 
 export const ROOT = fileURLToPath(new URL("../", import.meta.url));
 
@@ -26,6 +27,8 @@ export function obsidianGuard() {
   };
 }
 
+const { plugins: domPlugins, define: domDefine } = sharedConfig({ mode: "test" });
+
 export default defineConfig({
   root: ROOT,
   plugins: [obsidianGuard()],
@@ -38,6 +41,8 @@ export default defineConfig({
       },
       {
         extends: true,
+        plugins: domPlugins,
+        define: domDefine,
         test: {
           name: "dom",
           include: ["tests/dom/**/*.test.ts"],

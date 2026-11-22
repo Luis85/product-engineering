@@ -1,0 +1,15 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(pe);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "../presentation";
+@import "@nuxt/ui";
+@source not "../../node_modules/.nuxt-ui/ui";
+@source not "../../node_modules/@nuxt/ui/dist/runtime/components";
+
+@theme {
+  --color-old-neutral-*: initial;
+  --color-neutral-*: initial;
+}
+
+@import "./tokens.css";
+@import "./bridge.css";

@@ -19,6 +19,9 @@
     "test:coverage": "vitest run --config configs/vitest.config.ts --coverage",
     "fallow:config": "node scripts/fallow-config.mjs",
     "analyze": "node scripts/fallow-config.mjs --check && fallow -c configs/fallow.json && fallow architecture -c configs/fallow.json",
+    "build": "vite build --config configs/vite.config.ts",
+    "check:dist": "node scripts/check-dist.mjs",
+    "dev": "node scripts/dev-install.mjs",
     "verify": "node scripts/verify.mjs",
     "verify:full": "node scripts/verify.mjs --full",
     "prepare": "node scripts/install-hooks.mjs"
@@ -26,7 +29,9 @@
   "devDependencies": {
     "@effect/vitest": "4.1.5",
     "@eslint/js": "9.39.5",
+    "@iconify-json/lucide": "1.2.158",
     "@types/node": "26.6.6",
+    "@vitejs/plugin-vue": "6.0.11",
     "@vitest/coverage-v8": "5.1.1",
     "eslint": "9.39.5",
     "eslint-plugin-obsidianmd": "0.6.0",
@@ -38,9 +43,12 @@
     "happy-dom": "21.0.4",
     "obsidian": "1.14.4",
     "oxlint": "1.94.0",
+    "postcss": "8.5.33",
+    "postcss-selector-parser": "7.2.1",
     "prettier": "3.10.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.73.0",
+    "vite": "8.3.8",
     "vitest": "5.1.1",
     "vue-eslint-parser": "10.4.2",
     "vue-tsc": "3.3.14"
@@ -49,6 +57,8 @@
     "minimatch@>=7.0.0 <11.0.1": "11.0.9"
   },
   "dependencies": {
-    "effect": "4.1.5"
+    "@nuxt/ui": "4.13.0",
+    "effect": "4.1.5",
+    "tailwindcss": "4.3.5"
   }
 }

@@ -124,7 +124,7 @@ export function fallowConfig({ modules, has }) {
         ],
       },
     },
-    ignoreDependencies: ["obsidian", "@eslint/js"],
+    ignoreDependencies: ["obsidian", "@eslint/js", "@iconify-json/lucide"],
     overrides: [{ files: ["tests/support/obsidian/**"], rules: { "unused-class-members": "off" } }],
   };
 }

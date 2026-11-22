@@ -1,6 +1,7 @@
 import { Plugin } from "obsidian";
 import { bootstrap, reportUnloadFailure } from "./bootstrap";
 import type { BootstrapHandle } from "./bootstrap";
+import "./styles/app.css";
 
 type ActiveLoad = {
   readonly controller: AbortController;
