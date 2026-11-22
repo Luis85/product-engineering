@@ -22,6 +22,31 @@ export const de: NotesCatalog = {
       title: "Die Notiz konnte nicht gelöscht werden",
       detail: "Versuche erneut, die Notiz zu löschen.",
     },
+    NoteEditConflictError: {
+      title: "Änderungen stehen im Konflikt",
+      detail: "Prüfe die Felder, die während der Bearbeitung im Vault geändert wurden.",
+    },
+  },
+  issues: {
+    fields: {
+      "field.text": (label) => `${label} muss Text sein.`,
+      "field.number": (label) => `Gib für ${label} eine endliche Zahl ein.`,
+      "field.checkbox": (label) => `Wähle für ${label} wahr oder falsch.`,
+      "field.date": (label) => `Gib für ${label} ein gültiges Datum im Format JJJJ-MM-TT ein.`,
+      "field.list": (label) => `${label} muss eine Liste mit Textwerten sein.`,
+      "field.missing": (label) => `Gib einen Wert für ${label} ein.`,
+    },
+    customField: (label) => `Prüfe den Wert für ${label}.`,
+    identity: {
+      "id.missing": "Die Datensatz-ID fehlt.",
+      "id.malformed": "Das Format der Datensatz-ID ist ungültig.",
+      "id.other-type": "Die Datensatz-ID gehört zu einem anderen Datensatztyp.",
+    },
+    duplicateId: (other) => `Eine andere Notiz verwendet diese Datensatz-ID (${other}).`,
+    newerSchema: (version) =>
+      `Diese Notiz verwendet ein neueres Datensatzschema (Version ${version}).`,
+    failedMigration: (version) =>
+      `Der Datensatz konnte nicht von Version ${version} migriert werden.`,
   },
   invalidName: {
     title: "Ungültiger Notizname",

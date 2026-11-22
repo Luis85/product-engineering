@@ -1,4 +1,6 @@
 import { Schema } from "effect";
+import { isPlainRecord, runMigrations } from "./migrations";
+import type { MigrationSteps } from "./migrations";
 
 export const StructuralSettingsIssue = Schema.Union([
   Schema.Struct({ code: Schema.Literal("file.invalid") }),
@@ -23,12 +25,10 @@ export type SettingsFields<Editable, Issue> = {
   };
 };
 
-type Migrations = Readonly<Record<number, (raw: RawSettings) => unknown>>;
-
 type SettingsCodecOptions<Editable, Issue> = {
   readonly version: number;
   readonly fields: SettingsFields<Editable, Issue>;
-  readonly migrations: Migrations;
+  readonly migrations: MigrationSteps;
 };
 
 type DecodeResult<Editable, Issue> = {
@@ -36,12 +36,6 @@ type DecodeResult<Editable, Issue> = {
   readonly issues: readonly (Issue | StructuralSettingsIssue)[];
   readonly readOnlyReason?: ReadOnlyReason;
 };
-
-function isRecord(value: unknown): value is RawSettings {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const prototype: unknown = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
-}
 
 function versionOf(
   raw: RawSettings,
@@ -57,29 +51,6 @@ function versionOf(
     return { version, issues: [] };
   }
   return { version: current, issues: [{ code: "schema.invalid" }] };
-}
-
-type MigrationResult =
-  | { readonly ok: true; readonly raw: RawSettings }
-  | { readonly ok: false; readonly version: number };
-
-function runMigrations(
-  raw: RawSettings,
-  start: number,
-  target: number,
-  migrations: Migrations,
-): MigrationResult {
-  let value = raw;
-  for (let version = start; version < target; version += 1) {
-    try {
-      const next = migrations[version]?.({ ...value });
-      if (!isRecord(next)) return { ok: false, version };
-      value = { ...next, schemaVersion: version + 1 };
-    } catch {
-      return { ok: false, version };
-    }
-  }
-  return { ok: true, raw: value };
 }
 
 function hasAbsentDefault(field: {
@@ -122,7 +93,7 @@ export function makeSettingsCodec<Editable extends object, Issue>({
   function decode(input: unknown): DecodeResult<Editable, Issue> {
     if (input === undefined || input === null) return { settings: defaults, issues: [] };
     try {
-      if (!isRecord(input)) return { settings: defaults, issues: [{ code: "file.invalid" }] };
+      if (!isPlainRecord(input)) return { settings: defaults, issues: [{ code: "file.invalid" }] };
 
       const file = versionOf(input, version);
       if (file.version > version) {
@@ -133,7 +104,16 @@ export function makeSettingsCodec<Editable extends object, Issue>({
         };
       }
 
-      const migrated = runMigrations(input, file.version, version, migrations);
+      const migrated = runMigrations(
+        input,
+        file.version,
+        version,
+        migrations,
+        (raw, nextVersion) => ({
+          ...raw,
+          schemaVersion: nextVersion,
+        }),
+      );
       if (!migrated.ok) {
         return {
           settings: defaults,
@@ -164,7 +144,7 @@ export function makeSettingsCodec<Editable extends object, Issue>({
     readonly patch: Partial<Editable>;
     readonly issues: readonly (Issue | StructuralSettingsIssue)[];
   } {
-    return isRecord(input)
+    return isPlainRecord(input)
       ? decodeFields(input, "patch")
       : { patch: {}, issues: [{ code: "file.invalid" }] };
   }

@@ -20,3 +20,5 @@
 | Schema marker | `schema` |
 | Frontmatter patch | `patch` |
 | Write refusal | `writeRefusal` |
+| Record ID | `recordId` |
+| Edit conflict | `conflict` |

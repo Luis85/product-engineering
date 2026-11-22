@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { NOTE_NAME_ISSUES, WriteRefusal } from "../../domain/notes";
+import type { NoteFieldConflict } from "../../domain/notes";
 import type { ErrorTags } from "../module";
 
 export class NoteNotFoundError extends Schema.TaggedError<NoteNotFoundError>()(
@@ -26,6 +27,19 @@ export class NoteWriteRefusedError extends Schema.TaggedError<NoteWriteRefusedEr
   "NoteWriteRefusedError",
   { reason: WriteRefusal },
 ) {}
+const conflicts = Schema.Array(
+  Schema.Struct({
+    key: Schema.String,
+    base: Schema.Unknown,
+    edited: Schema.Unknown,
+    current: Schema.Unknown,
+  }),
+) satisfies Schema.Codec<readonly NoteFieldConflict[], unknown>;
+
+export class NoteEditConflictError extends Schema.TaggedError<NoteEditConflictError>()(
+  "NoteEditConflictError",
+  { conflicts },
+) {}
 
 export type NotesError =
   | NoteNotFoundError
@@ -34,6 +48,7 @@ export type NotesError =
   | NoteUnreadableError
   | NoteWriteError
   | NoteWriteRefusedError
+  | NoteEditConflictError
   | NoteTrashError;
 
 export const NOTES_ERROR_TAG_KEYS = {
@@ -43,5 +58,6 @@ export const NOTES_ERROR_TAG_KEYS = {
   NoteUnreadableError: true,
   NoteWriteError: true,
   NoteWriteRefusedError: true,
+  NoteEditConflictError: true,
   NoteTrashError: true,
 } satisfies ErrorTags<NotesError>;

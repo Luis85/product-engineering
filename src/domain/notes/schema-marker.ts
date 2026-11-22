@@ -1,11 +1,15 @@
 export const RECORD_SCHEMA_PREFIX = "product-engineering.";
 
-type SchemaMarker =
+export type SchemaMarker =
   | { readonly _tag: "none" }
   | { readonly _tag: "malformed" }
   | { readonly _tag: "record"; readonly type: string; readonly version: number };
 
 const marker = /^([a-z]+(?:-[a-z]+)*)\/v([1-9]\d*)$/;
+
+export function schemaMarker(type: string, version: number): string {
+  return `${RECORD_SCHEMA_PREFIX}${type}/v${version}`;
+}
 
 export function parseSchemaMarker(value: unknown): SchemaMarker {
   if (typeof value !== "string" || !value.startsWith(RECORD_SCHEMA_PREFIX)) {

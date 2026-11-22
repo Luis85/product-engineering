@@ -1,5 +1,12 @@
 import { expect, it } from "vitest";
 import { parseSchemaMarker, RECORD_SCHEMA_PREFIX } from "../../../../src/domain/notes";
+import { schemaMarker } from "../../../../src/domain/notes/schema-marker";
+
+it("writes the same marker the parser reads", () => {
+  const marker = schemaMarker("release-note", 12);
+  expect(marker).toBe("product-engineering.release-note/v12");
+  expect(parseSchemaMarker(marker)).toEqual({ _tag: "record", type: "release-note", version: 12 });
+});
 
 it("parses kebab-case types and positive versions", () => {
   expect(RECORD_SCHEMA_PREFIX).toBe("product-engineering.");

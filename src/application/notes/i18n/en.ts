@@ -10,6 +10,29 @@ export const en: NotesCatalog = {
     },
     NoteWriteError: { title: "Could not save the note", detail: "Try saving the note again." },
     NoteTrashError: { title: "Could not delete the note", detail: "Try deleting the note again." },
+    NoteEditConflictError: {
+      title: "Changes conflict",
+      detail: "Review the fields that changed in the vault while you were editing.",
+    },
+  },
+  issues: {
+    fields: {
+      "field.text": (label) => `${label} must be text.`,
+      "field.number": (label) => `Enter a finite number for ${label}.`,
+      "field.checkbox": (label) => `Choose true or false for ${label}.`,
+      "field.date": (label) => `Enter a valid date for ${label} in YYYY-MM-DD format.`,
+      "field.list": (label) => `${label} must be a list of text values.`,
+      "field.missing": (label) => `Enter a value for ${label}.`,
+    },
+    customField: (label) => `Check the value of ${label}.`,
+    identity: {
+      "id.missing": "The record ID is missing.",
+      "id.malformed": "The record ID format is invalid.",
+      "id.other-type": "The record ID belongs to another record type.",
+    },
+    duplicateId: (other) => `Another note uses this record ID (${other}).`,
+    newerSchema: (version) => `This note uses a newer record schema (version ${version}).`,
+    failedMigration: (version) => `The record could not be migrated from version ${version}.`,
   },
   invalidName: {
     title: "Invalid note name",

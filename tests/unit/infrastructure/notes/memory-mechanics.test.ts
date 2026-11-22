@@ -62,7 +62,7 @@ it("publishes file and metadata events when a memory vault is used beside an Eve
   );
 });
 
-it("allocates independent sequential test IDs", async () => {
+it("allocates independent sequential lowercase UUIDs for test records", async () => {
   const pair = Effect.gen(function* () {
     const ids = yield* IdGenerator;
     return [yield* ids.nextId, yield* ids.nextId];
@@ -70,7 +70,10 @@ it("allocates independent sequential test IDs", async () => {
   const first = await Effect.runPromise(Effect.provide(pair, sequentialIdGenerator()));
   const second = await Effect.runPromise(Effect.provide(pair, sequentialIdGenerator()));
   expect(first).toEqual(second);
-  expect(first[0]).not.toBe(first[1]);
+  expect(first).toEqual([
+    "00000000-0000-0000-0000-000000000001",
+    "00000000-0000-0000-0000-000000000002",
+  ]);
 });
 
 it("marks synthetic write failures without changing their typed category", async () => {
