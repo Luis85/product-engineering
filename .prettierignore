@@ -1,0 +1,13 @@
+docs/
+*.md
+package-lock.json
+node_modules/
+dist/
+release/
+reports/
+.stryker-tmp/
+.obsidian-cache/
+.obsidian/
+.claude/
+.fallow/
+.probe/
