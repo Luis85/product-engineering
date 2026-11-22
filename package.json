@@ -22,6 +22,8 @@
     "build": "vite build --config configs/vite.config.ts",
     "check:dist": "node scripts/check-dist.mjs",
     "dev": "node scripts/dev-install.mjs",
+    "dev:ui": "vite --config configs/vite.harness.config.ts",
+    "build:ui": "vite build --config configs/vite.harness.config.ts",
     "verify": "node scripts/verify.mjs",
     "verify:full": "node scripts/verify.mjs --full",
     "prepare": "node scripts/install-hooks.mjs"

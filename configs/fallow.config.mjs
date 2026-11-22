@@ -44,7 +44,7 @@ export function fallowConfig({ modules, has }) {
 
   return {
     $schema: "../node_modules/fallow/schema.json",
-    entry: [],
+    entry: ["harness/main.ts"],
     supportEntry: [
       "scripts/*.mjs",
       "tests/**/*.test.ts",
