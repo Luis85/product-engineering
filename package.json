@@ -1,0 +1,10 @@
+{
+  "name": "product-engineering",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Manage product engineering records in your vault.",
+  "license": "MIT",
+  "engines": { "node": ">=24" },
+  "scripts": {}
+}
