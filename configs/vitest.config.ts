@@ -36,6 +36,15 @@ export default defineConfig({
         extends: true,
         test: { name: "unit", include: ["tests/unit/**/*.test.ts"], environment: "node" },
       },
+      {
+        extends: true,
+        test: {
+          name: "dom",
+          include: ["tests/dom/**/*.test.ts"],
+          environment: "happy-dom",
+          setupFiles: ["tests/support/dom-setup.ts"],
+        },
+      },
     ],
     coverage: {
       provider: "v8",

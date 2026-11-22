@@ -12,5 +12,7 @@ it("leaves aliases and other imports to the normal resolver", () => {
   expect(testAlias["@test/obsidian"]).toMatch(/tests[\\/]support[\\/]obsidian[\\/]index\.ts$/);
 });
 
-// oxlint-disable-next-line vitest/warn-todo -- Task 04 adds the aliased test double this case needs.
-it.todo("resolves the test double by its alias");
+it("resolves the test double by its alias", async () => {
+  const { Plugin } = await import("@test/obsidian");
+  expect(typeof Plugin).toBe("function");
+});
