@@ -5,7 +5,12 @@ import { scopeCss } from "../scripts/scope-css.mjs";
 
 export const PLUGIN_ID = "product-engineering";
 export const CSS_PREFIX = "pe";
-export const SHELL_ICONS: readonly string[] = [];
+export const SHELL_ICONS: readonly string[] = [
+  "lucide:circle-x",
+  "lucide:info",
+  "lucide:loader-circle",
+  "lucide:triangle-alert",
+];
 
 export function sharedConfig({
   mode,

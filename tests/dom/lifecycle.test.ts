@@ -1,3 +1,4 @@
+import { eventually } from "../support/wait";
 import { afterEach, expect, it, vi } from "vitest";
 import { clearNotices, createTestPlugin, failNextNotice } from "@test/obsidian";
 import ShellPlugin from "../../src/main";
@@ -36,7 +37,7 @@ it("registers one shell on every load and removes its registrations on unload", 
 
     registry.runCommand("product-engineering:open-view");
     const workspace = registry.plugin.app.workspace;
-    await vi.waitFor(() =>
+    await eventually(() =>
       expect(workspace.getLeavesOfType("product-engineering-view")).toHaveLength(1),
     );
     expect(workspace.getLeavesOfType("product-engineering-view")[0]?.view?.getDisplayText()).toBe(
@@ -63,7 +64,7 @@ it("reports a command defect once and still runs the next command", async () => 
     await registry.load();
     failNextNotice();
     registry.runCommand("product-engineering:copy-diagnostics");
-    await vi.waitFor(() => expect(registry.notices).toHaveLength(1));
+    await eventually(() => expect(registry.notices).toHaveLength(1));
     expect(registry.notices[0]).toMatch(/Product Engineering.*[0-9A-Z]{6}/s);
     expect(registry.notices[0]).not.toContain("Test notice failed");
     expect(consoleError).toHaveBeenCalledExactlyOnceWith(
@@ -75,7 +76,7 @@ it("reports a command defect once and still runs the next command", async () => 
     );
 
     registry.runCommand("product-engineering:copy-diagnostics");
-    await vi.waitFor(() => expect(registry.notices).toHaveLength(2));
+    await eventually(() => expect(registry.notices).toHaveLength(2));
     expect(registry.notices[1]).toContain("Diagnose kopiert");
     expect(writeText).toHaveBeenCalledTimes(2);
     expect(consoleError).toHaveBeenCalledOnce();

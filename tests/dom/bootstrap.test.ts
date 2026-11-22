@@ -1,3 +1,4 @@
+import { eventually } from "../support/wait";
 import { Effect } from "effect";
 import { Plugin } from "obsidian";
 import { afterEach, expect, it, vi } from "vitest";
@@ -21,7 +22,7 @@ it("disposes an aborted bootstrap and returns an inert handle", async () => {
   const loadData = vi.spyOn(registry.plugin, "loadData");
 
   const boot = bootstrap(plugin, { signal: controller.signal });
-  await vi.waitFor(() => expect(loadData).toHaveBeenCalledOnce());
+  await eventually(() => expect(loadData).toHaveBeenCalledOnce());
   controller.abort();
   registry.releaseLoadData();
   const handle = await boot;
@@ -42,7 +43,7 @@ it("abandons a pending plugin load when Obsidian unloads it", async () => {
   const loadData = vi.spyOn(registry.plugin, "loadData");
 
   const boot = registry.load();
-  await vi.waitFor(() => expect(loadData).toHaveBeenCalledOnce());
+  await eventually(() => expect(loadData).toHaveBeenCalledOnce());
   plugin.unload();
   registry.releaseLoadData();
   await expect(boot).resolves.toBeUndefined();

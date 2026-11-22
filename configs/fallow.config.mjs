@@ -25,7 +25,9 @@ export function fallowConfig({ modules, has }) {
   const domain = siblings(modules.all, has, "domain");
   const application = siblings(modules.all, has, "application");
   const integrationPorts = application.filter((zone) => zone === "application/integrations");
-  const presentation = siblings(modules.all, has, "presentation");
+  const presentation = siblings(modules.all, has, "presentation").filter(
+    (zone) => zone !== "presentation/shell",
+  );
   const adapters = modules.all
     .filter((module) => has("infrastructure/obsidian", module))
     .map((module) => `adapters/${module}`);
@@ -72,6 +74,15 @@ export function fallowConfig({ modules, has }) {
         },
         ...nodeAdapters,
         { name: "infrastructure", patterns: ["src/infrastructure/**"] },
+        {
+          name: "presentation/shell",
+          patterns: ["src/presentation/shell/**"],
+          publicFiles: [
+            "src/presentation/shell/index.ts",
+            "src/presentation/shell/host.ts",
+            "src/presentation/shell/screens.ts",
+          ],
+        },
         ...(presentation.length > 0
           ? [
               {
@@ -81,6 +92,7 @@ export function fallowConfig({ modules, has }) {
               },
             ]
           : []),
+        { name: "presentation-composition", patterns: ["src/presentation/app-surface.ts"] },
         { name: "composition", patterns: ["src/main.ts", "src/bootstrap.ts"] },
       ],
       rules: [
@@ -109,6 +121,7 @@ export function fallowConfig({ modules, has }) {
             "application",
             "application-composition",
             "domain",
+            "presentation/shell",
           ],
         },
         {
@@ -122,6 +135,7 @@ export function fallowConfig({ modules, has }) {
                 from: "presentation",
                 allow: [
                   ...presentation,
+                  "presentation/shell",
                   "application",
                   "application-composition",
                   "application-describe-error",
@@ -131,6 +145,21 @@ export function fallowConfig({ modules, has }) {
             ]
           : []),
         {
+          from: "presentation/shell",
+          allow: ["application/shell", "application-describe-error", "domain/shell"],
+          allowTypeOnly: ["application-composition"],
+        },
+        {
+          from: "presentation-composition",
+          allow: [
+            "presentation/shell",
+            ...presentation,
+            "application",
+            "application-composition",
+            "domain",
+          ],
+        },
+        {
           from: "composition",
           allow: [
             "infrastructure",
@@ -138,6 +167,8 @@ export function fallowConfig({ modules, has }) {
             "application",
             "application-composition",
             "domain",
+            "presentation/shell",
+            "presentation-composition",
             ...nodeAdapters.map(({ name }) => name),
           ],
         },
@@ -150,6 +181,7 @@ export function fallowConfig({ modules, has }) {
                   "application/shell",
                   "application-composition",
                   "domain/shell",
+                  "presentation/shell",
                 ],
               },
             ]

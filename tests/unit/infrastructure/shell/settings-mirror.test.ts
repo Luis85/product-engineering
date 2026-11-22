@@ -1,5 +1,6 @@
+import { eventually } from "../../../support/wait";
 import { Effect } from "effect";
-import { expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
 import { setLogLevel, SettingsService } from "../../../../src/application/shell";
 import { mirrorSettings } from "../../../../src/infrastructure/obsidian/shell/settings-mirror";
 import { testRuntime } from "../../../support/runtime";
@@ -11,7 +12,7 @@ it("keeps ordinary synchronous properties in sync with the settings service", as
     expect(mirror.current).toEqual({ logLevel: "info" });
     expect(mirror.status).toEqual({ writable: true, issues: [] });
     await fixture.runtime.runPromise(setLogLevel("debug"));
-    await vi.waitFor(() => expect(mirror.current).toEqual({ logLevel: "debug" }));
+    await eventually(() => expect(mirror.current).toEqual({ logLevel: "debug" }));
 
     fixture.store.writeExternally({ schemaVersion: 3, logLevel: "error" });
     await fixture.runtime.runPromise(Effect.flatMap(SettingsService, (service) => service.reload));

@@ -61,10 +61,20 @@
       },
       { "name": "infrastructure", "patterns": ["src/infrastructure/**"] },
       {
+        "name": "presentation/shell",
+        "patterns": ["src/presentation/shell/**"],
+        "publicFiles": [
+          "src/presentation/shell/index.ts",
+          "src/presentation/shell/host.ts",
+          "src/presentation/shell/screens.ts"
+        ]
+      },
+      {
         "name": "presentation",
         "autoDiscover": ["src/presentation"],
         "publicFiles": ["index.ts", "screens.ts"]
       },
+      { "name": "presentation-composition", "patterns": ["src/presentation/app-surface.ts"] },
       { "name": "composition", "patterns": ["src/main.ts", "src/bootstrap.ts"] }
     ],
     "rules": [
@@ -101,7 +111,8 @@
           "infrastructure",
           "application",
           "application-composition",
-          "domain"
+          "domain",
+          "presentation/shell"
         ]
       },
       {
@@ -114,9 +125,25 @@
         "from": "presentation",
         "allow": [
           "presentation/integrations",
+          "presentation/shell",
           "application",
           "application-composition",
           "application-describe-error",
+          "domain"
+        ]
+      },
+      {
+        "from": "presentation/shell",
+        "allow": ["application/shell", "application-describe-error", "domain/shell"],
+        "allowTypeOnly": ["application-composition"]
+      },
+      {
+        "from": "presentation-composition",
+        "allow": [
+          "presentation/shell",
+          "presentation/integrations",
+          "application",
+          "application-composition",
           "domain"
         ]
       },
@@ -128,13 +155,21 @@
           "application",
           "application-composition",
           "domain",
+          "presentation/shell",
+          "presentation-composition",
           "node-adapters/mcp",
           "node-adapters/provider-cli"
         ]
       },
       {
         "from": "adapters/shell",
-        "allow": ["infrastructure", "application/shell", "application-composition", "domain/shell"]
+        "allow": [
+          "infrastructure",
+          "application/shell",
+          "application-composition",
+          "domain/shell",
+          "presentation/shell"
+        ]
       }
     ],
     "coverage": {

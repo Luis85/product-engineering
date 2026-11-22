@@ -29,6 +29,7 @@ import {
   showNotice,
 } from "./infrastructure/obsidian/shell";
 import { makeRuntime } from "./infrastructure/runtime";
+import { releaseAll } from "./presentation/shell/host";
 
 type Release = () => void | Promise<void>;
 
@@ -38,7 +39,7 @@ export interface BootstrapHandle {
   readonly dispose: () => Promise<void>;
 }
 
-async function releaseAll(steps: readonly Release[]): Promise<void> {
+async function runUndo(steps: readonly Release[]): Promise<void> {
   const failures: unknown[] = [];
   for (const release of steps) {
     try {
@@ -103,7 +104,7 @@ export async function bootstrap(
     reloadSettings: () => reloadSettings?.() ?? Promise.resolve(),
     dispose: () => {
       reloadSettings = undefined;
-      return (disposal ??= releaseAll(undo.toReversed()));
+      return (disposal ??= runUndo(undo.toReversed()));
     },
   };
   const aborted = () => signal.aborted;
@@ -140,11 +141,11 @@ export async function bootstrap(
     plugin.addSettingTab(tab);
     plugin.registerView(SHELL_VIEW_TYPE, (leaf) => new ShellView(leaf));
 
-    const surfaces = new Set<Release>();
+    const surfaces = new Set<() => void>();
     undo.push(() => {
-      const close = [...surfaces].toReversed();
+      const close = [...surfaces];
       surfaces.clear();
-      return releaseAll(close);
+      releaseAll(close);
     });
 
     reloadSettings = async () => {

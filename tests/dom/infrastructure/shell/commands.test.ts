@@ -1,3 +1,4 @@
+import { eventually } from "../../../support/wait";
 import { Effect } from "effect";
 import { Plugin } from "obsidian";
 import { afterEach, expect, it, vi } from "vitest";
@@ -24,7 +25,7 @@ it("registers localized commands without hotkeys and opens the requested view", 
       ["Copy diagnostics", undefined],
     ]);
     registry.runCommand("product-engineering:open-view");
-    await vi.waitFor(() => expect(open).toHaveBeenCalledExactlyOnceWith(undefined));
+    await eventually(() => expect(open).toHaveBeenCalledExactlyOnceWith(undefined));
     undo();
     expect(registry.commands.size).toBe(0);
   } finally {
@@ -47,10 +48,10 @@ it("handles defects in a run action and executes the next action", async () => {
   try {
     registerCommands(plugin, fixture.runtime, commands, catalogFor("en"), () => Promise.resolve());
     registry.runCommand("product-engineering:failed");
-    await vi.waitFor(() => expect(fixture.notifier).toHaveLength(1));
+    await eventually(() => expect(fixture.notifier).toHaveLength(1));
     expect(fixture.logger).toMatchObject([{ event: "defect.reported", incidentId: "T-1" }]);
     registry.runCommand("product-engineering:next");
-    await vi.waitFor(() => expect(next).toHaveBeenCalledOnce());
+    await eventually(() => expect(next).toHaveBeenCalledOnce());
   } finally {
     await fixture.runtime.dispose();
   }

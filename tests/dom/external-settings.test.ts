@@ -1,3 +1,4 @@
+import { eventually } from "../support/wait";
 import { afterEach, expect, it, vi } from "vitest";
 import { clearNotices, createTestPlugin, DropdownComponent, settingsIn } from "@test/obsidian";
 import ShellPlugin from "../../src/main";
@@ -47,7 +48,7 @@ it("waits for the current load before reloading and ignores changes after unload
 
   try {
     const load = registry.load();
-    await vi.waitFor(() => expect(loadData).toHaveBeenCalledOnce());
+    await eventually(() => expect(loadData).toHaveBeenCalledOnce());
     const change = registry.writeExternally({ schemaVersion: 1, logLevel: "debug" });
     expect(registry.settingTabs).toHaveLength(0);
     registry.releaseLoadData();
