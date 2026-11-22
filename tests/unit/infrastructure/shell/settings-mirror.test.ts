@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from "../../../../src/domain/shell";
 import { eventually } from "../../../support/wait";
 import { Effect } from "effect";
 import { expect, it } from "vitest";
@@ -9,15 +10,17 @@ it("keeps ordinary synchronous properties in sync with the settings service", as
   const fixture = testRuntime({ initialSettings: { logLevel: "info" } });
   const mirror = await mirrorSettings(fixture.runtime);
   try {
-    expect(mirror.current).toEqual({ logLevel: "info" });
+    expect(mirror.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "info" });
     expect(mirror.status).toEqual({ writable: true, issues: [] });
     await fixture.runtime.runPromise(setLogLevel("debug"));
-    await eventually(() => expect(mirror.current).toEqual({ logLevel: "debug" }));
+    await eventually(() =>
+      expect(mirror.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "debug" }),
+    );
 
     fixture.store.writeExternally({ schemaVersion: 3, logLevel: "error" });
     await fixture.runtime.runPromise(Effect.flatMap(SettingsService, (service) => service.reload));
     await mirror.refresh();
-    expect(mirror.current).toEqual({ logLevel: "warn" });
+    expect(mirror.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "warn" });
     expect(mirror.status).toMatchObject({ writable: false, readOnlyReason: "newer-version" });
   } finally {
     await mirror.stop();
@@ -31,7 +34,7 @@ it("stops mirror subscriptions without stopping the application runtime", async 
   try {
     await mirror.stop();
     await fixture.runtime.runPromise(setLogLevel("debug"));
-    expect(mirror.current).toEqual({ logLevel: "info" });
+    expect(mirror.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "info" });
     expect(fixture.store.saved).toEqual([{ schemaVersion: 1, logLevel: "debug" }]);
   } finally {
     await fixture.runtime.dispose();

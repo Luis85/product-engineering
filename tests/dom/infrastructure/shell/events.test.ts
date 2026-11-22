@@ -10,11 +10,53 @@ vi.mock("obsidian", () => import("@test/obsidian"));
 
 function hostedRuntime() {
   const { plugin, registry } = createTestPlugin(class extends Plugin {}, { layoutReady: false });
-  const workspace = registry.plugin.app.workspace;
+  const { workspace, vault, metadataCache, fileManager } = registry.plugin.app;
   const registration = vi.spyOn(workspace, "onLayoutReady");
   const fixture = testRuntime({ hostEvents: hostEventsLayer(plugin) });
-  return { ...fixture, workspace, registration };
+  return { ...fixture, workspace, registration, vault, metadataCache, fileManager };
 }
+
+it("maps each file event after layout readiness and disposes each listener", async () => {
+  const fixture = hostedRuntime();
+  const { vault, metadataCache, workspace } = fixture;
+  const counts = () => [
+    vault.listenerCount("create"),
+    vault.listenerCount("modify"),
+    vault.listenerCount("rename"),
+    vault.listenerCount("delete"),
+    metadataCache.listenerCount("changed"),
+  ];
+  const bus = await fixture.runtime.runPromise(EventBus);
+  const publish = vi.spyOn(bus, "publish");
+  try {
+    await vault.seedFile("Before.md", "Skipped");
+    await metadataCache.whenIndexed();
+    expect(publish).not.toHaveBeenCalled();
+    workspace.markLayoutReady();
+    expect(counts()).toEqual([1, 1, 1, 1, 1]);
+    await vault.seedFile("Work/Item.md", "Created");
+    await metadataCache.whenIndexed();
+    await vault.seedFile("Work/Item.md", "Changed");
+    await metadataCache.whenIndexed();
+    const item = vault.getFileByPath("Work/Item.md");
+    expect(item).toBeDefined();
+    if (!item) throw new Error("Expected the seeded file");
+    await fixture.fileManager.renameFile(item, "Work/Renamed.md");
+    await fixture.fileManager.trashFile(item);
+    expect(publish.mock.calls.flat()).toEqual([
+      { _tag: "LayoutReady" },
+      { _tag: "FileCreated", path: "Work/Item.md", extension: "md" },
+      { _tag: "MetadataChanged", path: "Work/Item.md", extension: "md" },
+      { _tag: "FileModified", path: "Work/Item.md", extension: "md" },
+      { _tag: "MetadataChanged", path: "Work/Item.md", extension: "md" },
+      { _tag: "FileRenamed", path: "Work/Renamed.md", oldPath: "Work/Item.md", extension: "md" },
+      { _tag: "FileDeleted", path: "Work/Renamed.md", extension: "md" },
+    ]);
+  } finally {
+    await fixture.runtime.dispose();
+  }
+  expect(counts()).toEqual([0, 0, 0, 0, 0]);
+});
 
 it("publishes layout readiness only once and ignores callbacks after disposal", async () => {
   const fixture = hostedRuntime();

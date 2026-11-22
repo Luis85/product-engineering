@@ -23,6 +23,8 @@ export function describeIssue(issue: SettingsIssue, messages: IssueDescriptions)
       return messages["claudeCodePath.invalid"](issue);
     case "codexPath.invalid":
       return messages["codexPath.invalid"](issue);
+    case "rootFolder.invalid":
+      return messages["rootFolder.invalid"](issue);
   }
 }
 

@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from "../../../../src/domain/shell";
 import { it } from "@effect/vitest";
 import { Effect, Fiber } from "effect";
 import { expect } from "vitest";
@@ -18,7 +19,7 @@ it.effect("publishes a committed save even when its caller is interrupted during
     yield* Fiber.join(interrupt);
 
     expect(fixture.store.saved).toEqual([{ schemaVersion: 1, logLevel: "info" }]);
-    expect(yield* settings.current).toEqual({ logLevel: "info" });
+    expect(yield* settings.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "info" });
   }).pipe(Effect.provide(fixture.layer));
 });
 

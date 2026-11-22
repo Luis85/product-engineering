@@ -12,6 +12,7 @@ import {
 import type { Language, UserMessage } from "../src/application/shell";
 import { consoleSinkLayer } from "../src/infrastructure/logging/console-sink";
 import { incidentsLayer } from "../src/infrastructure/logging/incidents";
+import { memoryNoteStore, sequentialIdGenerator } from "../src/infrastructure/memory/notes";
 
 export const SCENARIOS = ["loaded", "empty", "invalid", "readonly", "failure"] as const;
 type Scenario = (typeof SCENARIOS)[number];
@@ -41,6 +42,7 @@ type HarnessOptions = {
 
 export function harnessLayer(scenario: Scenario, { language, notify }: HarnessOptions) {
   let stored = initialSettings(scenario);
+  const notes = memoryNoteStore();
   const settingsStore = Layer.succeed(SettingsStore, {
     load: scenario === "failure" ? Effect.fail(new StorageError()) : Effect.sync(() => stored),
     save: (data) =>
@@ -69,6 +71,9 @@ export function harnessLayer(scenario: Scenario, { language, notify }: HarnessOp
       }),
       incidents: incidentsLayer,
       logSink: consoleSinkLayer,
+      noteStore: notes.layer,
+      noteOpener: notes.opener,
+      idGenerator: sequentialIdGenerator(),
       hostEvents: Layer.effectDiscard(
         EventBus.use((events) => events.publish({ _tag: "LayoutReady" })),
       ),

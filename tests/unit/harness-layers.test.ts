@@ -9,6 +9,7 @@ import {
   SettingsService,
 } from "../../src/application/shell";
 import type { UserMessage } from "../../src/application/shell";
+import { DEFAULT_SETTINGS } from "../../src/domain/shell";
 import { makeRuntime } from "../../src/infrastructure/runtime";
 
 it("recognizes each scenario and falls back to loaded for an unknown value", () => {
@@ -70,13 +71,12 @@ it("keeps written settings in the owning harness runtime", async () => {
     await expect(
       first.runPromise(SettingsService.use((service) => service.current)),
     ).resolves.toEqual({
+      ...DEFAULT_SETTINGS,
       logLevel: "debug",
     });
     await expect(
       second.runPromise(SettingsService.use((service) => service.current)),
-    ).resolves.toEqual({
-      logLevel: "warn",
-    });
+    ).resolves.toEqual(DEFAULT_SETTINGS);
   } finally {
     await Promise.all([first.dispose(), second.dispose()]);
   }

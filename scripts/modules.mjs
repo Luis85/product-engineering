@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 
 const MODULE_LIST = "src/application/modules.ts";
-const CORE_MODULES = ["shell"];
+const CORE_MODULES = ["shell", "notes"];
 
 /** @param {import("typescript").Expression} specifier */
 function moduleFolder(specifier) {

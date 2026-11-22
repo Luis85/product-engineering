@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { CSS_PREFIX as BUILD_CSS_PREFIX, PLUGIN_ID } from "../../../configs/vite.shared";
 import { BUDGETS, checkDist, CSS_PREFIX, EXPECTED_FILES } from "../../../scripts/check-dist.mjs";
 import { installDevArtifacts } from "../../../scripts/dev-install.mjs";
+import { TEST_ONLY_MARKER } from "../../../src/infrastructure/memory/notes";
 import manifest from "../../../manifest.json";
 
 const identity = { id: manifest.id, prefix: CSS_PREFIX };
@@ -108,7 +109,7 @@ describe("distribution checks", () => {
     ['fetch("https://example.invalid/plugin");', /fetch.*https:\/\//i],
     ['xhr.open("GET", "http://example.invalid/plugin");', /open.*http:\/\//i],
     ['window.open("https://example.invalid/help");', /open.*https:\/\//i],
-    ['const testOnly = "product-engineering/test-only";', /test-only/i],
+    [`const testOnly = ${JSON.stringify(TEST_ONLY_MARKER)};`, /test-only/i],
   ])("rejects forbidden bundle code %s", (line, diagnostic) => {
     const dist = distribution({ "main.js": bundle + line });
     expect(checkDist(dist, manifest, identity)).toContainEqual(expect.stringMatching(diagnostic));

@@ -33,7 +33,7 @@ export const config: WebdriverIO.Config = {
     "wdio:obsidianOptions": {
       appVersion,
       installerVersion,
-      plugins: ["dist"],
+      plugins: ["dist", "tests/e2e/probe-plugin/dist"],
       vault: "tests/e2e/vaults/basic",
       copy: true,
     },

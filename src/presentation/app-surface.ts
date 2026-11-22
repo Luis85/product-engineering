@@ -5,12 +5,14 @@ import type { Route } from "../application/routes";
 import { SETTINGS } from "../application/shell";
 import { integrationsScreens } from "./integrations/screens";
 import { itemsScreens } from "./items/screens";
+import { notesScreens } from "./notes/screens";
 import type { ModuleScreens, SurfaceDefinition, SurfaceSection } from "./shell/host";
 import type { ScreenLoader, SettingsSectionPart } from "./shell/host";
 import { shellScreens } from "./shell/screens";
 
 const MODULE_SCREENS: { readonly [Name in AppModuleName]: ModuleScreens<Name> } = {
   shell: shellScreens,
+  notes: notesScreens,
   items: itemsScreens,
   integrations: integrationsScreens,
 };

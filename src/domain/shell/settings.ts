@@ -1,5 +1,6 @@
 import { Schema, SchemaGetter } from "effect";
 import { CliExecutablePath, McpPort } from "./agent-settings";
+import { DEFAULT_ROOT_FOLDER, RootFolder, ROOT_FOLDER_MAX_LENGTH } from "./root-folder";
 import { makeSettingsCodec, StructuralSettingsIssue } from "./settings-codec";
 import type { SettingsFields } from "./settings-codec";
 
@@ -16,17 +17,23 @@ const UnknownLogLevel = Schema.Struct({
 const InvalidMcpPort = Schema.Struct({ code: Schema.Literal("mcpPort.invalid") });
 const InvalidClaudeCodePath = Schema.Struct({ code: Schema.Literal("claudeCodePath.invalid") });
 const InvalidCodexPath = Schema.Struct({ code: Schema.Literal("codexPath.invalid") });
+const InvalidRootFolder = Schema.Struct({
+  code: Schema.Literal("rootFolder.invalid"),
+  max: Schema.Number,
+});
 export const SettingsIssue = Schema.Union([
   StructuralSettingsIssue,
   UnknownLogLevel,
   InvalidMcpPort,
   InvalidClaudeCodePath,
   InvalidCodexPath,
+  InvalidRootFolder,
 ]);
 export type SettingsIssue = typeof SettingsIssue.Type;
 
 export type Settings = {
   readonly logLevel: LogLevel;
+  readonly rootFolder: string;
   readonly mcpPort?: number | undefined;
   readonly claudeCodePath?: string | undefined;
   readonly codexPath?: string | undefined;
@@ -44,6 +51,12 @@ const FIELDS = {
     schema: LogLevel,
     default: "warn",
     issue: { code: "logLevel.unknown", allowed: LOG_LEVELS },
+  },
+  rootFolder: {
+    schema: RootFolder,
+    default: DEFAULT_ROOT_FOLDER,
+    omitWhenDefault: true,
+    issue: { code: "rootFolder.invalid", max: ROOT_FOLDER_MAX_LENGTH },
   },
   mcpPort: {
     schema: Schema.UndefinedOr(McpPort),

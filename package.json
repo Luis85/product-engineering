@@ -17,10 +17,11 @@
     "format:check": "prettier --check .",
     "test": "vitest run --config configs/vitest.config.ts",
     "test:coverage": "vitest run --config configs/vitest.config.ts --coverage",
-    "test:e2e": "npm run build && wdio run tests/e2e/wdio.conf.mts",
+    "test:e2e": "npm run build && npm run build:probe && wdio run tests/e2e/wdio.conf.mts",
     "fallow:config": "node scripts/fallow-config.mjs",
     "analyze": "node scripts/fallow-config.mjs --check && fallow -c configs/fallow.json && fallow architecture -c configs/fallow.json",
     "build": "vite build --config configs/vite.config.ts",
+    "build:probe": "vite build --config configs/vite.probe.config.ts",
     "check:dist": "node scripts/check-dist.mjs",
     "dev": "node scripts/dev-install.mjs",
     "dev:ui": "vite --config configs/vite.harness.config.ts",
@@ -64,7 +65,8 @@
     "vue-eslint-parser": "10.4.2",
     "vue-tsc": "3.3.14",
     "wdio-obsidian-reporter": "3.5.0",
-    "wdio-obsidian-service": "3.5.0"
+    "wdio-obsidian-service": "3.5.0",
+    "yaml": "2.9.1"
   },
   "overrides": {
     "minimatch@>=7.0.0 <11.0.1": "11.0.9",

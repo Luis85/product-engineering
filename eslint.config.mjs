@@ -60,9 +60,13 @@ const pastIndex = [
     message: "Import the shell host through the presentation layer.",
   },
 ];
-const adapterOnly = {
+const kitOutside = {
   regex: "(^|/)notes/adapter(\\.[cm]?ts)?$",
   message: "The NoteStore adapter kit is for infrastructure only.",
+};
+const kitElsewhere = {
+  regex: "(^|/)(?<!application/)notes/adapter(\\.[cm]?ts)?$",
+  message: "Import the NoteStore adapter kit through the application layer.",
 };
 const testOnly = {
   regex: "(^|/)memory(/|$)",
@@ -210,11 +214,11 @@ export default [
     rules: { "max-lines": ["error", { max: 450, skipBlankLines: true, skipComments: true }] },
   },
   ...oxlint.buildFromOxlintConfigFile(fileURLToPath(new URL(".oxlintrc.json", import.meta.url))),
-  restrictModules(sourceFiles, [...pastIndex, adapterOnly, testOnly]),
-  restrictModules(adapterFiles, [...pastIndex, testOnly]),
+  restrictModules(sourceFiles, [...pastIndex, kitOutside, testOnly]),
+  restrictModules(adapterFiles, [...pastIndex, kitElsewhere, testOnly]),
   restrictModules(presentationCompositionFiles, [
     ...pastIndexWith(["screens"]),
-    adapterOnly,
+    kitOutside,
     testOnly,
   ]),
   vueFreeAtLoad(
@@ -227,10 +231,10 @@ export default [
     `^(vue(/|$)|@(vue|nuxt|tanstack|iconify)/)|\\.vue$|^\\./index(\\.[cm]?ts)?$|^\\.\\./${moduleEntry}`,
   ),
   ...coreDirections.flatMap(({ folders, patterns }) => [
-    restrictModules(folders, [...pastIndex, adapterOnly, testOnly, ...patterns]),
+    restrictModules(folders, [...pastIndex, kitOutside, testOnly, ...patterns]),
     restrictModules(
       folders.filter((folder) => folder.startsWith("src/infrastructure/")),
-      [...pastIndex, testOnly, ...patterns],
+      [...pastIndex, kitElsewhere, testOnly, ...patterns],
     ),
   ]),
 ];

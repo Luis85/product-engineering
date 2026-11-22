@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from "../../../../src/domain/shell";
 import { it } from "@effect/vitest";
 import { Effect, Stream } from "effect";
 import { expect } from "vitest";
@@ -8,10 +9,10 @@ it.effect("loads valid settings and publishes the current value without saving",
   const fixture = settingsFixture({ logLevel: "info" });
   return Effect.gen(function* () {
     const settings = yield* SettingsService;
-    expect(yield* settings.current).toEqual({ logLevel: "info" });
+    expect(yield* settings.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "info" });
     expect(yield* settings.status).toEqual({ writable: true, issues: [] });
     expect(yield* Stream.runCollect(Stream.take(settings.changes, 1))).toEqual([
-      { logLevel: "info" },
+      { ...DEFAULT_SETTINGS, logLevel: "info" },
     ]);
     expect(yield* Stream.runCollect(Stream.take(settings.statusChanges, 1))).toEqual([
       { writable: true, issues: [] },
@@ -26,11 +27,11 @@ it.effect("reports a rejected field once and writes canonical data only on updat
   return Effect.gen(function* () {
     const settings = yield* SettingsService;
     expect(fixture.notices).toHaveLength(1);
-    expect(yield* settings.current).toEqual({ logLevel: "warn" });
+    expect(yield* settings.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "warn" });
     expect(fixture.store.saved).toEqual([]);
     yield* settings.update({ logLevel: "debug" });
     expect(fixture.store.saved).toEqual([{ schemaVersion: 1, logLevel: "debug" }]);
-    expect(yield* settings.current).toEqual({ logLevel: "debug" });
+    expect(yield* settings.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "debug" });
     expect(yield* settings.status).toEqual({ writable: true, issues: [] });
   }).pipe(Effect.provide(fixture.layer));
 });
@@ -64,7 +65,7 @@ it.effect("rejects invalid patches and preserves the current value when saving f
     expect(yield* Effect.flip(settings.update({ logLevel: "error" }))).toMatchObject({
       _tag: "StorageError",
     });
-    expect(yield* settings.current).toEqual({ logLevel: "info" });
+    expect(yield* settings.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "info" });
     expect(fixture.store.saved).toEqual([]);
   }).pipe(Effect.provide(fixture.layer));
 });

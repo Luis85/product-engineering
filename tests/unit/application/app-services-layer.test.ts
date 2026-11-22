@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from "../../../src/domain/shell";
 import { Context, Effect, Layer } from "effect";
 import { expect, expectTypeOf, it, vi } from "vitest";
 import type { AppEvent } from "../../../src/application/events";
@@ -63,7 +64,7 @@ it("uses host settings, language, and logging adapters in the same graph", async
         const settings = yield* SettingsService;
         const messages = yield* Messages;
         const logger = yield* Logger;
-        expect(yield* settings.current).toEqual({ logLevel: "error" });
+        expect(yield* settings.current).toEqual({ ...DEFAULT_SETTINGS, logLevel: "error" });
         expect(messages.shell.language).toBe("en");
         yield* logger.log({ level: "debug", event: "plugin.loaded" });
         yield* logger.log({ level: "error", event: "plugin.loaded" });

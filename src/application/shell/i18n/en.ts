@@ -14,6 +14,8 @@ const issues: IssueDescriptions = {
     "Enter an absolute path to the Claude Code executable, or leave it blank to find it automatically.",
   "codexPath.invalid": () =>
     "Enter an absolute path to the Codex executable, or leave it blank to find it automatically.",
+  "rootFolder.invalid": ({ max }) =>
+    `Use a folder path of up to ${max} characters without hidden or invalid folder names.`,
 };
 
 export const en: ShellCatalog = {

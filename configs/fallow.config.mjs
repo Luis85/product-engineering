@@ -25,6 +25,7 @@ export function fallowConfig({ modules, has }) {
   const domain = siblings(modules.all, has, "domain");
   const application = siblings(modules.all, has, "application");
   const integrationPorts = application.filter((zone) => zone === "application/integrations");
+  const notes = notesBoundaries(has);
   const presentation = siblings(modules.all, has, "presentation").filter(
     (zone) => zone !== "presentation/shell",
   );
@@ -60,6 +61,7 @@ export function fallowConfig({ modules, has }) {
     boundaries: {
       zones: [
         { name: "domain", autoDiscover: ["src/domain"], publicFiles: ["index.ts"] },
+        ...notes.kit,
         { name: "application", autoDiscover: ["src/application"], publicFiles: ["index.ts"] },
         { name: "application-module", patterns: ["src/application/module.ts"] },
         { name: "application-describe-error", patterns: ["src/application/user-messages.ts"] },
@@ -73,6 +75,7 @@ export function fallowConfig({ modules, has }) {
           publicFiles: ["index.ts"],
         },
         ...nodeAdapters,
+        ...notes.memory,
         { name: "infrastructure", patterns: ["src/infrastructure/**"] },
         {
           name: "presentation/shell",
@@ -102,7 +105,13 @@ export function fallowConfig({ modules, has }) {
           from: "application",
           allow: ["domain", ...application, "application-module", "application-composition"],
         },
-        { from: "application-module", allowTypeOnly: ["application/shell"] },
+        {
+          from: "application-module",
+          allowTypeOnly: [
+            "application/shell",
+            ...application.filter((zone) => zone === "application/notes"),
+          ],
+        },
         {
           from: "application-describe-error",
           allow: ["application", "application-module", "application-composition"],
@@ -119,6 +128,7 @@ export function fallowConfig({ modules, has }) {
             ...adapters,
             "infrastructure",
             "application",
+            ...notes.kit.map(({ name }) => name),
             "application-composition",
             "domain",
             "presentation/shell",
@@ -129,6 +139,7 @@ export function fallowConfig({ modules, has }) {
           allow: ["adapters", "application", "application-composition", "domain"],
         },
         ...nodeAdapters.map(({ name }) => ({ from: name, allow: integrationPorts })),
+        ...notes.rules,
         ...(adapters.includes("adapters/integrations")
           ? [
               {
@@ -234,4 +245,65 @@ export function fallowConfig({ modules, has }) {
  */
 function siblings(modules, has, layer) {
   return modules.filter((module) => has(layer, module)).map((module) => `${layer}/${module}`);
+}
+
+/** @param {FallowInput["has"]} has */
+function notesBoundaries(has) {
+  const kitName = "application/notes-adapter";
+  const kit = has("application", "notes")
+    ? [
+        {
+          name: kitName,
+          patterns: ["adapter", "command", "frontmatter", "note-text", "paths"].map(
+            (file) => `src/application/notes/${file}.ts`,
+          ),
+          publicFiles: ["src/application/notes/adapter.ts"],
+        },
+      ]
+    : [];
+  const memory = has("infrastructure/memory", "notes")
+    ? [{ name: "memory", autoDiscover: ["src/infrastructure/memory"], publicFiles: ["index.ts"] }]
+    : [];
+  return {
+    kit,
+    memory,
+    rules: [
+      ...memory.map(({ name }) => ({
+        from: name,
+        allow: ["application", kitName, "application-composition", "domain"],
+      })),
+      ...(has("domain", "notes") ? [{ from: "domain/notes", allow: ["domain/shell"] }] : []),
+      ...(kit.length > 0
+        ? [
+            {
+              from: "application/notes",
+              allow: ["domain/shell", "domain/notes", "application/shell", "application-module"],
+              allowTypeOnly: ["application-composition"],
+            },
+            {
+              from: kitName,
+              allow: ["domain/shell", "domain/notes", "application/shell", "application/notes"],
+            },
+          ]
+        : []),
+      ...(has("infrastructure/obsidian", "notes")
+        ? [
+            {
+              from: "adapters/notes",
+              allow: [
+                "adapters/shell",
+                "infrastructure",
+                "application/shell",
+                "application/notes",
+                kitName,
+                "domain/shell",
+                "domain/notes",
+                "presentation/shell",
+              ],
+              allowTypeOnly: ["application-composition"],
+            },
+          ]
+        : []),
+    ],
+  };
 }

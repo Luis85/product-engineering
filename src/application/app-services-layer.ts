@@ -4,6 +4,7 @@ import type { AgentChat } from "./integrations";
 import { messagesLayer } from "./messages";
 import { servicesLayerOf } from "./module";
 import { APP_MODULES } from "./modules";
+import type { IdGenerator, NoteOpener, NoteStore } from "./notes";
 import { EventBusLive, LoggerLive, SettingsServiceLive } from "./shell";
 import type { AppServices } from "./app-services";
 import type {
@@ -26,6 +27,9 @@ export type AppAdapters = {
   readonly incidents: Layer.Layer<Incidents>;
   readonly logSink: Layer.Layer<LogSink>;
   readonly hostEvents: Layer.Layer<never, never, ShellServices>;
+  readonly noteStore: Layer.Layer<NoteStore>;
+  readonly noteOpener: Layer.Layer<NoteOpener>;
+  readonly idGenerator: Layer.Layer<IdGenerator>;
   readonly agentChat?: Layer.Layer<AgentChat, never, SettingsService>;
 };
 
@@ -45,6 +49,9 @@ export function appServicesLayer(
     adapters.hostInfo,
     adapters.incidents,
     adapters.logSink,
+    adapters.noteStore,
+    adapters.noteOpener,
+    adapters.idGenerator,
     messagesLayer(options.language),
   );
   const settings = Layer.provideMerge(SettingsServiceLive, ports);

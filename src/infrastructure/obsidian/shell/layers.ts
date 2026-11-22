@@ -24,7 +24,12 @@ function platformName(): string {
   return "Unknown";
 }
 
-export function shellAdapters(plugin: Plugin): AppAdapters {
+type ShellAdapters = Pick<
+  AppAdapters,
+  "settingsStore" | "notifier" | "clipboard" | "hostInfo" | "incidents" | "logSink" | "hostEvents"
+>;
+
+export function shellAdapters(plugin: Plugin): ShellAdapters {
   return {
     settingsStore: Layer.succeed(SettingsStore, {
       load: Effect.tryPromise({

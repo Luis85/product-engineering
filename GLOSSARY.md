@@ -14,3 +14,7 @@
 | Provider | `provider` |
 | MCP tool | `tool` |
 | Shared item | `sharedItem` |
+| Note | `note` |
+| Root folder | `rootFolder` |
+| Record | `record` |
+| Schema marker | `schema` |

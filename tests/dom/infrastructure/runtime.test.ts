@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from "../../../src/domain/shell";
 import { Effect } from "effect";
 import { Plugin } from "obsidian";
 import { expect, it, vi } from "vitest";
@@ -19,7 +20,7 @@ it("builds the Obsidian runtime lazily, runs a shell use case and disposes it", 
     expect(registry.saved).toEqual([{ schemaVersion: 1, logLevel: "debug" }]);
     await expect(
       runtime.runPromise(Effect.flatMap(SettingsService, (settings) => settings.current)),
-    ).resolves.toEqual({ logLevel: "debug" });
+    ).resolves.toEqual({ ...DEFAULT_SETTINGS, logLevel: "debug" });
   } finally {
     await runtime.dispose();
   }

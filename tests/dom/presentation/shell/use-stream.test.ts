@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from "../../../../src/domain/shell";
 import { Effect, Stream } from "effect";
 import { expect, it } from "vitest";
 import { h } from "vue";
@@ -53,10 +54,12 @@ it("streams settings values and their read-only status", async () => {
     status: useSettingsStatus(),
   }));
   try {
-    expect(mounted.result.settings.value).toEqual({ logLevel: "warn" });
+    expect(mounted.result.settings.value).toEqual({ ...DEFAULT_SETTINGS, logLevel: "warn" });
     expect(mounted.result.status.value.writable).toBe(true);
     await fixture.runtime.runPromise(setLogLevel("debug"));
-    await eventually(() => expect(mounted.result.settings.value).toEqual({ logLevel: "debug" }));
+    await eventually(() =>
+      expect(mounted.result.settings.value).toEqual({ ...DEFAULT_SETTINGS, logLevel: "debug" }),
+    );
 
     fixture.store.writeExternally({ schemaVersion: 3 });
     await fixture.runtime.runPromise(SettingsService.use((service) => service.reload));

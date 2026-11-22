@@ -10,7 +10,7 @@ import {
 
 it("declares the supported levels in severity order", () => {
   expect(LOG_LEVELS).toEqual(["error", "warn", "info", "debug"]);
-  expect(DEFAULT_SETTINGS).toEqual({ logLevel: "warn" });
+  expect(DEFAULT_SETTINGS).toEqual({ logLevel: "warn", rootFolder: "Product Engineering" });
   expect(encodeSettings(DEFAULT_SETTINGS)).toEqual({ schemaVersion: 1, logLevel: "warn" });
 });
 

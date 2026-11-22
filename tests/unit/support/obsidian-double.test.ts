@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { ManagedRuntime } from "effect";
+import type { App as HostApp } from "obsidian";
 import type { SettingDefinitionItem, ViewStateResult } from "obsidian";
 import { afterEach, expect, it, vi } from "vitest";
 import {
@@ -16,6 +18,7 @@ import {
   ItemView,
   normalizePath,
   Notice,
+  parseYaml,
   Platform,
   Plugin,
   PluginSettingTab,
@@ -23,12 +26,20 @@ import {
   Setting,
   setLanguage,
   settingsIn,
+  stringifyYaml,
   TextComponent,
   ToggleComponent,
   View,
   Workspace,
   WorkspaceLeaf,
 } from "@test/obsidian";
+import { noteStoreLayer } from "../../../src/infrastructure/obsidian/notes";
+import { READINESS_FACTS, STORE_FACTS, VAULT_FACTS } from "../../support/notes/fidelity";
+import { createNoteStoreProbeApi } from "../../support/notes/probe-api";
+import { storeScenario, vaultFacts } from "../../support/notes/scenarios";
+import { readinessScenario } from "../../support/readiness-scenario";
+
+vi.mock("obsidian", () => import("@test/obsidian"));
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -399,4 +410,20 @@ it.each([
   [" a\u00a0 /e\u0301 ", " a  /é "],
 ])("normalizes %s like Obsidian", (input, expected) => {
   expect(normalizePath(input)).toBe(expected);
+});
+
+it("agrees with the vault and readiness scenarios used in Obsidian", async () => {
+  const app = new App() as unknown as HostApp;
+  expect(await vaultFacts(app, { normalizePath, parseYaml, stringifyYaml })).toEqual(VAULT_FACTS);
+  expect(await readinessScenario(app)).toEqual(READINESS_FACTS);
+});
+
+it("agrees with the native store scenario used in Obsidian", async () => {
+  const app = new App({ caseInsensitive: true }) as unknown as HostApp;
+  const runtime = ManagedRuntime.make(noteStoreLayer(app));
+  try {
+    expect(await storeScenario(app, createNoteStoreProbeApi(runtime))).toEqual(STORE_FACTS);
+  } finally {
+    await runtime.dispose();
+  }
 });

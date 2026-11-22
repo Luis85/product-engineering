@@ -1,6 +1,7 @@
 import type { Plugin } from "obsidian";
 import { appServicesLayer } from "../../application/app-services-layer";
 import type { AppAdapters, AppServiceOptions } from "../../application/app-services-layer";
+import { notesAdapters } from "./notes";
 import { shellAdapters } from "./shell";
 
 export function appLayer(
@@ -9,7 +10,7 @@ export function appLayer(
   agentChat?: AppAdapters["agentChat"],
 ) {
   return appServicesLayer(
-    { ...shellAdapters(plugin), ...(agentChat ? { agentChat } : {}) },
+    { ...shellAdapters(plugin), ...notesAdapters(plugin), ...(agentChat ? { agentChat } : {}) },
     options,
   );
 }

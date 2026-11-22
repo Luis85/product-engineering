@@ -11,6 +11,7 @@ import {
   StorageError,
 } from "../../src/application/shell";
 import type { DatedLogEntry, UserMessage } from "../../src/application/shell";
+import { memoryNoteStore, sequentialIdGenerator } from "../../src/infrastructure/memory/notes";
 
 type StoreOptions = { readonly uncancellableSaves?: boolean };
 
@@ -91,6 +92,7 @@ const testHostInfo = Layer.succeed(HostInfo, {
 
 export function testAdapters(options: TestAdapterOptions = {}) {
   const store = inMemoryStore(options.initialSettings, options);
+  const notes = memoryNoteStore();
   const notifier: UserMessage[] = [];
   const logger: DatedLogEntry[] = [];
   const clipboard: string[] = [];
@@ -123,10 +125,14 @@ export function testAdapters(options: TestAdapterOptions = {}) {
     hostInfo: testHostInfo,
     incidents: Layer.succeed(Incidents, { nextId: Effect.sync(() => `T-${++incident}`) }),
     hostEvents: options.hostEvents ?? Layer.empty,
+    noteStore: notes.layer,
+    noteOpener: notes.opener,
+    idGenerator: sequentialIdGenerator(),
   };
   return {
     adapters,
     store,
+    notes,
     notifier,
     clipboard,
     logger,

@@ -16,3 +16,5 @@ export {
 } from "./settings";
 export { ItemView, View, WorkspaceLeaf } from "./views";
 export { Workspace } from "./workspace";
+export { TFile, TFolder } from "./vault";
+export { parseYaml, stringifyYaml, YAMLParseError } from "./yaml";
