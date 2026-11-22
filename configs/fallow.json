@@ -26,8 +26,10 @@
   "health": { "maxCyclomatic": 10 },
   "boundaries": {
     "zones": [
+      { "name": "domain", "autoDiscover": ["src/domain"], "publicFiles": ["index.ts"] },
       { "name": "application", "autoDiscover": ["src/application"], "publicFiles": ["index.ts"] },
       { "name": "application-module", "patterns": ["src/application/module.ts"] },
+      { "name": "application-describe-error", "patterns": ["src/application/user-messages.ts"] },
       {
         "name": "application-composition",
         "patterns": [
@@ -44,15 +46,24 @@
       }
     ],
     "rules": [
+      { "from": "domain", "allow": ["domain/shell"] },
+      { "from": "domain/shell", "allow": [] },
       {
         "from": "application",
-        "allow": ["application/shell", "application-module", "application-composition"]
+        "allow": ["domain", "application/shell", "application-module", "application-composition"]
       },
       { "from": "application-module", "allowTypeOnly": ["application/shell"] },
-      { "from": "application-composition", "allow": ["application", "application-module"] },
+      {
+        "from": "application-describe-error",
+        "allow": ["application", "application-module", "application-composition"]
+      },
+      {
+        "from": "application-composition",
+        "allow": ["domain", "application", "application-module"]
+      },
       {
         "from": "application/shell",
-        "allow": ["application-module"],
+        "allow": ["application-module", "domain/shell"],
         "allowTypeOnly": ["application-composition"]
       }
     ],

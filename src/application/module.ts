@@ -1,3 +1,4 @@
+import type { Effect } from "effect";
 import type { Language, UserMessage } from "./shell";
 
 type Tagged = { readonly _tag: string };
@@ -14,22 +15,40 @@ type ErrorPart<E extends Tagged, Catalog> = {
   readonly describe: (error: E, messages: Catalog) => UserMessage;
 };
 
-export type ModuleManifest<Name extends string, Catalog, E extends Tagged = never> = ModuleBase<
-  Name,
-  Catalog
-> & {
-  readonly errors?: ErrorPart<E, Catalog>;
+export type PluginCommand<Messages, Route, Services> = {
+  readonly id: string;
+  readonly name: (messages: Messages) => string;
+  readonly action:
+    | { readonly _tag: "open"; readonly route?: Route }
+    | { readonly _tag: "run"; readonly effect: Effect.Effect<void, never, Services> };
 };
 
-export function defineModule<const Name extends string, Catalog, E extends Tagged = never>(
-  manifest: ModuleBase<Name, Catalog> & { readonly errors: ErrorPart<E, Catalog> },
-): ModuleBase<Name, Catalog> & { readonly errors: ErrorPart<E, Catalog> };
-export function defineModule<const Name extends string, Catalog>(
-  manifest: ModuleBase<Name, Catalog> & { readonly errors?: never },
-): ModuleBase<Name, Catalog>;
-export function defineModule<const Name extends string, Catalog, E extends Tagged>(
-  manifest: ModuleManifest<Name, Catalog, E>,
-): ModuleManifest<Name, Catalog, E> {
+type CommandPart<Command> = { readonly commands?: readonly Command[] };
+
+export type ModuleManifest<
+  Name extends string,
+  Catalog,
+  E extends Tagged = never,
+  Command = never,
+> = ModuleBase<Name, Catalog> &
+  CommandPart<Command> & {
+    readonly errors?: ErrorPart<E, Catalog>;
+  };
+
+export function defineModule<
+  const Name extends string,
+  Catalog,
+  E extends Tagged = never,
+  Command = never,
+>(
+  manifest: ModuleManifest<Name, Catalog, E, Command> & { readonly errors: ErrorPart<E, Catalog> },
+): ModuleManifest<Name, Catalog, E, Command> & { readonly errors: ErrorPart<E, Catalog> };
+export function defineModule<const Name extends string, Catalog, Command = never>(
+  manifest: ModuleManifest<Name, Catalog, never, Command> & { readonly errors?: never },
+): ModuleBase<Name, Catalog> & CommandPart<Command>;
+export function defineModule<const Name extends string, Catalog, E extends Tagged, Command>(
+  manifest: ModuleManifest<Name, Catalog, E, Command>,
+): ModuleManifest<Name, Catalog, E, Command> {
   return manifest;
 }
 
@@ -44,6 +63,10 @@ export type ErrorOf<M> = M extends {
 }
   ? E
   : never;
+
+export function commandsOf<Command>(modules: readonly CommandPart<Command>[]): readonly Command[] {
+  return modules.flatMap(({ commands }) => commands ?? []);
+}
 
 type DescribableModule = ModuleBase & {
   readonly errors?: {

@@ -22,9 +22,8 @@ const compositionFiles = [
 
 /** @param {FallowInput} input */
 export function fallowConfig({ modules, has }) {
-  const siblings = modules.all
-    .filter((module) => has("application", module))
-    .map((module) => `application/${module}`);
+  const domain = siblings(modules.all, has, "domain");
+  const application = siblings(modules.all, has, "application");
 
   return {
     $schema: "../node_modules/fallow/schema.json",
@@ -43,23 +42,31 @@ export function fallowConfig({ modules, has }) {
     health: { maxCyclomatic: 10 },
     boundaries: {
       zones: [
+        { name: "domain", autoDiscover: ["src/domain"], publicFiles: ["index.ts"] },
         { name: "application", autoDiscover: ["src/application"], publicFiles: ["index.ts"] },
         { name: "application-module", patterns: ["src/application/module.ts"] },
+        { name: "application-describe-error", patterns: ["src/application/user-messages.ts"] },
         {
           name: "application-composition",
           patterns: compositionFiles.map((file) => `src/application/${file}.ts`),
         },
       ],
       rules: [
+        { from: "domain", allow: domain },
+        ...(domain.includes("domain/shell") ? [{ from: "domain/shell", allow: [] }] : []),
         {
           from: "application",
-          allow: [...siblings, "application-module", "application-composition"],
+          allow: ["domain", ...application, "application-module", "application-composition"],
         },
         { from: "application-module", allowTypeOnly: ["application/shell"] },
-        { from: "application-composition", allow: ["application", "application-module"] },
+        {
+          from: "application-describe-error",
+          allow: ["application", "application-module", "application-composition"],
+        },
+        { from: "application-composition", allow: ["domain", "application", "application-module"] },
         {
           from: "application/shell",
-          allow: ["application-module"],
+          allow: ["application-module", ...domain.filter((zone) => zone === "domain/shell")],
           allowTypeOnly: ["application-composition"],
         },
       ],
@@ -79,4 +86,13 @@ export function fallowConfig({ modules, has }) {
     ignoreDependencies: ["obsidian", "@eslint/js"],
     overrides: [{ files: ["tests/support/obsidian/**"], rules: { "unused-class-members": "off" } }],
   };
+}
+
+/**
+ * @param {readonly string[]} modules
+ * @param {FallowInput["has"]} has
+ * @param {string} layer
+ */
+function siblings(modules, has, layer) {
+  return modules.filter((module) => has(layer, module)).map((module) => `${layer}/${module}`);
 }
