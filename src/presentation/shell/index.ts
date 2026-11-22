@@ -7,4 +7,5 @@ export { mountSurface } from "./mount";
 export { useHistory, useNavigate, useRoute } from "./navigation";
 export type { ModuleScreens } from "./routing";
 export { useCommand, useMessages, useQuery, useService } from "./runtime/use-runtime";
+export type { UseCaseFn } from "./runtime/use-runtime";
 export { useSettings, useSettingsStatus, useStream } from "./runtime/use-stream";

@@ -58,6 +58,19 @@ export const checkbox = fieldKind(Schema.Boolean, "field.checkbox");
 export const date = fieldKind(Schema.String.check(Schema.makeFilter(isCalendarDate)), "field.date");
 export const list = fieldKind(Schema.Array(Schema.String), "field.list");
 
+export function isControlCharacter(value: string): boolean {
+  return /\p{Cc}/u.test(value);
+}
+
+export function lineOfText(max: number) {
+  return Schema.String.check(
+    Schema.isMaxLength(max),
+    Schema.makeFilter(
+      (value: string) => !isControlCharacter(value) && !/[\u2028\u2029]/u.test(value),
+    ),
+  );
+}
+
 export function required<Value, Issue extends string>(
   field: Field<Value | undefined, Issue>,
 ): Field<Value, Issue | "field.missing"> {

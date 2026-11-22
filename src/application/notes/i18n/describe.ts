@@ -5,6 +5,9 @@ import type { UnindexedIssue } from "../note-index";
 import type { NotesCatalog } from "./catalog";
 
 export function describeNotesError(error: NotesError, catalog: NotesCatalog): UserMessage {
+  if (error._tag === "NoteIndexReadError") {
+    return { severity: "error", action: "retry", ...catalog.errors.NoteIndexReadError };
+  }
   if (error._tag === "InvalidNoteNameError") {
     return {
       severity: "warning",

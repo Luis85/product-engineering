@@ -7,13 +7,13 @@ import { appRoutes, Route, SETTINGS_SECTIONS } from "../../../src/application/ro
 import type { RouteNameOf, SectionIdOf, SettingsSection } from "../../../src/application/routes";
 
 it("starts at the item section and pins the ordered real sections", () => {
-  expect(SETTINGS_SECTIONS).toEqual(["items"]);
+  expect(SETTINGS_SECTIONS).toEqual(["items", "data-issues"]);
   expect(appRoutes.start).toEqual({ name: "settings", section: "items" });
   expect(appRoutes.decode({ name: "settings", section: "unknown" })).toBe(appRoutes.start);
   expect(Schema.decodeUnknownSync(Route)({ name: "settings", section: "items" })).toEqual(
     appRoutes.start,
   );
-  expectTypeOf<SettingsSection>().toEqualTypeOf<"items">();
+  expectTypeOf<SettingsSection>().toEqualTypeOf<"items" | "data-issues">();
   expectTypeOf<RouteNameOf<"shell">>().toEqualTypeOf<"settings">();
   expectTypeOf<RouteNameOf<"items">>().toEqualTypeOf<never>();
   expectTypeOf<RouteNameOf<"integrations">>().toEqualTypeOf<"agent-chat">();

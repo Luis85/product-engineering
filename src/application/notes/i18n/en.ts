@@ -39,10 +39,38 @@ export const en: NotesCatalog = {
     failedMigration: (version) => `The record could not be migrated from version ${version}.`,
   },
   unindexed: {
+    label: "Data issues",
+    loading: "Checking notes…",
+    empty: "No data issues found.",
+    count: (value) => (value === 1 ? "1 data issue" : `${value} data issues`),
     malformedSchema: "The record schema has an invalid format.",
     unknownType: (type) => `The record type ${type} is not registered.`,
     unreadableFrontmatter: "Open the note and correct its frontmatter.",
   },
+  notices: {
+    created: (title) => `Created ${title}`,
+    saved: (title) => `Saved ${title}`,
+    deleted: (title) => `Deleted ${title}`,
+  },
+  conflict: {
+    title: "Review conflicting changes",
+    detail: "Choose the value to keep for each field, then save again.",
+    base: "When you opened the form",
+    mine: "Your change",
+    current: "Current note",
+    apply: "Apply choices",
+    empty: "Empty",
+    unavailable: "Cannot display this value",
+    trueValue: "Yes",
+    falseValue: "No",
+  },
+  deleteDialog: {
+    title: (name) => `Delete ${name}?`,
+    detail: "The note will be moved to the trash according to your Obsidian settings.",
+    cancel: "Cancel",
+    confirm: "Delete note",
+  },
+  openNote: "Open in Obsidian",
   invalidName: {
     title: "Invalid note name",
     details: {

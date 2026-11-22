@@ -13,7 +13,8 @@ export type LogEvent =
   | "settings.load.failed"
   | "notes.index.built"
   | "notes.index.build.failed"
-  | "notes.index.read.failed";
+  | "notes.index.read.failed"
+  | `${string}.rename.failed`;
 export type LogEntry = {
   readonly level: LogLevel;
   readonly event: LogEvent;

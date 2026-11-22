@@ -5,6 +5,7 @@ import {
   defineNoteType,
   list,
   number,
+  rebaseRecordFrontmatter,
   schemaMarker,
   text,
 } from "../../../../src/domain/notes";
@@ -110,6 +111,32 @@ describe("merging a record edit", () => {
       Result.fail({
         kind: "conflict",
         conflicts: [{ key: "title", base: "Base", edited: "Edited", current: "Independent" }],
+      }),
+    );
+  });
+
+  it("rebases each conflicted field after migration so retry compares the same live value", () => {
+    const base = {
+      ...identity,
+      schema: schemaMarker(type.type, 1),
+      old_title: "Before",
+      owner: "Original owner",
+      outside: "Unrelated",
+    };
+    const rebased = rebaseRecordFrontmatter(type, base, [
+      { key: "title", base: "Before", edited: "My title", current: "Live title" },
+      { key: "owner", base: "Original owner", edited: "My owner", current: undefined },
+    ]);
+    expect(rebased).toEqual(
+      Result.succeed({ ...identity, title: "Live title", count: 0, outside: "Unrelated" }),
+    );
+    if (Result.isFailure(rebased)) throw Error("Expected a rebased record");
+
+    const current = { ...base, old_title: "Live title", owner: undefined };
+    expect(type.merge(rebased.success, { title: "My title", count: 0 }, current)).toEqual(
+      Result.succeed({
+        set: { schema: identity.schema, title: "My title", count: 0 },
+        remove: ["old_title"],
       }),
     );
   });

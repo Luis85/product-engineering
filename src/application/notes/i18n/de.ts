@@ -53,10 +53,39 @@ export const de: NotesCatalog = {
       `Der Datensatz konnte nicht von Version ${version} migriert werden.`,
   },
   unindexed: {
+    label: "Datenprobleme",
+    loading: "Notizen werden geprüft…",
+    empty: "Keine Datenprobleme gefunden.",
+    count: (value) => (value === 1 ? "1 Datenproblem" : `${value} Datenprobleme`),
     malformedSchema: "Das Datensatzschema hat ein ungültiges Format.",
     unknownType: (type) => `Der Datensatztyp ${type} ist nicht registriert.`,
     unreadableFrontmatter: "Öffne die Notiz und korrigiere ihre Frontmatter.",
   },
+  notices: {
+    created: (title) => `${title} erstellt`,
+    saved: (title) => `${title} gespeichert`,
+    deleted: (title) => `${title} gelöscht`,
+  },
+  conflict: {
+    title: "Konflikte prüfen",
+    detail: "Wähle für jedes Feld einen Wert und speichere danach erneut.",
+    base: "Beim Öffnen des Formulars",
+    mine: "Deine Änderung",
+    current: "Aktuelle Notiz",
+    apply: "Auswahl übernehmen",
+    empty: "Leer",
+    unavailable: "Dieser Wert lässt sich nicht anzeigen",
+    trueValue: "Ja",
+    falseValue: "Nein",
+  },
+  deleteDialog: {
+    title: (name) => `${name} löschen?`,
+    detail:
+      "Die Notiz wird entsprechend deinen Obsidian-Einstellungen in den Papierkorb verschoben.",
+    cancel: "Abbrechen",
+    confirm: "Notiz löschen",
+  },
+  openNote: "In Obsidian öffnen",
   invalidName: {
     title: "Ungültiger Notizname",
     details: {

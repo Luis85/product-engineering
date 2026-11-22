@@ -25,3 +25,6 @@
 | Vault ready | `VaultReady` |
 | Note index | `NoteIndex` |
 | Unindexed note | `unindexedNote` |
+| Record list | `recordList` |
+| Record card key | `cardKey` |
+| Form draft | `formDraft` |

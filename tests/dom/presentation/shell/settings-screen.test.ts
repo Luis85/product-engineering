@@ -46,7 +46,7 @@ it("keeps the chosen section button focused while its section changes", async ()
   }
 });
 
-it("shows the one app section with no section switcher", async () => {
+it("shows the items section first with both app sections in the switcher", async () => {
   const { runtime } = testRuntime();
   const root = document.body.appendChild(document.createElement("div"));
   let close: (() => void) | undefined;
@@ -54,7 +54,9 @@ it("shows the one app section with no section switcher", async () => {
     ({ close } = await mountApp(root, runtime));
     await eventually(() => expect(find(root, "items-screen")).not.toBeNull());
     expect(find(root, "settings-screen")).not.toBeNull();
-    expect(find(root, "settings-sections")).toBeNull();
+    const sections = find(root, "settings-sections");
+    expect(sections?.querySelectorAll("button")).toHaveLength(2);
+    expect(sections?.querySelector("[aria-current='page']")?.textContent?.trim()).toBe("Einträge");
   } finally {
     close?.();
     root.remove();

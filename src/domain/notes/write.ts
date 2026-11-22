@@ -24,11 +24,12 @@ export interface NoteFieldConflict {
   readonly current: unknown;
 }
 
-export type NoteMergeFailure =
-  | { readonly kind: "refused"; readonly reason: WriteRefusal }
-  | { readonly kind: "conflict"; readonly conflicts: readonly NoteFieldConflict[] };
+type Refusal = { readonly kind: "refused"; readonly reason: WriteRefusal };
 
-function refusal(reason: WriteRefusal): NoteMergeFailure {
+export type NoteMergeFailure =
+  Refusal | { readonly kind: "conflict"; readonly conflicts: readonly NoteFieldConflict[] };
+
+function refusal(reason: WriteRefusal): Refusal {
   return { kind: "refused", reason };
 }
 
@@ -110,5 +111,23 @@ export function mergeNoteWrite(
     const fresh = yield* migrated(type, current, currentVersion);
     const target = yield* mergeFields(type.fields, before, edited, fresh);
     return diff(current, target);
+  });
+}
+
+export function rebaseRecordFrontmatter(
+  type: NoteTypeDefinition,
+  base: Frontmatter,
+  conflicts: readonly NoteFieldConflict[],
+): Result.Result<Frontmatter, Refusal> {
+  return Result.gen(function* () {
+    const version = yield* recordVersion(type, base);
+    const baseline = yield* migrated(type, base, version);
+    const rebased = new Map(Object.entries(baseline));
+    for (const { key, current } of conflicts) {
+      if (!Object.hasOwn(type.fields, key)) continue;
+      if (current === undefined || current === null) rebased.delete(key);
+      else rebased.set(key, current);
+    }
+    return Object.fromEntries(rebased);
   });
 }

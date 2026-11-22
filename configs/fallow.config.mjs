@@ -176,6 +176,22 @@ export function fallowConfig({ modules, has }) {
           allow: ["application/shell", "application-describe-error", "domain/shell"],
           allowTypeOnly: ["application-composition"],
         },
+        ...(presentation.includes("presentation/notes")
+          ? [
+              {
+                from: "presentation/notes",
+                allow: [
+                  "presentation/shell",
+                  "application/shell",
+                  "application/notes",
+                  "application-describe-error",
+                  "domain/shell",
+                  "domain/notes",
+                ],
+                allowTypeOnly: ["application-composition"],
+              },
+            ]
+          : []),
         {
           from: "presentation-composition",
           allow: [

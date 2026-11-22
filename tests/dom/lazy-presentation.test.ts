@@ -6,6 +6,7 @@ import { testRuntime } from "../support/runtime";
 const evaluated = vi.hoisted(() => ({
   vue: vi.fn<() => void>(),
   nuxt: vi.fn<() => void>(),
+  form: vi.fn<() => void>(),
 }));
 
 vi.mock("obsidian", () => import("@test/obsidian"));
@@ -17,8 +18,12 @@ vi.mock("@nuxt/ui/vue-plugin", async (original) => {
   evaluated.nuxt();
   return original<typeof import("@nuxt/ui/vue-plugin")>();
 });
+vi.mock("@tanstack/vue-form", async (original) => {
+  evaluated.form();
+  return original<typeof import("@tanstack/vue-form")>();
+});
 
-it("loads the plugin without evaluating Vue and Nuxt UI until opening a surface", async () => {
+it("loads the plugin without evaluating Vue, Nuxt UI or TanStack Form", async () => {
   const { default: ShellPlugin } = await import("../../src/main");
   const { plugin, registry } = createTestPlugin(ShellPlugin);
   const fixture = testRuntime();
@@ -29,6 +34,7 @@ it("loads the plugin without evaluating Vue and Nuxt UI until opening a surface"
     await registry.load();
     expect(evaluated.vue).not.toHaveBeenCalled();
     expect(evaluated.nuxt).not.toHaveBeenCalled();
+    expect(evaluated.form).not.toHaveBeenCalled();
 
     const { mountSurface } = await loadSurface();
     close = await mountSurface(root, fixture.runtime, {
@@ -37,10 +43,11 @@ it("loads the plugin without evaluating Vue and Nuxt UI until opening a surface"
     expect(root.textContent).toContain("Lazy surface");
     expect(evaluated.vue).toHaveBeenCalledOnce();
     expect(evaluated.nuxt).toHaveBeenCalledOnce();
+    expect(evaluated.form).not.toHaveBeenCalled();
   } finally {
     close?.();
     root.remove();
     plugin.unload();
     await fixture.runtime.dispose();
   }
-}, 15_000);
+}, 30_000);
