@@ -17,6 +17,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run --config configs/vitest.config.ts",
     "test:coverage": "vitest run --config configs/vitest.config.ts --coverage",
+    "fallow:config": "node scripts/fallow-config.mjs",
+    "analyze": "node scripts/fallow-config.mjs --check && fallow -c configs/fallow.json && fallow architecture -c configs/fallow.json",
     "verify": "node scripts/verify.mjs",
     "verify:full": "node scripts/verify.mjs --full",
     "prepare": "node scripts/install-hooks.mjs"
@@ -29,6 +31,7 @@
     "eslint-plugin-obsidianmd": "0.6.0",
     "eslint-plugin-oxlint": "1.94.0",
     "eslint-plugin-vue": "10.12.1",
+    "fallow": "3.46.0",
     "globals": "17.14.0",
     "obsidian": "1.14.4",
     "oxlint": "1.94.0",
@@ -40,8 +43,6 @@
     "vue-tsc": "3.3.14"
   },
   "overrides": {
-    "qs@<6.17.0": "6.17.1",
-    "minimatch@>=7.0.0 <11.0.1": "11.0.9",
-    "glob@>=9.0.0 <14.0.2": "14.0.6"
+    "minimatch@>=7.0.0 <11.0.1": "11.0.9"
   }
 }

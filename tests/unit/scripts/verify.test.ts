@@ -8,7 +8,7 @@ describe("verification gate", () => {
     const spawn = vi.fn<Spawn>(() => ({ status: 0 }));
     const result = runSteps(STEPS, spawn);
 
-    expect(STEPS).toEqual(["format:check", "lint", "typecheck", "test"]);
+    expect(STEPS).toEqual(["format:check", "lint", "typecheck", "test", "analyze"]);
     expect(spawn.mock.calls).toEqual(
       STEPS.map((step) => [
         "npm",
@@ -17,7 +17,7 @@ describe("verification gate", () => {
       ]),
     );
     expect(result.code).toBe(0);
-    expect(result.steps.map(({ status }) => status)).toEqual(["ok", "ok", "ok", "ok"]);
+    expect(result.steps.map(({ status }) => status)).toEqual(STEPS.map(() => "ok"));
   });
 
   it("reports the failed step and leaves later steps untouched", () => {
@@ -30,7 +30,7 @@ describe("verification gate", () => {
     expect(result.code).toBe(7);
     expect(spawn).toHaveBeenCalledTimes(2);
     expect(summary(result.steps)).toMatch(
-      /ok\s+format:check\s+[\d.]+s\r?\nFAIL\s+lint\s+[\d.]+s\r?\nnot run\s+typecheck\r?\nnot run\s+test/,
+      /ok\s+format:check\s+[\d.]+s\r?\nFAIL\s+lint\s+[\d.]+s\r?\nnot run\s+typecheck\r?\nnot run\s+test\r?\nnot run\s+analyze/,
     );
   });
 

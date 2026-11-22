@@ -102,7 +102,7 @@ The unmodified tree reported 25 moderate findings across three transitive packag
 | `effect` | Owns schema validation, expected failures, scoped services, and the managed runtime. |
 | `@tanstack/vue-form` | Manages validation and submission of Vue forms. |
 
-New runtime dependencies need a justification in this ADR.
+New runtime dependencies need a justification in this ADR. Add each override with the first tool that introduces its affected dependency into the lockfile.
 
 ### Other choices
 

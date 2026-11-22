@@ -1,0 +1,76 @@
+{
+  "$schema": "../node_modules/fallow/schema.json",
+  "entry": [],
+  "supportEntry": [
+    "scripts/*.mjs",
+    "tests/**/*.test.ts",
+    "tests/e2e/**/*.ts",
+    "tests/e2e/wdio.conf.mts",
+    "configs/*.ts",
+    "configs/*.mjs",
+    "*.config.mjs"
+  ],
+  "ignorePatterns": [
+    "docs/**",
+    "dist/**",
+    "release/**",
+    "reports/**",
+    ".stryker-tmp/**",
+    ".obsidian-cache/**",
+    ".obsidian/**",
+    ".claude/**",
+    ".fallow/**",
+    ".probe/**"
+  ],
+  "duplicates": { "minTokens": 50 },
+  "health": { "maxCyclomatic": 10 },
+  "boundaries": {
+    "zones": [
+      { "name": "application", "autoDiscover": ["src/application"], "publicFiles": ["index.ts"] },
+      { "name": "application-module", "patterns": ["src/application/module.ts"] },
+      {
+        "name": "application-composition",
+        "patterns": [
+          "src/application/modules.ts",
+          "src/application/errors.ts",
+          "src/application/events.ts",
+          "src/application/app-services.ts",
+          "src/application/app-services-layer.ts",
+          "src/application/messages.ts",
+          "src/application/routes.ts",
+          "src/application/note-types.ts",
+          "src/application/commands.ts"
+        ]
+      }
+    ],
+    "rules": [
+      {
+        "from": "application",
+        "allow": ["application/shell", "application-module", "application-composition"]
+      },
+      { "from": "application-module", "allowTypeOnly": ["application/shell"] },
+      { "from": "application-composition", "allow": ["application", "application-module"] },
+      {
+        "from": "application/shell",
+        "allow": ["application-module"],
+        "allowTypeOnly": ["application-composition"]
+      }
+    ],
+    "coverage": {
+      "requireAllFiles": true,
+      "allowUnmatched": [
+        "src/env.d.ts",
+        "src/styles/**",
+        "tests/**",
+        "scripts/**",
+        "harness/**",
+        "configs/**",
+        "*.mjs"
+      ]
+    }
+  },
+  "ignoreDependencies": ["obsidian", "@eslint/js"],
+  "overrides": [
+    { "files": ["tests/support/obsidian/**"], "rules": { "unused-class-members": "off" } }
+  ]
+}

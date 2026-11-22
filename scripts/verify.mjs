@@ -2,7 +2,7 @@
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
-export const STEPS = ["format:check", "lint", "typecheck", "test"];
+export const STEPS = ["format:check", "lint", "typecheck", "test", "analyze"];
 export const FULL_STEPS = [...STEPS];
 
 /**
