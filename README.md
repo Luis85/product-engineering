@@ -8,7 +8,9 @@ Copy `main.js`, `manifest.json`, and `styles.css` into `<vault>/.obsidian/plugin
 
 ## Development
 
-The [plugin blueprint](docs/plans/obsidian-plugin-shell-blueprint/README.md) describes how the repository is built. Use Node 24 and npm 11.
+The [plugin blueprint](docs/plans/obsidian-plugin-shell-blueprint/README.md) describes how the repository is built. Use Node 24.22.1 or a newer Node 24 release with npm 11.
+
+Run `npm run verify` for the repository gate and `npm run dev:ui` for the browser harness. Run the desktop suite with `npm run test:e2e` on Windows or macOS, or `xvfb-run -a npm run test:e2e` on Linux without a display. The suite installs the built plugin into copies of a fixture vault.
 
 ## Agent settings
 

@@ -1,8 +1,10 @@
 type RibbonItem = {
   readonly id: string;
-  readonly title: string;
-  readonly icon: string;
-  readonly element: HTMLElement;
+  title: string;
+  icon: string;
+  hidden: boolean;
+  callback?: (event: MouseEvent) => unknown;
+  buttonEl?: HTMLButtonElement;
 };
 
 export class Ribbon {
@@ -14,35 +16,45 @@ export class Ribbon {
     this.#container.className = "workspace-ribbon";
   }
 
-  add(
-    id: string,
-    icon: string,
-    title: string,
-    callback: (event: MouseEvent) => unknown,
-  ): RibbonItem {
-    this.items.get(id)?.element.remove();
-    const element = this.document.createElement("button");
-    element.type = "button";
-    element.setAttribute("aria-label", title);
-    element.addEventListener("click", (event) => {
-      callback(event);
-    });
-    const item = { id, title, icon, element };
-    this.items.set(id, item);
-    this.onChange();
-    return item;
+  get activeItems() {
+    return new Map([...this.items].filter(([, item]) => item.callback !== undefined));
   }
 
-  remove(item: RibbonItem): void {
-    item.element.remove();
-    if (this.items.get(item.id) === item) this.items.delete(item.id);
+  add(id: string, icon: string, title: string, callback: (event: MouseEvent) => unknown) {
+    const item: RibbonItem = this.items.get(id) ?? { id, title, icon, hidden: false };
+    item.buttonEl?.remove();
+    const buttonEl = this.document.createElement("button");
+    buttonEl.type = "button";
+    buttonEl.setAttribute("aria-label", title);
+    const click = (event: MouseEvent) => {
+      callback(event);
+    };
+    buttonEl.addEventListener("click", click);
+    item.title = title;
+    item.icon = icon;
+    item.callback = callback;
+    item.buttonEl = buttonEl;
+    this.items.set(id, item);
+    this.onChange();
+    return {
+      buttonEl,
+      release: () => {
+        buttonEl.removeEventListener("click", click);
+        buttonEl.remove();
+        if (item.buttonEl !== buttonEl) return;
+        delete item.callback;
+        delete item.buttonEl;
+      },
+    };
   }
 
   onChange(): void {
-    for (const { element } of this.items.values()) {
-      if (element.parentElement !== this.#container) this.#container.append(element);
+    for (const { buttonEl, hidden } of this.items.values()) {
+      if (!buttonEl) continue;
+      if (hidden) buttonEl.remove();
+      else if (buttonEl.parentElement !== this.#container) this.#container.append(buttonEl);
     }
-    if (!this.#container.isConnected && this.items.size > 0)
+    if (!this.#container.isConnected && this.#container.childElementCount > 0)
       this.document.body.append(this.#container);
   }
 }

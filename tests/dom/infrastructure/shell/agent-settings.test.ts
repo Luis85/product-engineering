@@ -2,7 +2,7 @@ import { get } from "node:http";
 import { Plugin } from "obsidian";
 import type { SettingDefinitionAction, SettingDefinitionItem } from "obsidian";
 import { expect, it, vi } from "vitest";
-import { createTestPlugin } from "@test/obsidian";
+import { createTestPlugin, settingsIn, TextComponent } from "@test/obsidian";
 import type { LocalMcpConnection, McpController } from "../../../../src/application/integrations";
 import { catalogFor } from "../../../../src/application/messages";
 import { createAgentSettingsPart } from "../../../../src/infrastructure/obsidian/integrations";
@@ -116,6 +116,28 @@ it("starts and stops on demand and copies credentials only from the native copy 
     await eventually(() => expect(controller.status()).toEqual({ state: "stopped" }));
     expect(controller.stop).toHaveBeenCalledOnce();
   } finally {
+    await dispose();
+  }
+});
+
+it("keeps an executable path input focused while its value is saved", async () => {
+  const { tab, fixture, dispose } = await harness();
+  document.body.append(tab.containerEl);
+  try {
+    tab.update();
+    const control = settingsIn(tab).get("codexPath")?.control;
+    if (!(control instanceof TextComponent)) throw new Error("Codex path input is missing");
+
+    control.inputEl.focus();
+    control.inputEl.value = "C:\\Tools\\codex.exe";
+    control.inputEl.dispatchEvent(new Event("input"));
+    await control.pending;
+
+    expect(fixture.store.saved.at(-1)).toMatchObject({ codexPath: "C:\\Tools\\codex.exe" });
+    expect(settingsIn(tab).get("codexPath")?.control).toBe(control);
+    expect(document.activeElement).toBe(control.inputEl);
+  } finally {
+    tab.containerEl.remove();
     await dispose();
   }
 });

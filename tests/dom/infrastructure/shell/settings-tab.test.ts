@@ -8,6 +8,7 @@ import { testRuntime } from "../../../support/runtime";
 vi.mock("obsidian", () => import("@test/obsidian"));
 
 class TestPlugin extends Plugin {}
+const dropdownSelector = "select.dropdown:not(.is-measuring)";
 
 it("presents one validated log level dropdown and persists a selection", async () => {
   const { plugin } = createTestPlugin(TestPlugin);
@@ -51,7 +52,7 @@ it("presents one validated log level dropdown and persists a selection", async (
     expect(fixture.store.saved).toEqual([{ schemaVersion: 1, logLevel: "debug" }]);
     expect(tab.getControlValue("logLevel")).toBe("debug");
     tab.update();
-    expect(tab.containerEl.querySelectorAll("select")).toHaveLength(1);
+    expect(tab.containerEl.querySelectorAll(dropdownSelector)).toHaveLength(1);
   } finally {
     await mirror.stop();
     await fixture.runtime.dispose();
@@ -72,9 +73,9 @@ it("renders the reason and issue link beside the disabled read-only dropdown", a
     );
     tab.update();
     tab.update();
-    const select = tab.containerEl.querySelector("select");
+    const select = tab.containerEl.querySelector<HTMLSelectElement>(dropdownSelector);
     expect(select?.disabled).toBe(true);
-    expect(tab.containerEl.querySelectorAll("select")).toHaveLength(1);
+    expect(tab.containerEl.querySelectorAll(dropdownSelector)).toHaveLength(1);
     expect(tab.containerEl.children).toHaveLength(2);
     expect(tab.containerEl.textContent).toContain("This file uses a newer settings version.");
     expect(tab.containerEl.querySelector("a")?.getAttribute("href")).toBe(

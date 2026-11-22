@@ -107,8 +107,29 @@ export class DropdownComponent
       "selectEl" | "addOptions" | "addOption" | "getValue" | "setValue" | "onChange" | "setDisabled"
     >
 {
+  readonly #measuringOption: HTMLOptionElement;
+
   constructor(parent: HTMLElement) {
-    super(parent.ownerDocument.createElement("select"), parent, "change");
+    const owner = parent.ownerDocument;
+    super(owner.createElement("select"), parent, "change");
+    this.element.classList.add("dropdown");
+
+    const measuring = owner.createElement("select");
+    measuring.classList.add("dropdown", "is-measuring");
+    measuring.setAttribute("aria-hidden", "true");
+    measuring.tabIndex = -1;
+    this.#measuringOption = owner.createElement("option");
+    measuring.append(this.#measuringOption);
+    parent.append(measuring);
+    this.element.addEventListener("change", () => this.#updateMeasurement());
+  }
+
+  #updateMeasurement(): void {
+    const value = this.element.value;
+    const label =
+      Array.from(this.element.options).find((option) => option.value === value)?.text ?? "";
+    this.#measuringOption.value = label;
+    this.#measuringOption.text = label;
   }
 
   get selectEl(): HTMLSelectElement {
@@ -120,6 +141,7 @@ export class DropdownComponent
     option.value = value;
     option.text = text;
     this.element.append(option);
+    this.#updateMeasurement();
     return this;
   }
 
@@ -134,6 +156,7 @@ export class DropdownComponent
 
   setValue(value: string): this {
     this.element.value = value;
+    this.#updateMeasurement();
     return this;
   }
 }

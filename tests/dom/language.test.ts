@@ -26,7 +26,10 @@ it.each([
     registry.setFailLoadData();
     try {
       await registry.load();
-      expect([...registry.commands.values()].map(({ name }) => name)).toEqual([open, copy]);
+      expect([...registry.commands.values()].map(({ name }) => name)).toEqual([
+        `Product Engineering: ${open}`,
+        `Product Engineering: ${copy}`,
+      ]);
       const tab = registry.settingTabs[0];
       if (!tab) throw new Error("Settings tab was not registered");
       tab.update();

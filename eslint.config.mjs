@@ -8,7 +8,11 @@ import vueParser from "vue-eslint-parser";
 import { readModules } from "./scripts/modules.mjs";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
-const project = ["./configs/tsconfig.app.json", "./configs/tsconfig.node.json"];
+const project = [
+  "./configs/tsconfig.app.json",
+  "./configs/tsconfig.node.json",
+  "./tests/e2e/tsconfig.json",
+];
 const typeAware = { project, tsconfigRootDir: root, extraFileExtensions: [".vue"] };
 const obsidianRules = obsidianmd.configs.recommended;
 const obsidianVueRules = obsidianRules

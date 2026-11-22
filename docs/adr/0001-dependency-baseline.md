@@ -124,3 +124,9 @@ The desktop-only manifest stays in place until mobile behavior can be verified. 
 ## Consequences
 
 Update repository dependencies with exact version pins and commit the lockfile. Inspect `npm outdated` monthly and after Obsidian minor releases, then rerun the probes for each changed combination. Retire an override once all applicable parents require a patched dependency.
+
+## Obsidian 1.15.1 on Windows · 2026-11-22
+
+The default Settings modal opens in its own window. The desktop tests select the window containing the plugin settings tab and return to the main window when it closes. Obsidian dropdowns also render an inert sizing select beside the interactive control. Obsidian prefixes registered command names with the plugin's display name.
+
+Disabling the plugin removes its ribbon button and callback. Obsidian retains the entry's ID, icon, title, and hidden state. A redraw keeps the button absent until the plugin is enabled again, when it restores the button on the same entry. The test double follows these behaviors.

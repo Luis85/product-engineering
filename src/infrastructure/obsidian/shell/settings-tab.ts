@@ -70,9 +70,7 @@ export class ShellSettingTab extends PluginSettingTab {
         await this.extra.setControlValue(key, value);
         await runSafely(
           this.runtime,
-          Effect.promise(() => this.mirror.refresh()).pipe(
-            Effect.andThen(Effect.sync(() => this.update())),
-          ),
+          Effect.promise(() => this.mirror.refresh()),
         );
       }
       return;

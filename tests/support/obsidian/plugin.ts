@@ -46,7 +46,7 @@ class Registry {
   }
 
   get ribbonIcons() {
-    return this.plugin.app.workspace.leftRibbon.items;
+    return this.plugin.app.workspace.leftRibbon.activeItems;
   }
 
   get notices(): readonly string[] {
@@ -154,7 +154,7 @@ export class Plugin
     if (failure === "before") throw new Error("Test addCommand failed before registration");
 
     const id = `${this.manifest.id}:${command.id}`;
-    const item = { ...command, id };
+    const item = { ...command, id, name: `${this.manifest.name}: ${command.name}` };
     const { commands } = this.testRegistry;
     commands.set(id, item);
     this.register(() => {
@@ -175,9 +175,9 @@ export class Plugin
     callback: (event: MouseEvent) => unknown,
   ): HTMLElement {
     const ribbon = this.app.workspace.leftRibbon;
-    const item = ribbon.add(`${this.manifest.id}:${title}`, icon, title, callback);
-    this.register(() => ribbon.remove(item));
-    return item.element;
+    const { buttonEl, release } = ribbon.add(`${this.manifest.id}:${title}`, icon, title, callback);
+    this.register(release);
+    return buttonEl;
   }
 
   addSettingTab(tab: SettingTab): void {

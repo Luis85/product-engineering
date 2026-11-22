@@ -22,8 +22,8 @@ it("registers localized commands without hotkeys and opens the requested view", 
   try {
     const undo = registerCommands(plugin, runtime, appCommands, catalogFor("en"), open);
     expect([...registry.commands.values()].map(({ name, hotkeys }) => [name, hotkeys])).toEqual([
-      ["Open Product Engineering", undefined],
-      ["Copy diagnostics", undefined],
+      ["Product Engineering: Open Product Engineering", undefined],
+      ["Product Engineering: Copy diagnostics", undefined],
     ]);
     registry.runCommand("product-engineering:open-view");
     await eventually(() => expect(open).toHaveBeenCalledExactlyOnceWith(undefined));

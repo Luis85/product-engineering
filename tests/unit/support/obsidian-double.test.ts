@@ -115,6 +115,7 @@ it("registers and unloads commands, views, settings and ribbon entries", async (
   const ribbonId = "product-engineering:Product Engineering";
 
   expect(registry.commands.get(commandId)?.id).toBe(commandId);
+  expect(registry.commands.get(commandId)?.name).toBe("Product Engineering: Open");
   expect(registry.views.has("probe")).toBe(true);
   expect(registry.settingTabs).toHaveLength(1);
   expect(registry.ribbonIcons.get(ribbonId)?.title).toBe("Product Engineering");
@@ -129,7 +130,7 @@ it("registers and unloads commands, views, settings and ribbon entries", async (
   expect(registry.ribbonIcons.size).toBe(0);
 });
 
-it("leaves a removed ribbon element registered until normal unload", async () => {
+it("retains ribbon metadata after unload and restores a single active button on reload", async () => {
   const { plugin, registry } = createTestPlugin(Plugin);
   await registry.load();
   const icon = plugin.addRibbonIcon("settings", "Example", () => undefined);
@@ -138,14 +139,28 @@ it("leaves a removed ribbon element registered until normal unload", async () =>
   icon.remove();
 
   expect(icon.isConnected).toBe(false);
-  expect(ribbon.items.get(key)?.element).toBe(icon);
+  expect(ribbon.items.get(key)).toMatchObject({ buttonEl: icon, hidden: false });
   ribbon.onChange();
   expect(icon.isConnected).toBe(true);
 
   plugin.unload();
   ribbon.onChange();
-  expect(ribbon.items.has(key)).toBe(false);
+  expect(ribbon.items.get(key)).toEqual({
+    id: key,
+    title: "Example",
+    icon: "settings",
+    hidden: false,
+  });
+  expect(registry.ribbonIcons.size).toBe(0);
   expect(icon.isConnected).toBe(false);
+
+  await registry.load();
+  const revived = plugin.addRibbonIcon("settings", "Example", () => undefined);
+  expect(ribbon.items.size).toBe(1);
+  expect(registry.ribbonIcons.size).toBe(1);
+  expect(ribbon.items.get(key)).toMatchObject({ buttonEl: revived, hidden: false });
+  expect(revived.isConnected).toBe(true);
+  plugin.unload();
 });
 
 it("can fail a command before or after registration", () => {
@@ -313,6 +328,32 @@ it("renders settings controls and waits for the change to settle", async () => {
   expect(tab.containerEl.querySelector("a")?.getAttribute("href")).toBe(
     "https://example.invalid/issues",
   );
+});
+
+it("mirrors the selected label into an inert native dropdown measuring control", async () => {
+  const parent = document.createElement("div");
+  const changed = vi.fn<(value: string) => void>();
+  const dropdown = new DropdownComponent(parent)
+    .addOptions({ info: "Information", debug: "Debugging" })
+    .setValue("info")
+    .onChange(changed);
+  const real = parent.querySelector("select.dropdown:not(.is-measuring)");
+  const measuring = parent.querySelector<HTMLSelectElement>("select.dropdown.is-measuring");
+
+  expect(real).toBe(dropdown.selectEl);
+  if (!measuring) throw new Error("Expected Obsidian's measuring control");
+  expect(measuring.getAttribute("aria-hidden")).toBe("true");
+  expect(measuring.tabIndex).toBe(-1);
+  expect([...measuring.options].map((option) => option.value)).toEqual(["Information"]);
+  measuring.dispatchEvent(new Event("change"));
+  await dropdown.pending;
+  expect(changed).not.toHaveBeenCalled();
+
+  dropdown.selectEl.value = "debug";
+  dropdown.selectEl.dispatchEvent(new Event("change"));
+  await dropdown.pending;
+  expect(changed).toHaveBeenCalledExactlyOnceWith("debug");
+  expect([...measuring.options].map((option) => option.value)).toEqual(["Debugging"]);
 });
 
 it("records notices and lets a test simulate a notice failure", () => {
