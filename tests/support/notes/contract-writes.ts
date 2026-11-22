@@ -1,5 +1,5 @@
 import { it } from "@effect/vitest";
-import { Effect, Fiber } from "effect";
+import { Effect, Fiber, Result } from "effect";
 import { expect } from "vitest";
 import { eventually } from "../wait";
 import type { NoteStoreFixture } from "./fixture";
@@ -142,6 +142,65 @@ export function contractWrites(makeFixture: () => NoteStoreFixture): void {
             eventually(() => expect(fixture.heldWrites()).toBeGreaterThan(0)),
           );
           yield* fixture.removeOutside(created.path);
+        } finally {
+          fixture.releaseWrites();
+        }
+        expect(yield* Fiber.join(writer)).toMatchObject({ _tag: "NoteNotFoundError" });
+      }),
+    );
+  });
+
+  it.effect("lets an update see the latest vault text after an outside write", () => {
+    const fixture = makeFixture();
+    return run(fixture, (store) =>
+      Effect.gen(function* () {
+        const path = "Work/Record.md";
+        yield* fixture.seed(path, { ...sampleFrontmatter, counter: 1 }, "Original body\n");
+        yield* fixture.settle;
+        fixture.holdWrites();
+        const writer = yield* Effect.forkChild(
+          store.update(path, (current) =>
+            Result.succeed({ set: { counter: Number(current.counter) + 1 } }),
+          ),
+        );
+        try {
+          yield* Effect.promise(() =>
+            eventually(() => expect(fixture.heldWrites()).toBeGreaterThan(0)),
+          );
+          yield* fixture.seed(path, { ...sampleFrontmatter, counter: 5 }, "Outside body\n");
+          yield* fixture.settle;
+        } finally {
+          fixture.releaseWrites();
+        }
+        const result = yield* Fiber.join(writer);
+        expect(result.frontmatter.counter).toBe(6);
+        yield* fixture.settle;
+        expect(yield* store.read(path)).toEqual(result);
+        expect(yield* fixture.body(path)).toBe("Outside body\n");
+      }),
+    );
+  });
+
+  it.effect("does not call the updater after the file is removed while the write waits", () => {
+    const fixture = makeFixture();
+    return run(fixture, (store) =>
+      Effect.gen(function* () {
+        const path = "Work/Record.md";
+        yield* fixture.seed(path, sampleFrontmatter);
+        yield* fixture.settle;
+        fixture.holdWrites();
+        const writer = yield* Effect.forkChild(
+          Effect.flip(
+            store.update(path, () => {
+              throw new Error("update must not run");
+            }),
+          ),
+        );
+        try {
+          yield* Effect.promise(() =>
+            eventually(() => expect(fixture.heldWrites()).toBeGreaterThan(0)),
+          );
+          yield* fixture.removeOutside(path);
         } finally {
           fixture.releaseWrites();
         }

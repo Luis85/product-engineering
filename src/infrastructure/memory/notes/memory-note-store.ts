@@ -1,4 +1,4 @@
-import { Effect, Layer, Option } from "effect";
+import { Effect, Layer, Option, Result } from "effect";
 import type { AppEvent } from "../../../application/events";
 import {
   NoteNotFoundError,
@@ -6,20 +6,23 @@ import {
   NotePathTakenError,
   NoteStore,
   NoteTrashError,
+  NoteUnreadableError,
   NoteWriteError,
 } from "../../../application/notes";
-import type { CreateNoteInput, Note } from "../../../application/notes";
+import type { CreateNoteInput, FrontmatterChange, Note } from "../../../application/notes";
 import {
+  applyPatch,
   copyFrontmatter,
   createNote,
   pathsInFolder,
   planRename,
   recordNotes,
+  resolveFolderPath,
   trashCommand,
   writeCommand,
 } from "../../../application/notes/adapter";
 import { EventBus, VaultReadError } from "../../../application/shell";
-import { clashKey } from "../../../domain/notes";
+import { clashKey, sameFrontmatter } from "../../../domain/notes";
 import type { Frontmatter } from "../../../domain/notes";
 import { normalizeMemoryPath } from "./normalize-path";
 
@@ -95,6 +98,12 @@ export function memoryNoteStore() {
       .map(basename);
   }
 
+  function findFolder(requested: string): string {
+    return resolveFolderPath(normalizeMemoryPath(requested), (parent) =>
+      [...folders].filter((path) => path !== parent && folderOf(path) === parent).map(basename),
+    );
+  }
+
   function makeFolders(folder: string): boolean {
     let path = "";
     for (const name of folder.split("/").filter(Boolean)) {
@@ -137,7 +146,7 @@ export function memoryNoteStore() {
 
   function create(input: CreateNoteInput) {
     return Effect.suspend(() => {
-      const folder = normalizeMemoryPath(input.folder);
+      const folder = findFolder(input.folder);
       return createNote({ ...input, folder }, siblings(folder), (path, text, payload) =>
         Effect.gen(function* () {
           const target = normalizeMemoryPath(path);
@@ -152,6 +161,32 @@ export function memoryNoteStore() {
           });
           yield* publishedWrite(target, "FileCreated");
           return target;
+        }),
+      );
+    });
+  }
+
+  function update<E>(path: string, change: FrontmatterChange<E>) {
+    return Effect.gen(function* () {
+      const file = fileAt(path);
+      if (!file) return yield* Effect.fail(new NoteNotFoundError());
+      const original = file.path;
+
+      return yield* writeCommand(
+        Effect.gen(function* () {
+          yield* waitForWrite;
+          if (files.get(original) !== file) return yield* Effect.fail(new NoteNotFoundError());
+          if (failWrites) return yield* Effect.fail(synthetic(new NoteWriteError()));
+          if (file.frontmatter === "broken") return yield* Effect.fail(new NoteUnreadableError());
+          const current = copyFrontmatter(file.frontmatter);
+          const changeResult = change(structuredClone(current));
+          if (Result.isFailure(changeResult)) return yield* Effect.fail(changeResult.failure);
+          const next = applyPatch(current, changeResult.success);
+          if (sameFrontmatter(current, next)) return noteOf(file);
+          file.frontmatter = structuredClone(next);
+          const written = noteOf(file);
+          yield* publishedWrite(written.path, "FileModified");
+          return written;
         }),
       );
     });
@@ -229,13 +264,14 @@ export function memoryNoteStore() {
       unreadable: (folder) =>
         readable(() =>
           pathsInFolder(
-            normalizeMemoryPath(folder),
+            findFolder(folder),
             [...files.values()]
               .filter((file) => markdown(file) && file.frontmatter === "broken")
               .map(({ path }) => path),
           ),
         ),
       create,
+      update,
       rename,
       trash,
     }),

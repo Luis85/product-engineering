@@ -19,4 +19,15 @@ export const en: NotesCatalog = {
       "leading-dot": "Start the note name with a character other than a dot.",
     },
   },
+  writeRefused: {
+    title: "Could not edit the note safely",
+    details: {
+      "other-type": "Select a note for this record type.",
+      "newer-version": "Update the Product Engineering plugin before editing this note.",
+      identity: "Open the note and check its record ID and schema.",
+      "duplicate-id": "Give each record a unique ID before editing.",
+      "migration-failed": "Open the note and fix its properties before editing.",
+      layout: "Open the note and write each frontmatter property on its own line.",
+    },
+  },
 };

@@ -18,3 +18,5 @@
 | Root folder | `rootFolder` |
 | Record | `record` |
 | Schema marker | `schema` |
+| Frontmatter patch | `patch` |
+| Write refusal | `writeRefusal` |

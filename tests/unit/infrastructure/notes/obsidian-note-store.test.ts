@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Result } from "effect";
 import { Plugin } from "obsidian";
 import { expect, it, vi } from "vitest";
 import { App, createTestPlugin } from "@test/obsidian";
 import { NoteStore, NoteTrashError } from "../../../../src/application/notes";
+import type { FrontmatterChange } from "../../../../src/application/notes";
 import { newNoteText } from "../../../../src/application/notes/adapter";
 import { notesAdapters } from "../../../../src/infrastructure/obsidian/notes";
 import { noteStoreContract } from "../../../support/notes/contract";
@@ -49,7 +50,9 @@ function makeFixture(caseInsensitive: boolean): NoteStoreFixture {
   };
 }
 
-noteStoreContract("Obsidian NoteStore on a case-sensitive vault", () => makeFixture(false));
+noteStoreContract("Obsidian NoteStore on a case-sensitive vault", () => makeFixture(false), {
+  caseSensitive: true,
+});
 noteStoreContract("Obsidian NoteStore on a case-insensitive vault", () => makeFixture(true));
 
 async function trashFixture() {
@@ -84,4 +87,89 @@ it("accepts a completed native trash move with the declared void result", async 
 
   await expect(Effect.runPromise(trash)).resolves.toBeUndefined();
   expect(app.vault.getFileByPath(file.path)).toBeNull();
+});
+
+const fidelityText = [
+  "---",
+  "# Properties",
+  "status: open  # comment to keep",
+  "zip: 01067",
+  "version: 1.10",
+  "large: 12345678901234567890",
+  "flow: [a, b]",
+  "flag: 'yes'",
+  "'quoted-key': value  # here too",
+  "list:",
+  "- one",
+  "- two",
+  "description: |",
+  "  note content",
+  "---",
+  "# Body",
+  "keep trailing spaces  ",
+  "",
+].join("\n");
+
+async function updateFixture(text = fidelityText) {
+  const app = new App();
+  const { plugin } = createTestPlugin(class extends Plugin {}, { app });
+  const file = await app.vault.seedFile("Byte fidelity.md", text);
+  await app.metadataCache.whenIndexed();
+  const layer = notesAdapters(plugin).noteStore;
+  return {
+    raw: () => app.vault.process(file, (contents) => contents),
+    onModify: (callback: () => void) => app.vault.on("modify", callback),
+    update: <E>(change: FrontmatterChange<E>) =>
+      NoteStore.use((store) => store.update(file.path, change)).pipe(Effect.provide(layer)),
+  };
+}
+
+it.each([
+  ["LF", fidelityText],
+  ["BOM", "\uFEFF" + fidelityText],
+  ["CRLF", fidelityText.replaceAll("\n", "\r\n")],
+  ["BOM and CRLF", "\uFEFF" + fidelityText.replaceAll("\n", "\r\n")],
+])("saves changed frontmatter with %s byte fidelity", async (_label, text) => {
+  const { raw, update } = await updateFixture(text);
+  const saved = await Effect.runPromise(update(() => Result.succeed({ set: { status: "done" } })));
+
+  expect(saved).toMatchObject({ path: "Byte fidelity.md", frontmatter: { status: "done" } });
+  await expect(raw()).resolves.toBe(text.replace("status: open", "status: done"));
+});
+
+it("skips the Obsidian write on a no-op or a typed patch failure", async () => {
+  const { raw, onModify, update } = await updateFixture();
+  const modified = vi.fn<() => void>();
+  onModify(modified);
+  const rejection = { _tag: "PatchRejected" } as const;
+
+  const unchanged = await Effect.runPromise(
+    update(() => Result.succeed({ set: { status: "open" } })),
+  );
+  expect(unchanged.frontmatter.status).toBe("open");
+  await expect(
+    Effect.runPromise(Effect.result(update(() => Result.fail(rejection)))),
+  ).resolves.toEqual(Result.fail(rejection));
+  await expect(raw()).resolves.toBe(fidelityText);
+  expect(modified).not.toHaveBeenCalled();
+});
+
+it("retains a thrown change as a defect and leaves the note untouched", async () => {
+  const { raw, onModify, update } = await updateFixture();
+  const modified = vi.fn<() => void>();
+  onModify(modified);
+  const defect = new Error("Broken edit callback");
+
+  const exit = await Effect.runPromise(
+    Effect.exit(
+      update(() => {
+        throw defect;
+      }),
+    ),
+  );
+  if (!Exit.isFailure(exit)) throw new Error("Expected the thrown change to fail the update");
+  expect(Cause.hasDies(exit.cause)).toBe(true);
+  expect(Cause.squash(exit.cause)).toBe(defect);
+  await expect(raw()).resolves.toBe(fidelityText);
+  expect(modified).not.toHaveBeenCalled();
 });

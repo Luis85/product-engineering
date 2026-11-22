@@ -56,25 +56,28 @@ type YamlBlock = {
   readonly yaml: string;
   readonly body: string;
   readonly position: Pos;
-  readonly eol: "\n" | "\r\n";
+  readonly eol: "\n" | "\r\n" | "\r";
 };
 
 export function yamlBlock(raw: string): YamlBlock | undefined {
   const text = withoutBom(raw);
-  const lines = text.match(/[^\n]+(?:\n|$)|\n/g) ?? [];
+  const lines = text.match(/[^\r\n]+(?:\r\n|\r|\n|$)|\r\n|\r|\n/g) ?? [];
   const opening = lines[0];
-  if (opening !== "---\n" && opening !== "---\r\n") return;
-  const closing = lines.findIndex((line, index) => index > 0 && /^---(?:\r?\n)?$/.test(line));
-  if (closing === -1) return;
+  const eol = opening?.slice(3);
+  if (!opening?.startsWith("---") || (eol !== "\n" && eol !== "\r\n" && eol !== "\r")) return;
+  const closing = lines.findIndex((line, index) => index > 0 && line.startsWith("---"));
+  const fence = lines[closing];
+  if (!fence) return;
 
   const yaml = lines.slice(1, closing).join("");
+  const col = fence.replace(/\r?\n$|\r$/, "").length;
   return {
     yaml,
     body: lines.slice(closing + 1).join(""),
-    eol: opening.endsWith("\r\n") ? "\r\n" : "\n",
+    eol,
     position: {
       start: { line: 0, col: 0, offset: 0 },
-      end: { line: closing, col: 3, offset: opening.length + yaml.length + 3 },
+      end: { line: closing, col, offset: opening.length + yaml.length + col },
     },
   };
 }

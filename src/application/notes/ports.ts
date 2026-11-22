@@ -1,13 +1,15 @@
 import { Context } from "effect";
-import type { Effect } from "effect";
-import type { Frontmatter } from "../../domain/notes";
+import type { Effect, Result } from "effect";
+import type { Frontmatter, FrontmatterPatch } from "../../domain/notes";
 import type { VaultReadError } from "../shell";
 import type {
   InvalidNoteNameError,
   NoteNotFoundError,
   NotePathTakenError,
   NoteTrashError,
+  NoteUnreadableError,
   NoteWriteError,
+  NoteWriteRefusedError,
 } from "./errors";
 
 export type Note = {
@@ -23,6 +25,12 @@ export type CreateNoteInput = {
 };
 
 type CreateNoteError = InvalidNoteNameError | NotePathTakenError | NoteWriteError;
+type UpdateNoteError =
+  NoteNotFoundError | NoteUnreadableError | NoteWriteError | NoteWriteRefusedError;
+
+export type FrontmatterChange<E = never> = (
+  current: Frontmatter,
+) => Result.Result<FrontmatterPatch, E>;
 
 export class NoteStore extends Context.Service<
   NoteStore,
@@ -31,6 +39,10 @@ export class NoteStore extends Context.Service<
     readonly read: (path: string) => Effect.Effect<Note, VaultReadError | NoteNotFoundError>;
     readonly unreadable: (folder: string) => Effect.Effect<readonly string[], VaultReadError>;
     readonly create: (input: CreateNoteInput) => Effect.Effect<Note, CreateNoteError>;
+    readonly update: <E>(
+      path: string,
+      change: FrontmatterChange<E>,
+    ) => Effect.Effect<Note, E | UpdateNoteError>;
     readonly rename: (
       path: string,
       newName: string,

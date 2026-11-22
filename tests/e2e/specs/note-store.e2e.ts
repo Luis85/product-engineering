@@ -22,3 +22,21 @@ it("matches the Obsidian vault and note-store contracts on the live host", async
   expect(readiness).toEqual(READINESS_FACTS);
   expect(await pluginProblems()).toEqual([]);
 });
+
+it("reuses existing folder names when the requested case differs", async () => {
+  const created = await browser.executeObsidian(async ({ app, plugins }) => {
+    await app.vault.createFolder("folder matching/Records");
+    return plugins.noteStoreProbe.api.create({
+      folder: "Folder Matching/records/New",
+      name: "Example",
+      frontmatter: { schema: "product-engineering.item/v1" },
+    });
+  });
+  expect(created).toEqual({
+    success: true,
+    value: {
+      path: "folder matching/Records/New/Example.md",
+      frontmatter: { schema: "product-engineering.item/v1" },
+    },
+  });
+});

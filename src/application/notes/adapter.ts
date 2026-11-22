@@ -1,4 +1,5 @@
 export { asDefect, createNote, trashCommand, writeCommand } from "./command";
 export { copyFrontmatter, recordNotes } from "./frontmatter";
-export { newNoteText } from "./note-text";
-export { pathsInFolder, planRename } from "./paths";
+export { newNoteText, updateNoteText } from "./note-text";
+export { applyPatch } from "./patch";
+export { pathsInFolder, planRename, resolveFolderPath } from "./paths";

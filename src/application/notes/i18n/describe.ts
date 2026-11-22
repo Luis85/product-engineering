@@ -10,6 +10,13 @@ export function describeNotesError(error: NotesError, catalog: NotesCatalog): Us
       detail: catalog.invalidName.details[error.issue],
     };
   }
+  if (error._tag === "NoteWriteRefusedError") {
+    return {
+      severity: "warning",
+      title: catalog.writeRefused.title,
+      detail: catalog.writeRefused.details[error.reason],
+    };
+  }
 
   return { severity: "error", ...catalog.errors[error._tag] };
 }

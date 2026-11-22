@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import { App, parseYaml, stringifyYaml, TFile, TFolder, YAMLParseError } from "@test/obsidian";
+import { eventually } from "../../support/wait";
 
 it("defines folders and file identities, and indexes writes on a separate turn", async () => {
   const app = new App();
@@ -94,4 +95,81 @@ it("parses YAML 1.2 scalars and reports malformed YAML", () => {
   expect(parseYaml(text)).toEqual(expected);
   expect(parseYaml(stringifyYaml(expected))).toEqual(expected);
   expect(() => parseYaml("schema: [")).toThrow(YAMLParseError);
+});
+
+it("passes raw BOM and CRLF bytes to process and preserves them when editing", async () => {
+  const app = new App();
+  const raw = "\uFEFF---\r\ntitle: Old\r\n---\r\nText\r\n";
+  const file = await app.vault.seedFile("Bytes.md", raw);
+  await app.metadataCache.whenIndexed();
+  const modified = vi.fn<() => void>();
+  app.vault.on("modify", modified);
+
+  const unchanged = vi.fn<(text: string) => string>((text) => text);
+  await expect(app.vault.process(file, unchanged)).resolves.toBe(raw);
+  expect(unchanged).toHaveBeenCalledExactlyOnceWith(raw);
+  expect(modified).not.toHaveBeenCalled();
+
+  const replacement = raw.replace("Old", "New");
+  await expect(app.vault.process(file, (text) => text.replace("Old", "New"))).resolves.toBe(
+    replacement,
+  );
+  expect(modified).toHaveBeenCalledOnce();
+  expect(app.metadataCache.getFileCache(file)?.frontmatter?.title).toBe("Old");
+  await app.metadataCache.whenIndexed();
+  expect(app.metadataCache.getFileCache(file)?.frontmatter?.title).toBe("New");
+});
+
+it("rejects a thrown process callback or a deleted file without modifying the vault", async () => {
+  const app = new App();
+  const file = await app.vault.seedFile("Gone.md", "Original");
+  const modified = vi.fn<() => void>();
+  app.vault.on("modify", modified);
+  const cause = new Error("Rejected test edit");
+  await expect(
+    app.vault.process(file, () => {
+      throw cause;
+    }),
+  ).rejects.toBe(cause);
+  await expect(app.vault.read(file)).resolves.toBe("Original");
+  expect(modified).not.toHaveBeenCalled();
+
+  app.vault.holdWrites();
+  const edit = vi.fn<(text: string) => string>().mockReturnValue("Replacement");
+  const pending = app.vault.process(file, edit);
+  try {
+    await eventually(() => expect(app.vault.heldWrites()).toBe(1));
+    await app.vault.removeOutside(file.path);
+  } finally {
+    app.vault.releaseWrites();
+  }
+  await expect(pending).rejects.toMatchObject({ code: "ENOENT" });
+  expect(edit).not.toHaveBeenCalled();
+  expect(modified).not.toHaveBeenCalled();
+});
+
+it.each(["----", "-----", "---- ", "--- x", "---x", "--- # c", "---  \t"])(
+  "indexes frontmatter closed by %s",
+  async (close) => {
+    const app = new App();
+    const file = await app.vault.seedFile(
+      "Fence.md",
+      "\uFEFF---\r\ntitle: A note\r\n" + close + "\r\nBody",
+    );
+    await app.metadataCache.whenIndexed();
+    expect(app.metadataCache.getFileCache(file)?.frontmatter?.title).toBe("A note");
+  },
+);
+
+it("indexes YAML frontmatter in a note with legacy CR line endings", async () => {
+  const app = new App();
+  const file = await app.vault.seedFile(
+    "Carriage.md",
+    "---\rtitle: A note\rstatus: open\r---\rBody",
+  );
+  await app.metadataCache.whenIndexed();
+  expect(app.metadataCache.getFileCache(file)?.frontmatter).toEqual({
+    title: "A note",
+    status: "open",
+  });
 });

@@ -6,6 +6,7 @@ import {
   NoteTrashError,
   NoteUnreadableError,
   NoteWriteError,
+  NoteWriteRefusedError,
   notesModule,
 } from "../../../../src/application/notes";
 
@@ -33,4 +34,22 @@ it("gives each tagged error a localized message without a vault path", () => {
   expect(notesModule.errors.describe(new NoteWriteError(), notesModule.catalog.en).title).toBe(
     "Could not save the note",
   );
+});
+
+it.each([
+  "other-type",
+  "newer-version",
+  "identity",
+  "duplicate-id",
+  "migration-failed",
+  "layout",
+] as const)("localizes the %s write refusal", (reason) => {
+  const refusal = new NoteWriteRefusedError({ reason });
+  const en = notesModule.errors.describe(refusal, notesModule.catalog.en);
+  const de = notesModule.errors.describe(refusal, notesModule.catalog.de);
+  expect(en.severity).toBe("warning");
+  expect(de.severity).toBe("warning");
+  expect(en.detail.length).toBeGreaterThan(0);
+  expect(de.detail.length).toBeGreaterThan(0);
+  expect(en.detail).not.toBe(de.detail);
 });

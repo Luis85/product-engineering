@@ -199,7 +199,7 @@ export class Vault extends Events {
 
   async process(file: TFile, edit: (text: string) => string): Promise<string> {
     await this.#write();
-    const input = withoutBom(this.#text(file));
+    const input = this.#text(file);
     const output = edit(input);
     if (output !== input) this.#replace(file, output);
     return output;

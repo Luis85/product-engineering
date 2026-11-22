@@ -6,6 +6,42 @@ const frontmatter = {
   due: "2026-11-22",
 };
 
+const recordText =
+  '---\nschema: product-engineering.item/v1\nid: fidelity-store\ntitle: "01067"\nstatus: open\ndue: !!str 2026-11-22\n---\nBody\n';
+
+const closingPrefixes = ["---", "--- \t", "----", "-----", "---- ", "--- x", "---x", "--- # c"];
+const nonClosers = [" ---", "..."];
+
+export const FENCE_CASES = [
+  ...["\n", "\r\n"].flatMap((eol) => [
+    ...closingPrefixes.map((closing) => ({ closing, eol, bom: false, found: true })),
+    ...nonClosers.map((closing) => ({ closing, eol, bom: false, found: false })),
+  ]),
+  { closing: "---", eol: "\r\n", bom: true, found: true },
+  { closing: "---", eol: "\r", bom: false, found: true },
+];
+
+export const LINE_EDIT_CASES = [
+  { name: "four dashes", closing: "----", eol: "\n", bom: false },
+  { name: "three dashes with blanks", closing: "--- \t", eol: "\r\n", bom: true },
+];
+
+export function fenceText(
+  { closing, eol, bom }: { closing: string; eol: string; bom: boolean },
+  status = "open",
+): string {
+  return (
+    (bom ? "\uFEFF" : "") + ["---", "status: " + status + "  # keep", closing, "Body", ""].join(eol)
+  );
+}
+
+export function yamlSampleValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(yamlSampleValue);
+  if (typeof value === "number") return { number: Object.is(value, -0) ? "-0" : String(value) };
+  if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+  return { unexpectedType: typeof value };
+}
+
 export const VAULT_FACTS = {
   paths: ["a/b", "/", "a/.././b", " a  /é "],
   yaml: {
@@ -44,6 +80,7 @@ export const VAULT_FACTS = {
     hasFrontmatterPosition: false,
     yamlLines: [0, 2],
   },
+  fences: FENCE_CASES.map(({ found }) => ({ indexed: found, split: found })),
 };
 
 export const STORE_FACTS = {
@@ -54,8 +91,10 @@ export const STORE_FACTS = {
     "Fidelity records/Nested/Alpha (3).md",
   ],
   createdFrontmatter: frontmatter,
-  raw: '---\nschema: product-engineering.item/v1\nid: fidelity-store\ntitle: "01067"\nstatus: open\ndue: !!str 2026-11-22\n---\nBody\n',
+  raw: recordText,
   readFrontmatter: frontmatter,
+  updatedFrontmatter: { ...frontmatter, status: "done" },
+  updatedRaw: recordText.replace("status: open", "status: done"),
   renamedPath: "Fidelity records/Nested/alpha.md",
   taken: { success: false, error: "NotePathTakenError" },
   records: [
@@ -67,6 +106,16 @@ export const STORE_FACTS = {
   broken: ["Fidelity records/Nested/Broken.md"],
   removed: true,
   missing: { success: false, error: "NoteNotFoundError" },
+};
+
+export const WRITE_FACTS = {
+  edited: LINE_EDIT_CASES.map((fixture) => ({
+    indexed: true,
+    saved: { status: "done" },
+    text: fenceText(fixture, "done"),
+  })),
+  refused: { success: false, error: "NoteWriteRefusedError", reason: "layout" },
+  keptText: fenceText({ closing: "---x", eol: "\n", bom: false }),
 };
 
 export const READINESS_FACTS = {

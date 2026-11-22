@@ -29,7 +29,20 @@ function yamlScalar(value: unknown): string {
   throw new TypeError("Unsupported frontmatter value");
 }
 
-export function yamlEntry(key: string, value: unknown, eol: "\n" | "\r\n"): string {
+export function yamlEntry(
+  key: string,
+  value: unknown,
+  eol: "\n" | "\r\n",
+  style: "flow" | "block" = "flow",
+): string {
+  if (style === "block" && Array.isArray(value) && value.length > 0) {
+    return (
+      yamlString(key) +
+      ":" +
+      eol +
+      Array.from(value, (item: unknown) => "  - " + yamlScalar(item) + eol).join("")
+    );
+  }
   const text = Array.isArray(value)
     ? "[" + Array.from(value, yamlScalar).join(", ") + "]"
     : yamlScalar(value);

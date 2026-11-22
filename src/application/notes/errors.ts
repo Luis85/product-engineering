@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { NOTE_NAME_ISSUES } from "../../domain/notes";
+import { NOTE_NAME_ISSUES, WriteRefusal } from "../../domain/notes";
 import type { ErrorTags } from "../module";
 
 export class NoteNotFoundError extends Schema.TaggedError<NoteNotFoundError>()(
@@ -22,6 +22,10 @@ export class NoteUnreadableError extends Schema.TaggedError<NoteUnreadableError>
 ) {}
 export class NoteWriteError extends Schema.TaggedError<NoteWriteError>()("NoteWriteError", {}) {}
 export class NoteTrashError extends Schema.TaggedError<NoteTrashError>()("NoteTrashError", {}) {}
+export class NoteWriteRefusedError extends Schema.TaggedError<NoteWriteRefusedError>()(
+  "NoteWriteRefusedError",
+  { reason: WriteRefusal },
+) {}
 
 export type NotesError =
   | NoteNotFoundError
@@ -29,6 +33,7 @@ export type NotesError =
   | InvalidNoteNameError
   | NoteUnreadableError
   | NoteWriteError
+  | NoteWriteRefusedError
   | NoteTrashError;
 
 export const NOTES_ERROR_TAG_KEYS = {
@@ -37,5 +42,6 @@ export const NOTES_ERROR_TAG_KEYS = {
   InvalidNoteNameError: true,
   NoteUnreadableError: true,
   NoteWriteError: true,
+  NoteWriteRefusedError: true,
   NoteTrashError: true,
 } satisfies ErrorTags<NotesError>;

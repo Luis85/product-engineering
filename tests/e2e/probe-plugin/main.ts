@@ -3,7 +3,12 @@ import { normalizePath, parseYaml, Plugin, stringifyYaml } from "obsidian";
 import { noteStoreLayer } from "../../../src/infrastructure/obsidian/notes";
 import { createNoteStoreProbeApi } from "../../support/notes/probe-api";
 import type { NoteStoreProbeApi } from "../../support/notes/probe-api";
-import { storeScenario, vaultFacts } from "../../support/notes/scenarios";
+import {
+  lineEditScenario,
+  serializerScenario,
+  storeScenario,
+  vaultFacts,
+} from "../../support/notes/scenarios";
 import { readinessScenario } from "../../support/readiness-scenario";
 
 export default class NoteStoreProbe extends Plugin {
@@ -29,6 +34,14 @@ export default class NoteStoreProbe extends Plugin {
 
   storeFacts() {
     return storeScenario(this.app, this.api);
+  }
+
+  writeFacts() {
+    return lineEditScenario(this.app, this.api);
+  }
+
+  serializerFacts(lines: readonly string[]) {
+    return serializerScenario(lines, parseYaml);
   }
 
   readinessFacts() {

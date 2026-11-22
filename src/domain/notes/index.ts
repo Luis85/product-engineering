@@ -1,5 +1,7 @@
-export { newNoteText } from "./note-text";
-export type { Frontmatter } from "./note-type";
+export { sameFrontmatter } from "./frontmatter-equality";
+export { editNoteText, frontmatterYaml, newNoteText, splitNoteText } from "./note-text";
+export type { SplitNoteText } from "./note-text";
+export type { Frontmatter, FrontmatterPatch } from "./note-type";
 export {
   clashKey,
   clashName,
@@ -10,4 +12,5 @@ export {
 } from "./notes";
 export type { NoteNameIssue } from "./notes";
 export { parseSchemaMarker, RECORD_SCHEMA_PREFIX } from "./schema-marker";
+export { WriteRefusal } from "./write";
 export { yamlEntry } from "./yaml-text";

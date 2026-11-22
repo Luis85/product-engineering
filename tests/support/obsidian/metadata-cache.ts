@@ -13,7 +13,7 @@ function metadata(raw: string): CachedMetadata {
 
   const cache: CachedMetadata = { sections: [{ type: "yaml", position: block.position }] };
   try {
-    const frontmatter = yamlMap(parseYaml(block.yaml));
+    const frontmatter = yamlMap(parseYaml(block.yaml.replace(/\r(?!\n)/g, "\n")));
     if (frontmatter) {
       cache.frontmatter = frontmatter;
       cache.frontmatterPosition = block.position;

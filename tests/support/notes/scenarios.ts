@@ -1,5 +1,7 @@
 import type { App, CachedMetadata, TFile } from "obsidian";
+import { frontmatterYaml, splitNoteText } from "../../../src/domain/notes";
 import { waitForVault } from "../readiness-scenario";
+import { FENCE_CASES, LINE_EDIT_CASES, fenceText, yamlSampleValue } from "./fidelity";
 import type { NoteStoreProbeApi, ProbeResult } from "./probe-api";
 
 type VaultHost = Pick<App, "vault" | "metadataCache" | "fileManager">;
@@ -150,6 +152,20 @@ async function brokenYamlFacts(app: VaultHost) {
   };
 }
 
+async function fenceFacts(app: VaultHost) {
+  return Promise.all(
+    FENCE_CASES.map(async (fixture, index) => {
+      const text = fenceText(fixture);
+      const file = await app.vault.create(`Fidelity fence ${index}.md`, text);
+      const cache = await waitForCache(app, file);
+      return {
+        indexed: cache.frontmatter?.status === "open",
+        split: frontmatterYaml(splitNoteText(text)) === "status: open  # keep" + fixture.eol,
+      };
+    }),
+  );
+}
+
 export async function vaultFacts(app: VaultHost, api: VaultFunctions) {
   const paths = ["\\a//b\\", "//", "a/.././b", " a\u00a0 /e\u0301 "].map(api.normalizePath);
   return {
@@ -157,6 +173,7 @@ export async function vaultFacts(app: VaultHost, api: VaultFunctions) {
     yaml: yamlFacts(api),
     writes: await nativeFileFacts(app),
     brokenYaml: await brokenYamlFacts(app),
+    fences: await fenceFacts(app),
   };
 }
 
@@ -185,6 +202,14 @@ export async function storeScenario(app: VaultHost, probe: NoteStoreProbeApi) {
   await Promise.all([waitForCache(app, outside), waitForCache(app, unreadable)]);
 
   const read = valueOf(await probe.read(first.path));
+  const updated = valueOf(await probe.update(first.path, { set: { status: "done" } }));
+  const firstFile = fileAt(app, first.path);
+  const updatedRaw = await app.vault.process(firstFile, (text) => text);
+  await waitForVault(
+    () =>
+      app.metadataCache.getFileCache(firstFile)?.frontmatter?.status === "done" ? true : undefined,
+    "updated record frontmatter",
+  );
   const renamed = valueOf(await probe.rename(first.path, "alpha"));
   await waitForCache(app, fileAt(app, renamed.path));
   const taken = await probe.rename(renamed.path, "ALPHA (2)");
@@ -200,6 +225,8 @@ export async function storeScenario(app: VaultHost, probe: NoteStoreProbeApi) {
     createdFrontmatter: first.frontmatter,
     raw,
     readFrontmatter: read.frontmatter,
+    updatedFrontmatter: updated.frontmatter,
+    updatedRaw,
     renamedPath: renamed.path,
     taken,
     records,
@@ -207,4 +234,38 @@ export async function storeScenario(app: VaultHost, probe: NoteStoreProbeApi) {
     removed,
     missing,
   };
+}
+
+export async function lineEditScenario(app: VaultHost, probe: NoteStoreProbeApi) {
+  const edited = await Promise.all(
+    LINE_EDIT_CASES.map(async (fixture) => {
+      const file = await app.vault.create(`Fidelity edit ${fixture.name}.md`, fenceText(fixture));
+      const cache = await waitForCache(app, file);
+      const saved = valueOf(await probe.update(file.path, { set: { status: "done" } }));
+      return {
+        indexed: cache.frontmatter?.status === "open",
+        saved: saved.frontmatter,
+        text: await app.vault.process(file, (text) => text),
+      };
+    }),
+  );
+  const refusedFile = await app.vault.create(
+    "Fidelity refused edit.md",
+    fenceText({ closing: "---x", eol: "\n", bom: false }),
+  );
+  const refused = await probe.update(refusedFile.path, { set: { status: "done" } });
+  const keptText = await app.vault.process(refusedFile, (text) => text);
+  return { edited, refused, keptText };
+}
+
+export function serializerScenario(
+  lines: readonly string[],
+  parseYaml: VaultFunctions["parseYaml"],
+) {
+  return lines.map((line) => {
+    const parsed = parseYaml(line);
+    return yamlSampleValue(
+      typeof parsed === "object" && parsed !== null && "probe" in parsed ? parsed.probe : undefined,
+    );
+  });
 }

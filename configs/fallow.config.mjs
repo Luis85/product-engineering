@@ -254,7 +254,7 @@ function notesBoundaries(has) {
     ? [
         {
           name: kitName,
-          patterns: ["adapter", "command", "frontmatter", "note-text", "paths"].map(
+          patterns: ["adapter", "command", "frontmatter", "note-text", "patch", "paths"].map(
             (file) => `src/application/notes/${file}.ts`,
           ),
           publicFiles: ["src/application/notes/adapter.ts"],

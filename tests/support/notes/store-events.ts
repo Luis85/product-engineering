@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 import { vi } from "vitest";
 import type { AppEvent } from "../../../src/application/events";
 import type { NoteStore } from "../../../src/application/notes";
@@ -30,6 +30,19 @@ const STORE_EVENT_STEPS: readonly Step[] = [
     run: (store) =>
       store.create({ folder: "Work", name: "Original", frontmatter: sampleFrontmatter }),
     events: [fileEvent("FileCreated", original), fileEvent("MetadataChanged", original)],
+  },
+  {
+    name: "update",
+    run: (store) => store.update(original, () => Result.succeed({ set: { title: "Updated" } })),
+    events: [fileEvent("FileModified", original), fileEvent("MetadataChanged", original)],
+  },
+  {
+    name: "unchanged update",
+    run: (store) =>
+      store.update(original, () =>
+        Result.succeed({ set: { title: "Updated", flags: ["one", "two"] } }),
+      ),
+    events: [],
   },
   {
     name: "rename",

@@ -31,4 +31,17 @@ export const de: NotesCatalog = {
       "leading-dot": "Beginne den Notiznamen mit einem anderen Zeichen als einem Punkt.",
     },
   },
+  writeRefused: {
+    title: "Die Notiz lässt sich nicht sicher bearbeiten",
+    details: {
+      "other-type": "Wähle eine Notiz mit diesem Datensatztyp.",
+      "newer-version":
+        "Aktualisiere das Plugin Product Engineering, bevor du die Notiz bearbeitest.",
+      identity: "Öffne die Notiz und prüfe ID und Schema des Datensatzes.",
+      "duplicate-id": "Gib jedem Datensatz eine eindeutige ID.",
+      "migration-failed":
+        "Öffne die Notiz und korrigiere ihre Eigenschaften, bevor du sie bearbeitest.",
+      layout: "Öffne die Notiz und schreibe jede Frontmatter-Eigenschaft in eine eigene Zeile.",
+    },
+  },
 };

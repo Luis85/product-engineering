@@ -34,9 +34,14 @@ import {
   WorkspaceLeaf,
 } from "@test/obsidian";
 import { noteStoreLayer } from "../../../src/infrastructure/obsidian/notes";
-import { READINESS_FACTS, STORE_FACTS, VAULT_FACTS } from "../../support/notes/fidelity";
+import {
+  READINESS_FACTS,
+  STORE_FACTS,
+  VAULT_FACTS,
+  WRITE_FACTS,
+} from "../../support/notes/fidelity";
 import { createNoteStoreProbeApi } from "../../support/notes/probe-api";
-import { storeScenario, vaultFacts } from "../../support/notes/scenarios";
+import { lineEditScenario, storeScenario, vaultFacts } from "../../support/notes/scenarios";
 import { readinessScenario } from "../../support/readiness-scenario";
 
 vi.mock("obsidian", () => import("@test/obsidian"));
@@ -418,11 +423,13 @@ it("agrees with the vault and readiness scenarios used in Obsidian", async () =>
   expect(await readinessScenario(app)).toEqual(READINESS_FACTS);
 });
 
-it("agrees with the native store scenario used in Obsidian", async () => {
+it("agrees with the native store and line-edit scenarios used in Obsidian", async () => {
   const app = new App({ caseInsensitive: true }) as unknown as HostApp;
   const runtime = ManagedRuntime.make(noteStoreLayer(app));
   try {
-    expect(await storeScenario(app, createNoteStoreProbeApi(runtime))).toEqual(STORE_FACTS);
+    const probe = createNoteStoreProbeApi(runtime);
+    expect(await storeScenario(app, probe)).toEqual(STORE_FACTS);
+    expect(await lineEditScenario(app, probe)).toEqual(WRITE_FACTS);
   } finally {
     await runtime.dispose();
   }

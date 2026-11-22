@@ -1,5 +1,5 @@
-import { Effect, Layer } from "effect";
-import { normalizePath } from "obsidian";
+import { Effect, Layer, Result } from "effect";
+import { normalizePath, parseYaml, TFolder } from "obsidian";
 import type { App, CachedMetadata, TFile, Vault } from "obsidian";
 import {
   NoteNotFoundError,
@@ -8,7 +8,7 @@ import {
   NoteTrashError,
   NoteWriteError,
 } from "../../../application/notes";
-import type { CreateNoteInput, Note } from "../../../application/notes";
+import type { CreateNoteInput, FrontmatterChange, Note } from "../../../application/notes";
 import {
   asDefect,
   copyFrontmatter,
@@ -16,7 +16,9 @@ import {
   pathsInFolder,
   planRename,
   recordNotes,
+  resolveFolderPath,
   trashCommand,
+  updateNoteText,
   writeCommand,
 } from "../../../application/notes/adapter";
 import { VaultReadError } from "../../../application/shell";
@@ -51,6 +53,16 @@ function folderAt(vault: Vault, path: string) {
   return path === "/" ? vault.getRoot() : vault.getFolderByPath(path);
 }
 
+function findFolder(vault: Vault, requested: string): string {
+  return resolveFolderPath(
+    requested,
+    (path) =>
+      folderAt(vault, path)
+        ?.children.filter((entry) => entry instanceof TFolder)
+        .map(({ name }) => name) ?? [],
+  );
+}
+
 function basename(path: string): string {
   return path.slice(path.lastIndexOf("/") + 1);
 }
@@ -75,9 +87,15 @@ async function ensureFolder(vault: Vault, folder: string): Promise<void> {
 function create(app: App, request: CreateNoteInput) {
   const { vault } = app;
   return Effect.gen(function* () {
-    const folder = yield* asDefect(() => normalizePath(request.folder));
-    const siblings = yield* Effect.try({
-      try: () => folderAt(vault, folder)?.children.map(({ name }) => name) ?? [],
+    const requested = yield* asDefect(() => normalizePath(request.folder));
+    const { folder, siblings } = yield* Effect.try({
+      try: () => {
+        const resolved = findFolder(vault, requested);
+        return {
+          folder: resolved,
+          siblings: folderAt(vault, resolved)?.children.map(({ name }) => name) ?? [],
+        };
+      },
       catch: () => new NoteWriteError(),
     });
     return yield* createNote({ ...request, folder }, siblings, (path, text) => {
@@ -90,6 +108,52 @@ function create(app: App, request: CreateNoteInput) {
         catch: () => (taken(vault, target) ? new NotePathTakenError() : new NoteWriteError()),
       });
     });
+  });
+}
+
+function processNote<E>(vault: Vault, file: TFile, change: FrontmatterChange<E>) {
+  return Effect.gen(function* () {
+    const edit: {
+      result?: ReturnType<typeof updateNoteText<E>>;
+      defect?: { cause: unknown };
+    } = {};
+    const processed = yield* Effect.result(
+      Effect.tryPromise({
+        try: () =>
+          vault.process(file, (text) => {
+            try {
+              const result = updateNoteText(text, change, parseYaml);
+              edit.result = result;
+              return Result.isSuccess(result) ? result.success.text : text;
+            } catch (cause) {
+              edit.defect = { cause };
+              throw cause;
+            }
+          }),
+        catch: () => new NoteWriteError(),
+      }),
+    );
+    if (edit.defect) return yield* Effect.die(edit.defect.cause);
+    if (Result.isFailure(processed)) {
+      return yield* noteFile(vault, file.path) !== file
+        ? new NoteNotFoundError()
+        : processed.failure;
+    }
+    if (!edit.result) return yield* Effect.die(new Error("Vault.process skipped the note editor"));
+
+    const { frontmatter } = yield* Effect.fromResult(edit.result);
+    return { path: normalizePath(file.path), frontmatter };
+  });
+}
+
+function update<E>(vault: Vault, path: string, change: FrontmatterChange<E>) {
+  return Effect.gen(function* () {
+    const file = yield* Effect.try({
+      try: () => noteFile(vault, path),
+      catch: () => new NoteWriteError(),
+    });
+    if (!file) return yield* new NoteNotFoundError();
+    return yield* writeCommand(processNote(vault, file, change));
   });
 }
 
@@ -169,7 +233,7 @@ export function noteStoreLayer(app: App) {
     unreadable: (folder) =>
       readVault(() =>
         pathsInFolder(
-          normalizePath(folder),
+          normalizePath(findFolder(vault, normalizePath(folder))),
           vault
             .getMarkdownFiles()
             .filter((file) => unreadable(metadataCache.getFileCache(file)))
@@ -177,6 +241,7 @@ export function noteStoreLayer(app: App) {
         ),
       ),
     create: (request) => create(app, request),
+    update: (path, change) => update(vault, path, change),
     rename: (path, newName) => rename(app, path, newName),
     trash: (path) => trash(app, path),
   });

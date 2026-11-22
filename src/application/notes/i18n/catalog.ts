@@ -1,7 +1,7 @@
-import type { NoteNameIssue } from "../../../domain/notes";
+import type { NoteNameIssue, WriteRefusal } from "../../../domain/notes";
 import type { NotesError } from "../errors";
 
-type NamedError = Exclude<NotesError["_tag"], "InvalidNoteNameError">;
+type NamedError = Exclude<NotesError["_tag"], "InvalidNoteNameError" | "NoteWriteRefusedError">;
 type Message = { readonly title: string; readonly detail: string };
 
 export type NotesCatalog = {
@@ -9,5 +9,9 @@ export type NotesCatalog = {
   readonly invalidName: {
     readonly title: string;
     readonly details: Readonly<Record<NoteNameIssue, string>>;
+  };
+  readonly writeRefused: {
+    readonly title: string;
+    readonly details: Readonly<Record<WriteRefusal, string>>;
   };
 };
