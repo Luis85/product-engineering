@@ -166,7 +166,7 @@ export class Plugin
   }
 
   removeCommand(id: string): void {
-    this.testRegistry.commands.delete(id);
+    this.testRegistry.commands.delete(`${this.manifest.id}:${id}`);
   }
 
   addRibbonIcon(

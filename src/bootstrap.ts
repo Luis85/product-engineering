@@ -1,0 +1,171 @@
+import { Effect, Layer } from "effect";
+import type { Plugin } from "obsidian";
+import type { AppRuntime } from "./application/app-services";
+import { appCommands } from "./application/commands";
+import { catalogFor } from "./application/messages";
+import {
+  describeDefect,
+  Incidents,
+  Logger,
+  LogSink,
+  Messages,
+  reportDefect,
+  SettingsService,
+  toLoggedError,
+} from "./application/shell";
+import { consoleSinkLayer } from "./infrastructure/logging/console-sink";
+import { incidentsLayer } from "./infrastructure/logging/incidents";
+import { appLayer } from "./infrastructure/obsidian/app-layer";
+import {
+  addRibbonIcon,
+  hostLanguage,
+  mirrorSettings,
+  openShellView,
+  registerCommands,
+  runSafely,
+  SHELL_VIEW_TYPE,
+  ShellSettingTab,
+  ShellView,
+  showNotice,
+} from "./infrastructure/obsidian/shell";
+import { makeRuntime } from "./infrastructure/runtime";
+
+type Release = () => void | Promise<void>;
+
+export interface BootstrapHandle {
+  readonly runtime: AppRuntime;
+  readonly reloadSettings: () => Promise<void>;
+  readonly dispose: () => Promise<void>;
+}
+
+async function releaseAll(steps: readonly Release[]): Promise<void> {
+  const failures: unknown[] = [];
+  for (const release of steps) {
+    try {
+      // oxlint-disable-next-line eslint/no-await-in-loop -- Teardown follows dependency order.
+      await release();
+    } catch (cause) {
+      failures.push(cause);
+    }
+  }
+  if (failures.length > 0) throw failures[0];
+}
+
+export function reportUnloadFailure(cause: unknown): void {
+  try {
+    const incident = Effect.runSync(
+      Effect.gen(function* () {
+        const incidents = yield* Incidents;
+        const sink = yield* LogSink;
+        const incidentId = yield* incidents.nextId;
+        yield* sink.write({
+          level: "error",
+          event: "plugin.unload.failed",
+          timestamp: Date.now(),
+          incidentId,
+          error: toLoggedError(cause),
+        });
+        return incidentId;
+      }).pipe(Effect.provide(Layer.mergeAll(incidentsLayer, consoleSinkLayer))),
+    );
+    showNotice(describeDefect(incident, catalogFor(hostLanguage()).shell));
+  } catch {
+    // The host can reject a notice after it has shut down.
+    return;
+  }
+}
+
+async function reportBootstrapFailure(runtime: AppRuntime, cause: unknown): Promise<void> {
+  try {
+    await runtime.runPromise(reportDefect(cause));
+  } catch {
+    reportUnloadFailure(cause);
+  }
+}
+
+export async function bootstrap(
+  plugin: Plugin,
+  { signal }: { readonly signal: AbortSignal },
+): Promise<BootstrapHandle> {
+  const runtime = makeRuntime(
+    appLayer(plugin, {
+      developmentMode: import.meta.env.MODE === "development",
+      language: hostLanguage(),
+    }),
+  );
+  const undo: Release[] = [() => runtime.dispose()];
+  let disposal: Promise<void> | undefined;
+  let started = false;
+  let reloadSettings: (() => Promise<void>) | undefined;
+
+  const handle: BootstrapHandle = {
+    runtime,
+    reloadSettings: () => reloadSettings?.() ?? Promise.resolve(),
+    dispose: () => {
+      reloadSettings = undefined;
+      return (disposal ??= releaseAll(undo.toReversed()));
+    },
+  };
+  const aborted = () => signal.aborted;
+
+  try {
+    const mirror = await mirrorSettings(runtime);
+    undo.push(() => mirror.stop());
+    if (aborted()) {
+      await handle.dispose();
+      return handle;
+    }
+
+    const messages = await runtime.runPromise(Messages);
+    if (aborted()) {
+      await handle.dispose();
+      return handle;
+    }
+
+    let opening: Promise<void> | undefined;
+    const open = () => {
+      if (aborted() || disposal) return Promise.resolve();
+      return (opening ??= openShellView(plugin.app.workspace).finally(() => {
+        opening = undefined;
+      }));
+    };
+
+    const removeCommands = registerCommands(plugin, runtime, appCommands, messages, open);
+    undo.push(() => {
+      if (!started) removeCommands();
+    });
+
+    const tab = new ShellSettingTab(plugin.app, plugin, runtime, mirror, messages.shell);
+    addRibbonIcon(plugin, () => runSafely(runtime, Effect.promise(open)));
+    plugin.addSettingTab(tab);
+    plugin.registerView(SHELL_VIEW_TYPE, (leaf) => new ShellView(leaf));
+
+    const surfaces = new Set<Release>();
+    undo.push(() => {
+      const close = [...surfaces].toReversed();
+      surfaces.clear();
+      return releaseAll(close);
+    });
+
+    reloadSettings = async () => {
+      await runSafely(
+        runtime,
+        SettingsService.use((settings) => settings.reload).pipe(
+          Effect.flatMap(() => Effect.promise(() => mirror.refresh())),
+          Effect.map(() => tab.update()),
+        ),
+      );
+    };
+
+    void runSafely(
+      runtime,
+      Logger.use((logger) => logger.log({ level: "info", event: "plugin.loaded" })),
+    );
+    started = true;
+    return handle;
+  } catch (cause) {
+    await reportBootstrapFailure(runtime, cause);
+    await handle.dispose().catch(reportUnloadFailure);
+    throw cause;
+  }
+}

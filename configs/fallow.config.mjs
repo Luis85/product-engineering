@@ -59,6 +59,7 @@ export function fallowConfig({ modules, has }) {
           publicFiles: ["index.ts"],
         },
         { name: "infrastructure", patterns: ["src/infrastructure/**"] },
+        { name: "composition", patterns: ["src/main.ts", "src/bootstrap.ts"] },
       ],
       rules: [
         { from: "domain", allow: domain },
@@ -91,6 +92,10 @@ export function fallowConfig({ modules, has }) {
         {
           from: "infrastructure",
           allow: ["adapters", "application", "application-composition", "domain"],
+        },
+        {
+          from: "composition",
+          allow: ["infrastructure", "adapters", "application", "application-composition", "domain"],
         },
         ...(adapters.includes("adapters/shell")
           ? [

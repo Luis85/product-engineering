@@ -246,11 +246,12 @@ export class PluginSettingTab implements Pick<
   }
 
   #render(definition: SettingDefinitionItem): void {
-    if (!("control" in definition)) return;
+    if ("type" in definition || !flag(definition.visible, true)) return;
     const { control } = definition;
-    if (!control || !supported(control) || !flag(definition.visible, true)) return;
+    if (control && !supported(control)) return;
     const setting = new Setting(this.containerEl).setName(definition.name);
     if (definition.desc !== undefined) setting.setDesc(definition.desc);
+    if (!control) return;
     const value = this.getControlValue(control.key) ?? control.defaultValue;
     const widget = renderControl(control, setting.controlEl, value);
     widget.setDisabled(flag(control.disabled, false));

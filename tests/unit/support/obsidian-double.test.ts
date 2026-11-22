@@ -120,7 +120,7 @@ it("registers and unloads commands, views, settings and ribbon entries", async (
   expect(registry.ribbonIcons.get(ribbonId)?.title).toBe("Product Engineering");
   registry.runCommand(commandId);
   expect(invoked).toHaveBeenCalledOnce();
-  plugin.removeCommand(commandId);
+  plugin.removeCommand("open");
   expect(registry.commands.has(commandId)).toBe(false);
 
   plugin.unload();
@@ -259,6 +259,11 @@ it("renders settings controls and waits for the change to settle", async () => {
     readOnly = false;
 
     override getSettingDefinitions(): SettingDefinitionItem[] {
+      const detail = this.containerEl.ownerDocument.createDocumentFragment();
+      const link = this.containerEl.ownerDocument.createElement("a");
+      link.href = "https://example.invalid/issues";
+      link.textContent = "Issue tracker";
+      detail.append(link);
       return [
         { name: "Title", control: { type: "text", key: "title", defaultValue: "Default" } },
         { name: "Flag", control: { type: "toggle", key: "flag", defaultValue: true } },
@@ -272,6 +277,7 @@ it("renders settings controls and waits for the change to settle", async () => {
             disabled: () => this.readOnly,
           },
         },
+        { name: "Read-only settings", desc: detail, visible: this.readOnly },
       ];
     }
 
@@ -303,6 +309,10 @@ it("renders settings controls and waits for the change to settle", async () => {
   const updated = settingsIn(tab).get("level")?.control;
   expect(updated).toBeInstanceOf(DropdownComponent);
   expect(updated instanceof DropdownComponent && updated.selectEl.disabled).toBe(true);
+  expect(tab.containerEl.textContent).toContain("Read-only settings");
+  expect(tab.containerEl.querySelector("a")?.getAttribute("href")).toBe(
+    "https://example.invalid/issues",
+  );
 });
 
 it("records notices and lets a test simulate a notice failure", () => {

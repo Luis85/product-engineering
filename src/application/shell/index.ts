@@ -9,9 +9,9 @@ export {
   StorageError,
   VaultReadError,
 } from "./errors";
-export { LANGUAGES, PRODUCT_NAME } from "./i18n/catalog";
-export type { Language } from "./i18n/catalog";
-export { describeIssue } from "./i18n/describe";
+export { ISSUES_URL, LANGUAGES, PRODUCT_NAME } from "./i18n/catalog";
+export type { Language, ShellCatalog } from "./i18n/catalog";
+export { describeDefect, describeIssue, describeShellError } from "./i18n/describe";
 export { toLoggedError } from "./logged-error";
 export { LoggerLive } from "./logger";
 export { shellModule } from "./module";
@@ -28,5 +28,6 @@ export {
 export type { DatedLogEntry } from "./ports";
 export type { ShellServices } from "./services";
 export { SettingsService, SettingsServiceLive } from "./settings-service";
+export type { SettingsStatus } from "./settings-service";
 export type { UserMessage } from "./user-messages";
 export { setLogLevel } from "./use-cases";

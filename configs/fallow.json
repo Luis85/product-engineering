@@ -49,7 +49,8 @@
         "autoDiscover": ["src/infrastructure/obsidian"],
         "publicFiles": ["index.ts"]
       },
-      { "name": "infrastructure", "patterns": ["src/infrastructure/**"] }
+      { "name": "infrastructure", "patterns": ["src/infrastructure/**"] },
+      { "name": "composition", "patterns": ["src/main.ts", "src/bootstrap.ts"] }
     ],
     "rules": [
       { "from": "domain", "allow": ["domain/shell"] },
@@ -85,6 +86,10 @@
       {
         "from": "infrastructure",
         "allow": ["adapters", "application", "application-composition", "domain"]
+      },
+      {
+        "from": "composition",
+        "allow": ["infrastructure", "adapters", "application", "application-composition", "domain"]
       },
       {
         "from": "adapters/shell",

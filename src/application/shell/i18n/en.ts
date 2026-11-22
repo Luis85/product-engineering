@@ -46,6 +46,7 @@ export const en: ShellCatalog = {
   },
   commands: { openView: `Open ${PRODUCT_NAME}`, copyDiagnostics: "Copy diagnostics" },
   settingsTab: {
+    issuesLink: "Report issues on GitHub",
     logLevel: {
       name: "Log level",
       desc: "Choose which messages appear in the diagnostic log.",

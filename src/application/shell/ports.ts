@@ -6,7 +6,8 @@ import type { ClipboardError, StorageError } from "./errors";
 import type { LoggedError } from "./logged-error";
 import type { UserMessage } from "./user-messages";
 
-export type LogEvent = "defect.reported" | "plugin.loaded" | "settings.load.failed";
+export type LogEvent =
+  "defect.reported" | "plugin.loaded" | "plugin.unload.failed" | "settings.load.failed";
 export type LogEntry = {
   readonly level: LogLevel;
   readonly event: LogEvent;

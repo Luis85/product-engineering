@@ -34,6 +34,7 @@ export interface ShellCatalog {
   readonly actions: Readonly<Record<UserMessageAction, string>>;
   readonly commands: { readonly openView: string; readonly copyDiagnostics: string };
   readonly settingsTab: {
+    readonly issuesLink: string;
     readonly logLevel: {
       readonly name: string;
       readonly desc: string;
