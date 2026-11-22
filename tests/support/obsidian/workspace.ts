@@ -1,4 +1,5 @@
 import type { PaneType, Workspace as ObsidianWorkspace } from "obsidian";
+import type { App } from "./app";
 import { Events } from "./events";
 import { Ribbon } from "./ribbon";
 import { WorkspaceLeaf } from "./views";
@@ -19,6 +20,7 @@ export class Workspace
 
   constructor(
     readonly document: Document,
+    readonly app: App,
     public layoutReady = true,
   ) {
     super();

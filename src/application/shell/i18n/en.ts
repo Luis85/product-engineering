@@ -45,6 +45,19 @@ export const en: ShellCatalog = {
     "copy-diagnostics": "Copy diagnostics",
   },
   commands: { openView: `Open ${PRODUCT_NAME}`, copyDiagnostics: "Copy diagnostics" },
+  frame: {
+    navigation: `${PRODUCT_NAME} navigation`,
+    settings: "Settings",
+    content: `${PRODUCT_NAME} content`,
+    back: "Go back",
+    forward: "Go forward",
+    settingsSections: "Settings sections",
+  },
+  notFound: {
+    title: "This page is unavailable",
+    detail: `Open the ${PRODUCT_NAME} start page.`,
+    back: "Back to start",
+  },
   settingsTab: {
     issuesLink: "Report issues on GitHub",
     logLevel: {

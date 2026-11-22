@@ -2,21 +2,28 @@ import ui from "@nuxt/ui/vue-plugin";
 import { createApp } from "vue";
 import type { Component } from "vue";
 import type { AppRuntime } from "../../application/app-services";
+import type { RouteLike } from "../../application/shell";
 import ShellApp from "./components/ShellApp.vue";
 import { keepIconsOffline } from "./icons-offline";
+import { provideRouting } from "./navigation";
 import { releaseAll } from "./release";
+import type { SurfaceDefinition, ViewNavigation } from "./routing";
 import { provideRuntime, reportVueError } from "./runtime/use-runtime";
 import { PORTAL_CLASS, SCOPE_CLASS } from "./scope";
 import { bindHostTheme } from "./theme";
 
-type SurfaceOptions = {
-  readonly content: Component;
-};
+type SurfaceOptions<R extends RouteLike> =
+  | { readonly content: Component; readonly surface?: never; readonly navigation?: never }
+  | {
+      readonly content?: Component;
+      readonly surface: SurfaceDefinition<R>;
+      readonly navigation: ViewNavigation<R>;
+    };
 
-export async function mountSurface(
+export async function mountSurface<R extends RouteLike>(
   root: HTMLElement,
   runtime: AppRuntime,
-  { content }: SurfaceOptions,
+  { content, surface, navigation }: SurfaceOptions<R>,
 ): Promise<() => void> {
   await runtime.context();
 
@@ -37,10 +44,11 @@ export async function mountSurface(
     );
     root.append(mountPoint, portal);
 
-    const app = createApp(ShellApp, { portal, content });
+    const app = createApp(ShellApp, { portal, ...(content === undefined ? {} : { content }) });
     app.config.idPrefix = crypto.randomUUID();
     app.config.errorHandler = (cause) => reportVueError(runtime, cause);
     provideRuntime(app, runtime);
+    if (surface) releases.push(provideRouting(app, surface, navigation));
     keepIconsOffline();
     app.use(ui);
     app.mount(mountPoint);

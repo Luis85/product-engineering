@@ -3,6 +3,7 @@ import type { Plugin } from "obsidian";
 import type { AppRuntime } from "../../../application/app-services";
 import type { AppCommand } from "../../../application/commands";
 import type { Catalog } from "../../../application/messages";
+import type { Route } from "../../../application/routes";
 import { runSafely } from "./run";
 
 export function registerCommands(
@@ -10,7 +11,7 @@ export function registerCommands(
   runtime: AppRuntime,
   commands: readonly AppCommand[],
   messages: Catalog,
-  open: (route?: never) => Promise<unknown>,
+  open: (route?: Route) => Promise<unknown>,
 ): () => void {
   const registered: string[] = [];
 

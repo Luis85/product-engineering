@@ -3,6 +3,7 @@ import type { Plugin } from "obsidian";
 import type { AppRuntime } from "./application/app-services";
 import { appCommands } from "./application/commands";
 import { catalogFor } from "./application/messages";
+import type { Route } from "./application/routes";
 import {
   describeDefect,
   Incidents,
@@ -20,7 +21,7 @@ import {
   addRibbonIcon,
   hostLanguage,
   mirrorSettings,
-  openShellView,
+  openRoute,
   registerCommands,
   runSafely,
   SHELL_VIEW_TYPE,
@@ -29,6 +30,7 @@ import {
   showNotice,
 } from "./infrastructure/obsidian/shell";
 import { makeRuntime } from "./infrastructure/runtime";
+import { appSurface } from "./presentation/app-surface";
 import { releaseAll } from "./presentation/shell/host";
 
 type Release = () => void | Promise<void>;
@@ -123,12 +125,13 @@ export async function bootstrap(
       return handle;
     }
 
-    let opening: Promise<void> | undefined;
-    const open = () => {
-      if (aborted() || disposal) return Promise.resolve();
-      return (opening ??= openShellView(plugin.app.workspace).finally(() => {
-        opening = undefined;
-      }));
+    let opening = Promise.resolve();
+    const open = (route?: Route) => {
+      const request = opening.then(() => {
+        if (!aborted() && !disposal) return openRoute(plugin.app.workspace, route);
+      });
+      opening = request.catch(() => undefined);
+      return request;
     };
 
     const removeCommands = registerCommands(plugin, runtime, appCommands, messages, open);
@@ -137,11 +140,18 @@ export async function bootstrap(
     });
 
     const tab = new ShellSettingTab(plugin.app, plugin, runtime, mirror, messages.shell);
-    addRibbonIcon(plugin, () => runSafely(runtime, Effect.promise(open)));
+    addRibbonIcon(plugin, () =>
+      runSafely(
+        runtime,
+        Effect.promise(() => open()),
+      ),
+    );
     plugin.addSettingTab(tab);
-    plugin.registerView(SHELL_VIEW_TYPE, (leaf) => new ShellView(leaf));
-
     const surfaces = new Set<() => void>();
+    plugin.registerView(
+      SHELL_VIEW_TYPE,
+      (leaf) => new ShellView(leaf, runtime, surfaces, appSurface),
+    );
     undo.push(() => {
       const close = [...surfaces];
       surfaces.clear();

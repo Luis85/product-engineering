@@ -55,6 +55,19 @@ export const de: ShellCatalog = {
     "copy-diagnostics": "Diagnose kopieren",
   },
   commands: { openView: `${PRODUCT_NAME} öffnen`, copyDiagnostics: "Diagnose kopieren" },
+  frame: {
+    navigation: `${PRODUCT_NAME} Navigation`,
+    settings: "Einstellungen",
+    content: `Inhalt von ${PRODUCT_NAME}`,
+    back: "Zurück",
+    forward: "Vorwärts",
+    settingsSections: "Einstellungsbereiche",
+  },
+  notFound: {
+    title: "Diese Seite ist nicht verfügbar",
+    detail: `Öffne die Startseite von ${PRODUCT_NAME}.`,
+    back: "Zur Startseite",
+  },
   settingsTab: {
     issuesLink: "Probleme auf GitHub melden",
     logLevel: {

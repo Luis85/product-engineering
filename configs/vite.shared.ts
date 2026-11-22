@@ -6,9 +6,12 @@ import { scopeCss } from "../scripts/scope-css.mjs";
 export const PLUGIN_ID = "product-engineering";
 export const CSS_PREFIX = "pe";
 export const SHELL_ICONS: readonly string[] = [
+  "lucide:arrow-left",
+  "lucide:arrow-right",
   "lucide:circle-x",
   "lucide:info",
   "lucide:loader-circle",
+  "lucide:settings",
   "lucide:triangle-alert",
 ];
 

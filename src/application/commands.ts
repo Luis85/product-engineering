@@ -3,6 +3,8 @@ import type { Catalog } from "./messages";
 import { commandsOf } from "./module";
 import type { PluginCommand } from "./module";
 import { APP_MODULES } from "./modules";
-export type AppCommand = PluginCommand<Catalog, never, AppServices>;
+import type { Route } from "./routes";
+
+export type AppCommand = PluginCommand<Catalog, Route, AppServices>;
 
 export const appCommands: readonly AppCommand[] = commandsOf(APP_MODULES);

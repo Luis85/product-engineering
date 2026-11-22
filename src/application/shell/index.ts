@@ -2,6 +2,8 @@ export { reportDefect, reportUnexpected } from "./defects";
 export { copyDiagnostics } from "./diagnostics";
 export { EventBus, EventBusLive } from "./event-bus";
 export type { ShellEvents } from "./events";
+export { HISTORY_LIMIT, historyAt, stepBack, stepForward, visit } from "./history";
+export type { RouteHistory } from "./history";
 export {
   ClipboardError,
   InvalidSettingsError,
@@ -26,6 +28,8 @@ export {
   SettingsStore,
 } from "./ports";
 export type { DatedLogEntry } from "./ports";
+export { routesOf, SETTINGS, settingsRoute } from "./routes";
+export type { RouteLike, Routes, SettingsRoute } from "./routes";
 export type { ShellServices } from "./services";
 export { SettingsService, SettingsServiceLive } from "./settings-service";
 export type { SettingsStatus } from "./settings-service";

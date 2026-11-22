@@ -1,6 +1,6 @@
 import { Layer } from "effect";
-import type { Effect } from "effect";
-import type { Language, UserMessage } from "./shell";
+import type { Effect, Schema } from "effect";
+import type { Language, RouteLike, UserMessage } from "./shell";
 
 type Tagged = { readonly _tag: string };
 
@@ -29,15 +29,26 @@ type CommandPart<Command> = { readonly commands?: readonly Command[] };
 type ServiceLayer = Layer.Layer<never, never, unknown>;
 type ServicePart<Services extends ServiceLayer> = { readonly services?: Services };
 
+type RouteSchemas = readonly Schema.Codec<RouteLike, unknown>[];
+type SectionDefinitions = readonly { readonly id: string; readonly order: number }[];
+
+type RoutingPart<Schemas extends RouteSchemas, Sections extends SectionDefinitions> = {
+  readonly routes?: Schemas;
+  readonly sections?: Sections;
+};
+
 export type ModuleManifest<
   Name extends string,
   Catalog,
   E extends Tagged = never,
   Command = never,
   Services extends ServiceLayer = never,
+  Schemas extends RouteSchemas = never,
+  Sections extends SectionDefinitions = never,
 > = ModuleBase<Name, Catalog> &
   CommandPart<Command> &
-  ServicePart<Services> & {
+  ServicePart<Services> &
+  RoutingPart<Schemas, Sections> & {
     readonly errors?: ErrorPart<E, Catalog>;
   };
 
@@ -47,28 +58,41 @@ export function defineModule<
   E extends Tagged = never,
   Command = never,
   Services extends ServiceLayer = never,
+  const Schemas extends RouteSchemas = never,
+  const Sections extends SectionDefinitions = never,
 >(
-  manifest: ModuleManifest<Name, Catalog, E, Command, Services> & {
+  manifest: ModuleManifest<Name, Catalog, E, Command, Services, Schemas, Sections> & {
     readonly errors: ErrorPart<E, Catalog>;
   },
-): ModuleManifest<Name, Catalog, E, Command, Services> & { readonly errors: ErrorPart<E, Catalog> };
+): ModuleManifest<Name, Catalog, E, Command, Services, Schemas, Sections> & {
+  readonly errors: ErrorPart<E, Catalog>;
+};
 export function defineModule<
   const Name extends string,
   Catalog,
   Command = never,
   Services extends ServiceLayer = never,
+  const Schemas extends RouteSchemas = never,
+  const Sections extends SectionDefinitions = never,
 >(
-  manifest: ModuleManifest<Name, Catalog, never, Command, Services> & { readonly errors?: never },
-): ModuleBase<Name, Catalog> & CommandPart<Command> & ServicePart<Services>;
+  manifest: ModuleManifest<Name, Catalog, never, Command, Services, Schemas, Sections> & {
+    readonly errors?: never;
+  },
+): ModuleBase<Name, Catalog> &
+  CommandPart<Command> &
+  ServicePart<Services> &
+  RoutingPart<Schemas, Sections>;
 export function defineModule<
   const Name extends string,
   Catalog,
   E extends Tagged,
   Command,
   Services extends ServiceLayer,
+  Schemas extends RouteSchemas,
+  Sections extends SectionDefinitions,
 >(
-  manifest: ModuleManifest<Name, Catalog, E, Command, Services>,
-): ModuleManifest<Name, Catalog, E, Command, Services> {
+  manifest: ModuleManifest<Name, Catalog, E, Command, Services, Schemas, Sections>,
+): ModuleManifest<Name, Catalog, E, Command, Services, Schemas, Sections> {
   return manifest;
 }
 
@@ -97,6 +121,28 @@ export function servicesLayerOf<M extends ServicePart<ServiceLayer>>(modules: re
     services === undefined ? [] : [services],
   ) as NonNullable<M["services"]>[];
   return Layer.mergeAll(Layer.empty, ...layers);
+}
+
+export type SectionOf<M> =
+  M extends RoutingPart<RouteSchemas, infer Sections> ? Sections[number]["id"] : never;
+
+export function sectionsOf<M extends RoutingPart<RouteSchemas, SectionDefinitions>>(
+  modules: readonly M[],
+): readonly SectionOf<M>[] {
+  // Sorting changes order only, retaining each manifest's declared literal IDs.
+  return modules
+    .flatMap(({ sections }) => sections ?? [])
+    .toSorted((left, right) => left.order - right.order)
+    .map(({ id }) => id) as SectionOf<M>[];
+}
+
+export type RouteOf<M> =
+  M extends RoutingPart<infer Schemas, SectionDefinitions> ? Schemas[number]["Type"] : never;
+
+export function routeSchemasOf<M extends RoutingPart<RouteSchemas, SectionDefinitions>>(
+  modules: readonly M[],
+): readonly NonNullable<M["routes"]>[number][] {
+  return modules.flatMap(({ routes }) => routes ?? []);
 }
 
 type DescribableModule = ModuleBase & {

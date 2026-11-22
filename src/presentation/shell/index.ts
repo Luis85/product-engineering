@@ -1,6 +1,10 @@
 export { default as ErrorNotice } from "./components/ErrorNotice.vue";
+export { default as NotFoundState } from "./components/NotFoundState.vue";
+export { default as SettingsScreen } from "./components/SettingsScreen.vue";
 export { useDelayed } from "./delay";
 export { useModal } from "./modal";
 export { mountSurface } from "./mount";
+export { useHistory, useNavigate, useRoute } from "./navigation";
+export type { ModuleScreens } from "./routing";
 export { useCommand, useMessages, useQuery } from "./runtime/use-runtime";
 export { useSettings, useSettingsStatus, useStream } from "./runtime/use-stream";

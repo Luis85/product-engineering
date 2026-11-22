@@ -6,6 +6,7 @@ import { createTestPlugin } from "@test/obsidian";
 import { appCommands } from "../../../../src/application/commands";
 import type { AppCommand } from "../../../../src/application/commands";
 import { catalogFor } from "../../../../src/application/messages";
+import type { Route } from "../../../../src/application/routes";
 import { registerCommands } from "../../../../src/infrastructure/obsidian/shell";
 import { testRuntime } from "../../../support/runtime";
 
@@ -17,7 +18,7 @@ class TestPlugin extends Plugin {}
 it("registers localized commands without hotkeys and opens the requested view", async () => {
   const { plugin, registry } = createTestPlugin(TestPlugin);
   const { runtime } = testRuntime();
-  const open = vi.fn<(route?: never) => Promise<unknown>>().mockResolvedValue(undefined);
+  const open = vi.fn<(route?: Route) => Promise<unknown>>().mockResolvedValue(undefined);
   try {
     const undo = registerCommands(plugin, runtime, appCommands, catalogFor("en"), open);
     expect([...registry.commands.values()].map(({ name, hotkeys }) => [name, hotkeys])).toEqual([

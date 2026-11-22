@@ -5,6 +5,7 @@ import type {
   ViewStateResult,
   WorkspaceLeaf as ObsidianLeaf,
 } from "obsidian";
+import type { App } from "./app";
 import { Component } from "./component";
 import type { Workspace } from "./workspace";
 
@@ -19,6 +20,7 @@ export class View
     >
 {
   readonly leaf: WorkspaceLeaf;
+  readonly app: App;
   readonly containerEl: HTMLElement;
   readonly contentEl: HTMLElement;
   navigation = false;
@@ -28,6 +30,7 @@ export class View
     super();
     if (!(leaf instanceof WorkspaceLeaf)) throw new Error("Expected a test workspace leaf");
     this.leaf = leaf;
+    this.app = leaf.workspace.app;
     this.containerEl = leaf.containerEl.ownerDocument.createElement("div");
     this.contentEl = leaf.containerEl.ownerDocument.createElement("div");
     this.containerEl.append(this.contentEl);
@@ -82,6 +85,7 @@ export class ItemView extends View {}
 export class WorkspaceLeaf implements Pick<ObsidianLeaf, "setViewState" | "openFile"> {
   readonly containerEl: HTMLElement;
   readonly openedFiles: Pick<TFile, "path">[] = [];
+  readonly viewStates: ViewState[] = [];
   view: View | undefined;
 
   constructor(readonly workspace: Workspace) {
@@ -93,7 +97,9 @@ export class WorkspaceLeaf implements Pick<ObsidianLeaf, "setViewState" | "openF
     document.body.append(document.adoptNode(this.containerEl));
   }
 
-  async setViewState({ type, state = {} }: ViewState): Promise<void> {
+  async setViewState(viewState: ViewState): Promise<void> {
+    this.viewStates.push(viewState);
+    const { type, state = {} } = viewState;
     if (this.view?.getViewType() !== type) {
       const factory = this.workspace.viewFactories.get(type);
       if (!factory) throw new Error(`No test view registered for ${type}`);
@@ -103,6 +109,7 @@ export class WorkspaceLeaf implements Pick<ObsidianLeaf, "setViewState" | "openF
       if (!(view instanceof View)) throw new Error("Expected a test view");
       this.view = view;
       await view.open();
+      if (this.view !== view) return;
     }
     await this.view.setState(state, { history: false });
   }

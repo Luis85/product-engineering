@@ -33,6 +33,19 @@ export interface ShellCatalog {
   readonly diagnosticsCopied: Text;
   readonly actions: Readonly<Record<UserMessageAction, string>>;
   readonly commands: { readonly openView: string; readonly copyDiagnostics: string };
+  readonly frame: {
+    readonly navigation: string;
+    readonly settings: string;
+    readonly content: string;
+    readonly back: string;
+    readonly forward: string;
+    readonly settingsSections: string;
+  };
+  readonly notFound: {
+    readonly title: string;
+    readonly detail: string;
+    readonly back: string;
+  };
   readonly settingsTab: {
     readonly issuesLink: string;
     readonly logLevel: {

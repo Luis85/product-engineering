@@ -4,6 +4,6 @@ export class App {
   readonly workspace: Workspace;
 
   constructor({ document: owner = document, layoutReady = true } = {}) {
-    this.workspace = new Workspace(owner, layoutReady);
+    this.workspace = new Workspace(owner, this, layoutReady);
   }
 }
