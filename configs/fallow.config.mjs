@@ -24,9 +24,21 @@ const compositionFiles = [
 export function fallowConfig({ modules, has }) {
   const domain = siblings(modules.all, has, "domain");
   const application = siblings(modules.all, has, "application");
+  const integrationPorts = application.filter((zone) => zone === "application/integrations");
+  const presentation = siblings(modules.all, has, "presentation");
   const adapters = modules.all
     .filter((module) => has("infrastructure/obsidian", module))
     .map((module) => `adapters/${module}`);
+  const nodeAdapters = ["mcp", "provider-cli"]
+    .filter((module) => has("infrastructure", module))
+    .map((module) => {
+      const directory = `src/infrastructure/${module}`;
+      return {
+        name: `node-adapters/${module}`,
+        patterns: [`${directory}/**`],
+        publicFiles: [`${directory}/index.ts`],
+      };
+    });
 
   return {
     $schema: "../node_modules/fallow/schema.json",
@@ -58,7 +70,17 @@ export function fallowConfig({ modules, has }) {
           autoDiscover: ["src/infrastructure/obsidian"],
           publicFiles: ["index.ts"],
         },
+        ...nodeAdapters,
         { name: "infrastructure", patterns: ["src/infrastructure/**"] },
+        ...(presentation.length > 0
+          ? [
+              {
+                name: "presentation",
+                autoDiscover: ["src/presentation"],
+                publicFiles: ["index.ts", "screens.ts"],
+              },
+            ]
+          : []),
         { name: "composition", patterns: ["src/main.ts", "src/bootstrap.ts"] },
       ],
       rules: [
@@ -93,9 +115,31 @@ export function fallowConfig({ modules, has }) {
           from: "infrastructure",
           allow: ["adapters", "application", "application-composition", "domain"],
         },
+        ...nodeAdapters.map(({ name }) => ({ from: name, allow: integrationPorts })),
+        ...(presentation.length > 0
+          ? [
+              {
+                from: "presentation",
+                allow: [
+                  ...presentation,
+                  "application",
+                  "application-composition",
+                  "application-describe-error",
+                  "domain",
+                ],
+              },
+            ]
+          : []),
         {
           from: "composition",
-          allow: ["infrastructure", "adapters", "application", "application-composition", "domain"],
+          allow: [
+            "infrastructure",
+            "adapters",
+            "application",
+            "application-composition",
+            "domain",
+            ...nodeAdapters.map(({ name }) => name),
+          ],
         },
         ...(adapters.includes("adapters/shell")
           ? [

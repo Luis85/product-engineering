@@ -10,3 +10,7 @@
 | Log level | `logLevel` |
 | Diagnostic report | `diagnostics` |
 | Incident | `incident` |
+| Conversation | `conversation` |
+| Provider | `provider` |
+| MCP tool | `tool` |
+| Shared item | `sharedItem` |

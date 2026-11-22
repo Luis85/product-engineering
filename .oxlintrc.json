@@ -130,6 +130,31 @@
       }
     },
     {
+      "files": ["src/infrastructure/provider-cli/adapter.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "obsidian",
+                  "vue",
+                  "vue/*",
+                  "@nuxt/*",
+                  "@tanstack/*",
+                  "!@tanstack/ai",
+                  "!@tanstack/ai/adapters",
+                  "@vue/*",
+                  "@iconify/*"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/presentation/**"],
       "rules": {
         "no-restricted-imports": [

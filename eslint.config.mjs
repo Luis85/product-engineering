@@ -192,6 +192,11 @@ export default [
     rules: { "obsidianmd/prefer-active-doc": "off", "obsidianmd/prefer-create-el": "off" },
   },
   {
+    // The desktop-only listener and CLI adapter use the host's Node runtime.
+    files: ["src/infrastructure/mcp/**/*.ts", "src/infrastructure/provider-cli/**/*.ts"],
+    rules: { "obsidianmd/no-nodejs-modules": "off" },
+  },
+  {
     files: ["**/*.{ts,vue,mjs}"],
     ignores: ["tests/**"],
     rules: { "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }] },
