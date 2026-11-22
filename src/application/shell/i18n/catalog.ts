@@ -6,8 +6,12 @@ export const PRODUCT_NAME = "Product Engineering";
 export const ISSUES_URL = "https://github.com/Luis85/product-engineering/issues";
 export type Language = (typeof LANGUAGES)[number];
 
+export type SettingsIssueByCode = {
+  readonly [Issue in SettingsIssue as Issue["code"]]: Issue;
+};
+
 export type IssueDescriptions = {
-  readonly [Issue in SettingsIssue as Issue["code"]]: (issue: Issue) => string;
+  readonly [Code in keyof SettingsIssueByCode]: (issue: SettingsIssueByCode[Code]) => string;
 };
 
 type Text = { readonly title: string; readonly detail: string };

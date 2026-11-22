@@ -9,6 +9,7 @@ const encoder = new TextEncoder();
 function replaceForbiddenRuns(title: string): string {
   let safe = "";
   let insideRun = false;
+  let hasNameCharacter = false;
   for (const character of title) {
     if (forbidden.has(character) || isControlCharacter(character)) {
       if (!insideRun) safe += "-";
@@ -16,9 +17,10 @@ function replaceForbiddenRuns(title: string): string {
     } else {
       safe += character;
       insideRun = false;
+      if (!/[.\s]/u.test(character)) hasNameCharacter = true;
     }
   }
-  return safe;
+  return hasNameCharacter ? safe : "";
 }
 
 export function recordFileName(title: string, fallback: string): string {

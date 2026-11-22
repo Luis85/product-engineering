@@ -19,6 +19,7 @@ function setup(record?: RecordRow<typeof type.fields>, hasConflict = false) {
   const fixture = testRuntime({ language: "en" });
   const done = vi.fn<(savedId: string) => void>();
   const written = vi.fn<(baseline: unknown, input: unknown) => void>();
+  const checked = vi.fn<(baseline: unknown) => void>();
   let fail = hasConflict;
   const result = { frontmatter: identity };
   let root: HTMLElement | null = null;
@@ -50,7 +51,10 @@ function setup(record?: RecordRow<typeof type.fields>, hasConflict = false) {
             );
           }),
         invalid: "NoteEditConflictError",
-        rules: (input) => type.check(input).issues,
+        rules: (input, baseline?: RecordRow<typeof type.fields>) => {
+          checked(baseline?.frontmatter);
+          return type.check(input).issues;
+        },
         describe: (issue) => `${issue.key} needs attention`,
         labels,
         summary,
@@ -72,6 +76,7 @@ function setup(record?: RecordRow<typeof type.fields>, hasConflict = false) {
     ...mounted,
     fixture,
     written,
+    checked,
     done,
     close: async () => {
       mounted.close();
@@ -127,6 +132,11 @@ it("uses the live values as the new baseline and keeps an invalid chosen value e
     expect(form.conflicts.value).toEqual([]);
     expect(form.input.value).toMatchObject({ title: "My title", status: 42 });
     expect(form.issue("status")).toBe("status needs attention");
+    expect(mounted.checked).toHaveBeenLastCalledWith({
+      ...identity,
+      title: "Changed elsewhere",
+      status: 42,
+    });
     await form.submit();
     expect(mounted.written).toHaveBeenCalledOnce();
 

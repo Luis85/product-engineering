@@ -2,7 +2,7 @@ import { get } from "node:http";
 import { Plugin } from "obsidian";
 import type { SettingDefinitionAction, SettingDefinitionItem } from "obsidian";
 import { expect, it, vi } from "vitest";
-import { createTestPlugin, settingsIn, TextComponent } from "@test/obsidian";
+import { createTestPlugin, settingsIn, TextComponent, ToggleComponent } from "@test/obsidian";
 import type { LocalMcpConnection, McpController } from "../../../../src/application/integrations";
 import { catalogFor } from "../../../../src/application/messages";
 import { createAgentSettingsPart } from "../../../../src/infrastructure/obsidian/integrations";
@@ -14,6 +14,9 @@ import { eventually } from "../../../support/wait";
 vi.mock("obsidian", () => import("@test/obsidian"));
 
 class TestPlugin extends Plugin {}
+
+const firstItem = { id: "item-00000000-0000-0000-0000-000000000001", title: "First item" };
+const secondItem = { id: "item-00000000-0000-0000-0000-000000000002", title: "Second item" };
 
 function activate(definitions: readonly SettingDefinitionItem[], name: string): void {
   const action = definitions.find(
@@ -52,7 +55,7 @@ async function harness(initialSettings?: unknown) {
     runtime: fixture.runtime,
     mirror,
     messages: catalog,
-    selectedItemIds: () => ["shared-item"],
+    items: () => ({ state: "ready", items: [firstItem, secondItem] }),
   });
   const tab = new ShellSettingTab(plugin.app, plugin, fixture.runtime, mirror, catalog.shell, part);
   return {
@@ -95,13 +98,16 @@ it("persists port and provider paths from native settings and clears blank value
 });
 
 it("starts and stops on demand and copies credentials only from the native copy action", async () => {
-  const { tab, fixture, controller, dispose } = await harness({ mcpPort: 8391 });
+  const { tab, fixture, controller, dispose } = await harness({
+    mcpPort: 8391,
+    mcpSharedItemIds: [firstItem.id],
+  });
   try {
     expect(controller.start).not.toHaveBeenCalled();
     expect(fixture.clipboard).toHaveLength(0);
     activate(tab.getSettingDefinitions(), "Start MCP server");
     await eventually(() =>
-      expect(controller.start).toHaveBeenCalledExactlyOnceWith(8391, ["shared-item"]),
+      expect(controller.start).toHaveBeenCalledExactlyOnceWith(8391, [firstItem.id]),
     );
     await eventually(() => expect(controller.status()).toMatchObject({ state: "running" }));
     expect(fixture.clipboard).toHaveLength(0);
@@ -136,6 +142,85 @@ it("keeps an executable path input focused while its value is saved", async () =
     expect(fixture.store.saved.at(-1)).toMatchObject({ codexPath: "C:\\Tools\\codex.exe" });
     expect(settingsIn(tab).get("codexPath")?.control).toBe(control);
     expect(document.activeElement).toBe(control.inputEl);
+  } finally {
+    tab.containerEl.remove();
+    await dispose();
+  }
+});
+
+function sharingControl(definitions: readonly SettingDefinitionItem[], name: string) {
+  const definition = definitions.find((item) => "name" in item && item.name === name);
+  if (!definition || !("control" in definition) || definition.control?.type !== "toggle") {
+    throw new Error(`Missing native sharing toggle ${name}`);
+  }
+  return definition.control;
+}
+
+it("persists only explicitly selected items and uses that scope when starting the server", async () => {
+  const { tab, fixture, controller, dispose } = await harness({ mcpPort: 8410 });
+  try {
+    const definitions = tab.getSettingDefinitions();
+    const first = sharingControl(definitions, firstItem.title);
+    const second = sharingControl(definitions, secondItem.title);
+    expect(tab.getControlValue(first.key)).toBe(false);
+    expect(tab.getControlValue(second.key)).toBe(false);
+    await tab.setControlValue(second.key, true);
+    expect(tab.getControlValue(second.key)).toBe(true);
+    expect(fixture.store.saved.at(-1)).toMatchObject({ mcpSharedItemIds: [secondItem.id] });
+
+    activate(tab.getSettingDefinitions(), "Start MCP server");
+    await eventually(() =>
+      expect(controller.start).toHaveBeenCalledExactlyOnceWith(8410, [secondItem.id]),
+    );
+    await tab.setControlValue(second.key, false);
+    expect(fixture.store.saved.at(-1)).not.toHaveProperty("mcpSharedItemIds");
+  } finally {
+    await dispose();
+  }
+});
+
+it("serializes multiple user selections without losing either and permits removing an unavailable item", async () => {
+  const obsolete = "item-00000000-0000-0000-0000-000000000003";
+  const { tab, fixture, dispose } = await harness({ mcpSharedItemIds: [obsolete] });
+  try {
+    const definitions = tab.getSettingDefinitions();
+    const stale = sharingControl(definitions, "Unavailable item");
+    const first = sharingControl(definitions, firstItem.title);
+    const second = sharingControl(definitions, secondItem.title);
+    expect(tab.getControlValue(stale.key)).toBe(true);
+    await Promise.all([
+      tab.setControlValue(stale.key, false),
+      tab.setControlValue(first.key, true),
+      tab.setControlValue(second.key, true),
+    ]);
+    expect(fixture.store.saved.at(-1)).toMatchObject({
+      mcpSharedItemIds: [firstItem.id, secondItem.id],
+    });
+  } finally {
+    await dispose();
+  }
+});
+
+it("keeps the selected toggle on when a revocation cannot be saved", async () => {
+  const { tab, fixture, dispose } = await harness({ mcpSharedItemIds: [firstItem.id] });
+  document.body.append(tab.containerEl);
+  try {
+    tab.update();
+    const { key } = sharingControl(tab.getSettingDefinitions(), firstItem.title);
+    const control = settingsIn(tab).get(key)?.control;
+    if (!(control instanceof ToggleComponent)) throw new Error("Missing rendered sharing switch");
+    expect(control.getValue()).toBe(true);
+
+    fixture.store.setFailSave(true);
+    control.setValue(false).toggleEl.dispatchEvent(new Event("change"));
+    await control.pending;
+    const restored = settingsIn(tab).get(key)?.control;
+    expect(restored?.getValue()).toBe(true);
+    expect(tab.getControlValue(key)).toBe(true);
+    expect(fixture.notifier.at(-1)).toMatchObject({
+      severity: "error",
+      title: catalogFor("en").shell.errors.storage.title,
+    });
   } finally {
     tab.containerEl.remove();
     await dispose();

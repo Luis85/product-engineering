@@ -2,6 +2,7 @@ import { browser, expect } from "@wdio/globals";
 import { it } from "mocha";
 import type { ItemView } from "obsidian";
 import { PORTAL_CLASS } from "../../../src/presentation/shell/scope";
+import { itemForm, openCreate, openItems } from "../items";
 import { installConsoleSpy, openView, pluginProblems, ROOT, setTheme, VIEW_TYPE } from "../support";
 
 type MountedView = ItemView & {
@@ -168,5 +169,46 @@ it("keeps a moved view, its portal, and an open dialog in the pop-out document",
       ),
     { timeoutMsg: "The pop-out routed view did not close" },
   );
+  expect(await pluginProblems()).toEqual([]);
+});
+
+it("opens the real item sheet with focus inside the pop-out portal", async () => {
+  await installConsoleSpy();
+  await setTheme("light");
+  await openItems();
+  const main = await browser.getObsidianPage().getMainWindowHandle();
+  const handles = new Set(await browser.getWindowHandles());
+  try {
+    await moveToPopout();
+    const popup = await browser.waitUntil(
+      async () =>
+        (await browser.getWindowHandles()).find((handle) => !handles.has(handle)) ?? false,
+    );
+    await browser.switchToWindow(popup);
+    await openCreate();
+    const state = await browser.execute(
+      (root, portalClass) => {
+        const form = document.querySelector(root + " [data-testid='item-form']");
+        return {
+          portal: form?.closest("." + portalClass)?.ownerDocument === document,
+          titleFocus: document.activeElement?.matches(
+            root + " [data-testid='item-form'] [name='title']",
+          ),
+        };
+      },
+      ROOT,
+      PORTAL_CLASS,
+    );
+    expect(state).toEqual({ portal: true, titleFocus: true });
+    await browser.switchToWindow(main);
+    await setTheme("dark");
+    await browser.switchToWindow(popup);
+    await browser.$(`${ROOT}.dark .${PORTAL_CLASS} [data-testid='item-form']`).waitForDisplayed();
+    await browser.keys("Escape");
+    await itemForm().waitForDisplayed({ reverse: true });
+  } finally {
+    await browser.switchToWindow(main);
+    await closePopout();
+  }
   expect(await pluginProblems()).toEqual([]);
 });

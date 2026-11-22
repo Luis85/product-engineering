@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import UModal from "@nuxt/ui/components/Modal.vue";
-import { onScopeDispose } from "vue";
+import { onScopeDispose, shallowRef, watch } from "vue";
 import type { AppError } from "../../../application/errors";
+import type { UserMessage } from "../../../application/shell";
 import { ErrorNotice, useCommand, useMessages } from "../../shell";
 import type { UseCaseFn, useModal } from "../../shell";
 
@@ -15,11 +16,18 @@ const props = defineProps<{
 const emit = defineEmits<{ "update:open": [open: boolean]; deleted: [] }>();
 const text = useMessages().notes.deleteDialog;
 const deletion = useCommand(() => props.remove());
-const { pending, message } = deletion;
+const { pending } = deletion;
+const message = shallowRef<UserMessage>();
 let active = true;
 onScopeDispose(() => {
   active = false;
 });
+watch(
+  () => props.open,
+  () => {
+    message.value = undefined;
+  },
+);
 
 function updateOpen(next: boolean) {
   if (!pending.value) emit("update:open", next);
@@ -27,8 +35,11 @@ function updateOpen(next: boolean) {
 
 async function confirmDeletion() {
   if (pending.value) return;
+  message.value = undefined;
   const outcome = await deletion.run();
-  if (active && outcome._tag === "success") {
+  if (!active) return;
+  if (outcome._tag === "failure") message.value = outcome.message;
+  if (outcome._tag === "success") {
     emit("deleted");
     emit("update:open", false);
   }

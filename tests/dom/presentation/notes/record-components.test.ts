@@ -136,3 +136,36 @@ it("opens a note for manual repair through the host opener", async () => {
     await mounted.close();
   }
 });
+
+it("clears a previous delete error when the dialog opens again", async () => {
+  const fixture = testRuntime({ language: "en", source: "fail" });
+  const open = ref(true);
+  const view = defineComponent({
+    setup() {
+      const modalProps = useModal(open, () => undefined);
+      return () =>
+        h(DeleteRecordDialog, {
+          open: open.value,
+          title: "Example",
+          modalProps,
+          remove: () => fixture.source.read,
+          "onUpdate:open": (next: boolean) => {
+            open.value = next;
+          },
+        });
+    },
+  });
+  const mounted = await mountContent(fixture, view);
+  try {
+    const confirm = await eventually(() => button(mounted.root, text.deleteDialog.confirm));
+    confirm.click();
+    await eventually(() => expect(mounted.root.querySelector('[role="alert"]')).not.toBeNull());
+    button(mounted.root, text.deleteDialog.cancel).click();
+    await eventually(() => expect(mounted.root.querySelector('[role="dialog"]')).toBeNull());
+    open.value = true;
+    await eventually(() => button(mounted.root, text.deleteDialog.confirm));
+    expect(mounted.root.querySelector('[role="alert"]')).toBeNull();
+  } finally {
+    await mounted.close();
+  }
+});

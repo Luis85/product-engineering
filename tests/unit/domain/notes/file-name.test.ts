@@ -25,6 +25,13 @@ it("counts UTF-8 bytes after reserving the largest suffix and Markdown extension
   expect(fitsFileName("...", "x".repeat(247))).toBe(false);
 });
 
+it("uses the fallback when only forbidden characters, dots, and spaces remain", () => {
+  expect(recordFileName(" ??? . # [ ] ", "Item")).toBe("Item");
+  expect(recordFileName("-", "Item")).toBe("-");
+  expect(recordFileName(" /-? ", "Item")).toBe("---");
+  expect(followsTitle("Item (2)", "???", "Item")).toBe(true);
+});
+
 it("follows exact and generated clash names using the vault's name comparison", () => {
   const title = "Résumé / Milestone";
   for (const generated of [

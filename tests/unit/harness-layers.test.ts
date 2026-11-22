@@ -1,6 +1,12 @@
-import { Effect } from "effect";
+import { Effect, Option, Stream } from "effect";
 import { expect, it, vi } from "vitest";
 import { harnessLayer, parseScenario, SCENARIOS } from "../../harness/layers";
+import {
+  NoteStore,
+  rebuildNoteIndex,
+  unindexedChanges,
+  unindexedSnapshot,
+} from "../../src/application/notes";
 import {
   Clipboard,
   HostInfo,
@@ -100,6 +106,54 @@ it("uses the browser clipboard and maps rejected writes to typed errors", async 
     expect(writeText).toHaveBeenCalledWith("report");
   } finally {
     vi.unstubAllGlobals();
+    await runtime.dispose();
+  }
+});
+
+it.each([
+  { scenario: "loaded", count: 2, newer: 0, blocked: 0, repeated: 0 },
+  { scenario: "empty", count: 0, newer: 0, blocked: 0, repeated: 0 },
+  { scenario: "invalid", count: 4, newer: 0, blocked: 1, repeated: 2 },
+  { scenario: "readonly", count: 2, newer: 1, blocked: 0, repeated: 0 },
+] as const)(
+  "seeds the $scenario vault scenario with $count records",
+  async ({ scenario, count, newer, blocked, repeated }) => {
+    const runtime = makeRuntime(harnessLayer(scenario, { language: "en", notify: () => {} }));
+    try {
+      const notes = await runtime.runPromise(NoteStore.use((store) => store.list));
+      expect(notes).toHaveLength(count);
+      expect(
+        notes.filter((note) => note.frontmatter.schema === "product-engineering.item/v2"),
+      ).toHaveLength(newer);
+      expect(notes.filter((note) => note.frontmatter.title === "Repeated title")).toHaveLength(
+        repeated,
+      );
+      expect(notes.filter((note) => note.frontmatter.status === "blocked")).toHaveLength(blocked);
+    } finally {
+      await runtime.dispose();
+    }
+  },
+);
+
+it("recovers the failure scenario on the first index retry", async () => {
+  const runtime = makeRuntime(harnessLayer("failure", { language: "en", notify: () => {} }));
+  try {
+    const initial = await runtime.runPromise(
+      Stream.runHead(
+        unindexedChanges.pipe(Stream.filter((state) => state.ready || state.failure !== undefined)),
+      ),
+    );
+    expect(Option.getOrThrow(initial)).toMatchObject({
+      ready: false,
+      failure: { _tag: "NoteIndexReadError" },
+    });
+    await runtime.runPromise(rebuildNoteIndex);
+    expect(await runtime.runPromise(unindexedSnapshot)).toMatchObject({
+      ready: true,
+      notes: [],
+      failure: undefined,
+    });
+  } finally {
     await runtime.dispose();
   }
 });

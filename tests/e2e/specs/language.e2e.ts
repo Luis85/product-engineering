@@ -33,7 +33,7 @@ async function verifyLanguage(language: Language): Promise<void> {
   await openView();
   const frame = browser.$(`${ROOT} [data-testid=app-frame]`);
   await expect(frame).toHaveAttribute("lang", language);
-  await expect(browser.$(`${ROOT} [data-testid=items-screen]`)).toHaveText(
+  await expect(browser.$(`${ROOT} [data-testid=items-empty]`)).toHaveText(
     texts.items.settings.empty,
   );
 

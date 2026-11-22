@@ -34,6 +34,14 @@ export interface IntegrationsCatalog {
       readonly stop: string;
       readonly copy: string;
       readonly copied: MessageText;
+      readonly sharing: {
+        readonly title: string;
+        readonly description: string;
+        readonly loading: string;
+        readonly unavailable: string;
+        readonly empty: string;
+        readonly unavailableItem: string;
+      };
       readonly errors: Readonly<Record<McpSettingsAction, MessageText>>;
     };
     readonly ai: {

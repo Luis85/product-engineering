@@ -4,6 +4,7 @@ import type { AppRuntime } from "./application/app-services";
 import { appCommands } from "./application/commands";
 import { configuredAgentChat } from "./application/integrations";
 import { catalogFor } from "./application/messages";
+import { noteChanges, noteSnapshot } from "./application/notes";
 import type { Route } from "./application/routes";
 import {
   describeDefect,
@@ -15,11 +16,15 @@ import {
   SettingsService,
   toLoggedError,
 } from "./application/shell";
+import { itemType } from "./domain/items";
 import { consoleSinkLayer } from "./infrastructure/logging/console-sink";
 import { incidentsLayer } from "./infrastructure/logging/incidents";
 import { createMcpController } from "./infrastructure/mcp";
 import { appLayer } from "./infrastructure/obsidian/app-layer";
-import { createAgentSettingsPart } from "./infrastructure/obsidian/integrations";
+import {
+  createAgentSettingsPart,
+  createMcpItemAccess,
+} from "./infrastructure/obsidian/integrations";
 import {
   addRibbonIcon,
   hostLanguage,
@@ -146,9 +151,13 @@ export async function bootstrap(
       if (!started) removeCommands();
     });
 
+    const mcpItems = createMcpItemAccess(runtime, {
+      current: noteSnapshot(itemType),
+      changes: noteChanges(itemType),
+    });
     const mcp = createMcpController({
       version: plugin.manifest.version,
-      readItem: () => Promise.resolve(undefined),
+      readItem: mcpItems.readItem,
     });
     undo.push(() => mcp.dispose());
     const agentSettings = createAgentSettingsPart({
@@ -156,7 +165,7 @@ export async function bootstrap(
       runtime,
       mirror,
       messages,
-      selectedItemIds: () => [],
+      items: mcpItems.choices,
     });
     const tab = new ShellSettingTab(
       plugin.app,
@@ -173,6 +182,11 @@ export async function bootstrap(
       ),
     );
     plugin.addSettingTab(tab);
+    undo.push(
+      mcpItems.watchChoices(() => {
+        if (tab.containerEl.isConnected) tab.update();
+      }),
+    );
     const surfaces = new Set<() => void>();
     plugin.registerView(
       SHELL_VIEW_TYPE,

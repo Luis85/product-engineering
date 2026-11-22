@@ -12,6 +12,8 @@ const issues: IssueDescriptions = {
   "logLevel.unknown": ({ allowed }) =>
     `Wähle eine verfügbare Protokollstufe (${allowed.map((level) => levelLabels[level]).join(", ")}).`,
   "mcpPort.invalid": () => "Gib für den MCP-Port eine ganze Zahl von 0 bis 65535 ein.",
+  "mcpSharedItemIds.invalid": () =>
+    "Wähle die freigegebenen Einträge erneut in den Einstellungen von Product Engineering aus.",
   "claudeCodePath.invalid": () =>
     "Gib den absoluten Pfad zur ausführbaren Datei von Claude Code ein oder lass das Feld für die automatische Suche leer.",
   "codexPath.invalid": () =>

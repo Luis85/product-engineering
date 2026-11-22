@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { itemType as referenceItemType } from "../../../src/domain/items";
 import { date, defineNoteType, required, text } from "../../../src/domain/notes";
 
 const title = required(text());
@@ -6,13 +7,7 @@ const status = required(
   text({ schema: Schema.Literals(["open", "done"]), issue: "status.unknown" }),
 );
 
-export const referenceItemType = defineNoteType({
-  type: "item",
-  version: 1,
-  folder: "Items",
-  fields: { title, status, due: date() },
-  migrations: {},
-});
+export { referenceItemType };
 
 export const referenceEntryType = defineNoteType({
   type: "entry",

@@ -1,5 +1,5 @@
 import { Schema, SchemaGetter } from "effect";
-import { CliExecutablePath, McpPort } from "./agent-settings";
+import { CliExecutablePath, McpPort, McpSharedItemIds } from "./agent-settings";
 import { DEFAULT_ROOT_FOLDER, RootFolder, ROOT_FOLDER_MAX_LENGTH } from "./root-folder";
 import { makeSettingsCodec, StructuralSettingsIssue } from "./settings-codec";
 import type { SettingsFields } from "./settings-codec";
@@ -15,6 +15,7 @@ const UnknownLogLevel = Schema.Struct({
   allowed: Schema.Array(LogLevel),
 });
 const InvalidMcpPort = Schema.Struct({ code: Schema.Literal("mcpPort.invalid") });
+const InvalidMcpSharedItemIds = Schema.Struct({ code: Schema.Literal("mcpSharedItemIds.invalid") });
 const InvalidClaudeCodePath = Schema.Struct({ code: Schema.Literal("claudeCodePath.invalid") });
 const InvalidCodexPath = Schema.Struct({ code: Schema.Literal("codexPath.invalid") });
 const InvalidRootFolder = Schema.Struct({
@@ -25,6 +26,7 @@ export const SettingsIssue = Schema.Union([
   StructuralSettingsIssue,
   UnknownLogLevel,
   InvalidMcpPort,
+  InvalidMcpSharedItemIds,
   InvalidClaudeCodePath,
   InvalidCodexPath,
   InvalidRootFolder,
@@ -35,6 +37,7 @@ export type Settings = {
   readonly logLevel: LogLevel;
   readonly rootFolder: string;
   readonly mcpPort?: number | undefined;
+  readonly mcpSharedItemIds?: readonly string[] | undefined;
   readonly claudeCodePath?: string | undefined;
   readonly codexPath?: string | undefined;
 };
@@ -63,6 +66,12 @@ const FIELDS = {
     default: undefined,
     omitWhenDefault: true,
     issue: { code: "mcpPort.invalid" },
+  },
+  mcpSharedItemIds: {
+    schema: McpSharedItemIds,
+    default: undefined,
+    omitWhenDefault: true,
+    issue: { code: "mcpSharedItemIds.invalid" },
   },
   claudeCodePath: {
     schema: OptionalCliExecutablePath,

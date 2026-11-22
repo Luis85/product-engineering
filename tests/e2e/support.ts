@@ -111,6 +111,25 @@ export async function openView(): Promise<void> {
   await browser.executeObsidianCommand(OPEN_VIEW_COMMAND);
 }
 
+export function readViewRoute(): Promise<unknown> {
+  return browser.executeObsidian(
+    ({ app }, type) => app.workspace.getLeavesOfType(type)[0]?.getViewState().state?.route,
+    VIEW_TYPE,
+  );
+}
+
+export async function setViewRoute(route: unknown): Promise<void> {
+  await browser.executeObsidian(
+    async ({ app }, type, value) => {
+      const leaf = app.workspace.getLeavesOfType(type)[0];
+      if (!leaf) throw new Error("Expected the routed view");
+      await leaf.setViewState({ type, active: true, state: { route: value } });
+    },
+    VIEW_TYPE,
+    route,
+  );
+}
+
 export async function enablePlugin(): Promise<void> {
   await browser.getObsidianPage().enablePlugin(PLUGIN_ID);
   await waitForPluginCommand(true);

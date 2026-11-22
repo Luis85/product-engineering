@@ -19,49 +19,82 @@ export function waitForVault<A>(read: () => A | undefined, operation: string): P
   });
 }
 
+type MetadataEvent =
+  | { readonly event: "changed"; readonly title: unknown }
+  | { readonly event: "resolve" | "resolved" | "deleted" };
+
+function completedTrace(trace: readonly MetadataEvent[], title: string | undefined) {
+  const started = trace.findIndex((entry) =>
+    title === undefined
+      ? entry.event === "deleted"
+      : entry.event === "changed" && entry.title === title,
+  );
+  if (started < 0) return;
+
+  const targetResolved =
+    title === undefined
+      ? started
+      : trace.findIndex((entry, index) => index > started && entry.event === "resolve");
+  if (targetResolved < 0) return;
+
+  const completed = trace.findIndex(
+    (entry, index) => index > targetResolved && entry.event === "resolved",
+  );
+  if (completed < 0) return;
+  return trace
+    .slice(started, completed + 1)
+    .flatMap(({ event }, index) =>
+      event === "resolved" && index !== completed - started ? [] : [event],
+    );
+}
+
 export async function readinessScenario({
   vault,
   metadataCache,
   fileManager,
 }: Pick<App, "vault" | "metadataCache" | "fileManager">) {
   const path = "Fidelity readiness.md";
-  type Event = "changed" | "resolve" | "resolved" | "deleted";
-  const trace: Event[] = [];
+  const trace: MetadataEvent[] = [];
   const subscriptions = [
-    metadataCache.on("changed", (file) => {
-      if (file.path === path) trace.push("changed");
+    metadataCache.on("changed", (file, _text, cache) => {
+      if (file.path === path) trace.push({ event: "changed", title: cache.frontmatter?.title });
     }),
     metadataCache.on("resolve", (file) => {
-      if (file.path === path) trace.push("resolve");
+      if (file.path === path) trace.push({ event: "resolve" });
     }),
     metadataCache.on("resolved", () => {
-      trace.push("resolved");
+      trace.push({ event: "resolved" });
     }),
     metadataCache.on("deleted", (file) => {
-      if (file.path === path) trace.push("deleted");
+      if (file.path === path) trace.push({ event: "deleted" });
     }),
   ];
 
-  async function observe(start: Event, action: () => Promise<unknown>) {
+  async function observe(phase: string, title: string | undefined, action: () => Promise<unknown>) {
     trace.length = 0;
     await action();
-    return waitForVault(() => {
-      const first = trace.indexOf(start);
-      const last = trace.indexOf("resolved", first + 1);
-      return first >= 0 && last > first ? trace.slice(first, last + 1) : undefined;
-    }, start + " and resolved");
+    try {
+      return await waitForVault(() => completedTrace(trace, title), phase + " metadata events");
+    } catch (cause) {
+      const file = vault.getFileByPath(path);
+      const cachedTitle: unknown = file && metadataCache.getFileCache(file)?.frontmatter?.title;
+      throw new Error(
+        `${phase} readiness trace: ${JSON.stringify({ cachedTitle, events: trace.slice(-16) })}`,
+        { cause },
+      );
+    }
   }
 
   try {
-    const create = await observe("changed", () =>
+    const create = await observe("create", "Before", () =>
       vault.create(path, "---\ntitle: Before\n---\nBody\n"),
     );
     const file = vault.getFileByPath(path);
     if (!file) throw new Error("The readiness note was not created");
-    const edit = await observe("changed", () =>
+    const edit = await observe("edit", "After", () =>
       vault.process(file, (text) => text.replace("Before", "After")),
     );
-    const trash = await observe("deleted", () => fileManager.trashFile(file));
+    const trash = await observe("trash", undefined, () => fileManager.trashFile(file));
     return { create, edit, trash };
   } finally {
     for (const subscription of subscriptions) metadataCache.offref(subscription);

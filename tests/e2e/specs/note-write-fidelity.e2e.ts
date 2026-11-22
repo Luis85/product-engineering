@@ -3,6 +3,17 @@ import * as fc from "fast-check";
 import { it } from "mocha";
 import { yamlEntry } from "../../../src/domain/notes";
 import { WRITE_FACTS, yamlSampleValue } from "../../support/notes/fidelity";
+import {
+  fixtureId,
+  itemCard,
+  itemPath,
+  openEdit,
+  openItems,
+  save,
+  selectStatus,
+  waitForNote,
+  writeNote,
+} from "../items";
 import { installConsoleSpy, pluginProblems } from "../support";
 
 const scalar = fc.oneof(fc.string(), fc.double(), fc.boolean(), fc.constant(null));
@@ -40,5 +51,47 @@ it("saves within Obsidian's recognized frontmatter fences and preserves the orig
     plugins.noteStoreProbe.writeFacts(),
   );
   expect(written).toEqual(WRITE_FACTS);
+  expect(await pluginProblems()).toEqual([]);
+});
+
+it("changes one property through the item form while preserving the rest of the file bytes", async () => {
+  await installConsoleSpy();
+  const id = fixtureId(19);
+  const path = itemPath("Exact bytes");
+  const original =
+    "\uFEFF" +
+    [
+      "---",
+      "# A comment before the schema",
+      "schema: product-engineering.item/v1",
+      `id: ${id}`,
+      "title: Exact bytes",
+      "status: open  # keep this comment",
+      "zip: 01067",
+      "version_text: 1.10",
+      "large_integer: 12345678901234567890",
+      "flow: [a, b]",
+      "confirmation: 'yes'",
+      "'quoted-key': value  # preserve the key and comment",
+      "list:",
+      "- alpha",
+      "- beta",
+      "summary: |",
+      "  A block scalar",
+      "  with two lines.",
+      "---",
+      "# Original Markdown",
+      "Trailing spaces stay.  ",
+      "",
+    ].join("\r\n");
+  await writeNote(path, original);
+  await openItems();
+  await itemCard(id).waitForDisplayed();
+  await openEdit(id);
+  await selectStatus("done");
+  await save();
+  expect(await waitForNote(path, (text) => text.includes("status: done"))).toBe(
+    original.replace("status: open", "status: done"),
+  );
   expect(await pluginProblems()).toEqual([]);
 });

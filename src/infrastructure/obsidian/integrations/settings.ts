@@ -10,6 +10,8 @@ import { describeError } from "../../../application/user-messages";
 import { parseMcpPort, validatePatch } from "../../../domain/shell";
 import { runSafely } from "../shell";
 import type { SettingsMirror, SettingsTabPart } from "../shell";
+import type { McpItemChoices } from "./mcp-items";
+import { createMcpSharing } from "./mcp-sharing";
 
 type AgentSetting = "mcpPort" | "claudeCodePath" | "codexPath";
 
@@ -18,7 +20,7 @@ type AgentSettings = {
   readonly runtime: AppRuntime;
   readonly mirror: SettingsMirror;
   readonly messages: Catalog;
-  readonly selectedItemIds: () => readonly string[];
+  readonly items: () => McpItemChoices;
 };
 
 function isAgentSetting(key: string): key is AgentSetting {
@@ -64,14 +66,23 @@ export function createAgentSettingsPart({
   runtime,
   mirror,
   messages,
-  selectedItemIds,
+  items,
 }: AgentSettings): SettingsTabPart {
   let pending = false;
+  let selectionWrites: Promise<void> = Promise.resolve();
+  let refreshDefinitions: (() => void) | undefined;
   const { mcp, ai } = messages.integrations.settings;
+  const sharing = createMcpSharing({ mirror, messages: mcp.sharing, choices: items });
 
-  const start = Effect.tryPromise({
-    try: () => controller.start(mirror.current.mcpPort ?? 0, selectedItemIds()),
-    catch: () => new McpSettingsError({ action: "start" }),
+  const start = Effect.gen(function* () {
+    yield* Effect.promise(() => selectionWrites);
+    const { mcpPort = 0, mcpSharedItemIds = [] } = yield* SettingsService.use(
+      (settings) => settings.current,
+    );
+    yield* Effect.tryPromise({
+      try: () => controller.start(mcpPort, mcpSharedItemIds),
+      catch: () => new McpSettingsError({ action: "start" }),
+    });
   });
   const stop = Effect.tryPromise({
     try: () => controller.stop(),
@@ -117,6 +128,7 @@ export function createAgentSettingsPart({
 
   return {
     definitions(refresh) {
+      refreshDefinitions = refresh;
       const status = controller.status();
       const running = status.state === "running";
       return [
@@ -129,23 +141,36 @@ export function createAgentSettingsPart({
           disabled: !running || pending,
           action: () => action(copyConnection(controller, messages.integrations), refresh),
         },
+        ...sharing.definitions(),
         { name: ai.title },
         field("claudeCodePath", ai.claudeCodePath),
         field("codexPath", ai.codexPath),
       ];
     },
     getControlValue(key) {
-      return isAgentSetting(key) ? String(mirror.current[key] ?? "") : undefined;
+      return isAgentSetting(key) ? String(mirror.current[key] ?? "") : sharing.controlValue(key);
     },
     async setControlValue(key, value) {
-      if (!isAgentSetting(key)) return;
-      await runSafely(
-        runtime,
-        notifyFailure(
-          SettingsService.use((settings) => settings.update(patchFor(key, value))),
-          messages,
-        ),
-      );
+      if (isAgentSetting(key)) {
+        await runSafely(
+          runtime,
+          notifyFailure(
+            SettingsService.use((settings) => settings.update(patchFor(key, value))),
+            messages,
+          ),
+        );
+        return;
+      }
+      const change = sharing.change(key, value);
+      if (!change) return;
+      const restoreToggle = Effect.sync(() => refreshDefinitions?.());
+      const persist = () =>
+        runSafely(
+          runtime,
+          notifyFailure(change.pipe(Effect.tapError(() => restoreToggle)), messages),
+        );
+      selectionWrites = selectionWrites.then(persist, persist);
+      await selectionWrites;
     },
   };
 }

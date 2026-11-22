@@ -1,31 +1,15 @@
-import type { ReadOnlyReason, SettingsIssue } from "../../../domain/shell";
+import type { ReadOnlyReason } from "../../../domain/shell";
 import type { ShellError } from "../errors";
 import type { SettingsStatus } from "../settings-service";
 import type { UserMessage } from "../user-messages";
 import { ISSUES_URL } from "./catalog";
-import type { IssueDescriptions, ShellCatalog } from "./catalog";
+import type { IssueDescriptions, SettingsIssueByCode, ShellCatalog } from "./catalog";
 
-export function describeIssue(issue: SettingsIssue, messages: IssueDescriptions): string {
-  switch (issue.code) {
-    case "file.invalid":
-      return messages["file.invalid"](issue);
-    case "schema.invalid":
-      return messages["schema.invalid"](issue);
-    case "schema.newer":
-      return messages["schema.newer"](issue);
-    case "migration.failed":
-      return messages["migration.failed"](issue);
-    case "logLevel.unknown":
-      return messages["logLevel.unknown"](issue);
-    case "mcpPort.invalid":
-      return messages["mcpPort.invalid"](issue);
-    case "claudeCodePath.invalid":
-      return messages["claudeCodePath.invalid"](issue);
-    case "codexPath.invalid":
-      return messages["codexPath.invalid"](issue);
-    case "rootFolder.invalid":
-      return messages["rootFolder.invalid"](issue);
-  }
+export function describeIssue<Code extends keyof SettingsIssueByCode>(
+  issue: SettingsIssueByCode[Code] & { readonly code: Code },
+  messages: IssueDescriptions,
+): string {
+  return messages[issue.code](issue);
 }
 
 function describeReadOnly(reason: ReadOnlyReason, messages: ShellCatalog): UserMessage {

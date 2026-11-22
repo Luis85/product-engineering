@@ -28,3 +28,8 @@
 | Record list | `recordList` |
 | Record card key | `cardKey` |
 | Form draft | `formDraft` |
+| Item status | `status` |
+| Open item | `open` |
+| Done item | `done` |
+| Taken title | `title.taken` |
+| Duplicate title | `title.duplicate` |

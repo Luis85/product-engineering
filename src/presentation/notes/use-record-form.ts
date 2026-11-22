@@ -28,17 +28,22 @@ type RecordFormOptions<
   Fields extends NoteFields,
   Extra extends NoteIssue,
   Issue extends FieldIssue,
-  Error extends AppError,
 > = {
   readonly type: NoteType<Fields>;
   readonly record?: RecordRow<Fields, Extra>;
   readonly initial: FormInput;
-  readonly create: UseCaseFn<[FormInput], Saved, Error>;
-  readonly update: UseCaseFn<[RecordRow<Fields, Extra>, FormInput], Saved, Error>;
-  readonly invalid: Error["_tag"];
-  readonly rules: (input: FormInput) => readonly Issue[];
+  readonly create: UseCaseFn<[FormInput], Saved, AppError>;
+  readonly update: UseCaseFn<[RecordRow<Fields, Extra>, FormInput], Saved, AppError>;
+  readonly invalid: AppError["_tag"];
+  readonly rules: (
+    input: FormInput,
+    record: RecordRow<Fields, Extra> | undefined,
+  ) => readonly Issue[];
   readonly describe: (
-    issue: Issue | FieldIssue<NoteKey<Fields>, NoteFieldCode<Fields>> | Extract<Extra, FieldIssue>,
+    issue:
+      | NoInfer<Issue>
+      | FieldIssue<NoteKey<Fields>, NoteFieldCode<Fields>>
+      | Extract<Extra, FieldIssue>,
   ) => string;
   readonly labels: Readonly<Record<NoteKey<Fields>, string>>;
   readonly summary: FormSummary;
@@ -81,8 +86,7 @@ export function useRecordForm<
   Fields extends NoteFields,
   Extra extends NoteIssue,
   Issue extends FieldIssue,
-  Error extends AppError,
->(options: RecordFormOptions<Fields, Extra, Issue, Error>) {
+>(options: RecordFormOptions<Fields, Extra, Issue>) {
   const messages = useMessages().notes;
   const loaded = shallowRef(options.record);
   const starting: FormDraft = { ...(options.record?.values ?? options.initial) };
@@ -117,7 +121,7 @@ export function useRecordForm<
     defaultValues: starting,
     validators: {
       onSubmit({ value }) {
-        const issues = options.rules(value);
+        const issues = options.rules(value, loaded.value);
         return issues.length > 0 ? options.summary.title : undefined;
       },
     },
@@ -151,7 +155,7 @@ export function useRecordForm<
   const blocked = computed(
     () => submitting.value || save.pending.value || conflicts.value.length > 0,
   );
-  const validation = computed(() => fieldIssues(options.rules(input.value)));
+  const validation = computed(() => fieldIssues(options.rules(input.value, loaded.value)));
 
   function issue(key: string): string | undefined {
     const current = input.value[key];

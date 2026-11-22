@@ -18,6 +18,15 @@ export const en: IntegrationsCatalog = {
         title: "MCP connection copied",
         detail: "Use these connection details in your MCP client.",
       },
+      sharing: {
+        title: "Items shared with MCP clients",
+        description:
+          "Choose the items clients can read. New selections take effect at the next server start. Removing a selection withdraws access immediately.",
+        loading: "Loading items…",
+        unavailable: "The item index is unavailable.",
+        empty: "No items are available to share.",
+        unavailableItem: "Unavailable item",
+      },
       errors: {
         start: {
           title: "The MCP server could not start",

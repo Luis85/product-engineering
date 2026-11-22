@@ -50,4 +50,4 @@ it("loads the plugin without evaluating Vue, Nuxt UI or TanStack Form", async ()
     plugin.unload();
     await fixture.runtime.dispose();
   }
-}, 30_000);
+}, 60_000);

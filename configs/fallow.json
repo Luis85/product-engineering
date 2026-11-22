@@ -95,7 +95,7 @@
       { "name": "composition", "patterns": ["src/main.ts", "src/bootstrap.ts"] }
     ],
     "rules": [
-      { "from": "domain", "allow": ["domain/shell", "domain/notes"] },
+      { "from": "domain", "allow": ["domain/shell", "domain/notes", "domain/items"] },
       { "from": "domain/shell", "allow": [] },
       {
         "from": "application",

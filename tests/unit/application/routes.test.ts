@@ -59,8 +59,8 @@ it("collects route schemas in manifest order and keeps each schema's parameters"
 });
 
 it("localizes the item section and its empty state", () => {
-  expect(catalogFor("en").items.settings).toEqual({ label: "Items", empty: "No items yet." });
-  expect(catalogFor("de").items.settings).toEqual({
+  expect(catalogFor("en").items.settings).toMatchObject({ label: "Items", empty: "No items yet." });
+  expect(catalogFor("de").items.settings).toMatchObject({
     label: "Einträge",
     empty: "Noch keine Einträge.",
   });

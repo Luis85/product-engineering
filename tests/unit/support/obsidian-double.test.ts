@@ -423,6 +423,17 @@ it("agrees with the vault and readiness scenarios used in Obsidian", async () =>
   expect(await readinessScenario(app)).toEqual(READINESS_FACTS);
 });
 
+it("waits for the target note's resolve when the vault resolves other files first", async () => {
+  const app = new App();
+  const running = readinessScenario(app as unknown as HostApp);
+  const unrelated = app.metadataCache.on("changed", () => app.metadataCache.trigger("resolved"));
+  try {
+    expect(await running).toEqual(READINESS_FACTS);
+  } finally {
+    app.metadataCache.offref(unrelated);
+  }
+});
+
 it("agrees with the native store and line-edit scenarios used in Obsidian", async () => {
   const app = new App({ caseInsensitive: true }) as unknown as HostApp;
   const runtime = ManagedRuntime.make(noteStoreLayer(app));

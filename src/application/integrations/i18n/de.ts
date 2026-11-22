@@ -18,6 +18,15 @@ export const de: IntegrationsCatalog = {
         title: "MCP-Verbindung kopiert",
         detail: "Verwende diese Verbindungsdaten in deinem MCP-Client.",
       },
+      sharing: {
+        title: "Für MCP-Clients freigegebene Einträge",
+        description:
+          "Wähle die Einträge aus, die Clients lesen dürfen. Neue Freigaben gelten ab dem nächsten Serverstart. Das Aufheben einer Freigabe entzieht den Zugriff sofort.",
+        loading: "Einträge werden geladen…",
+        unavailable: "Der Eintragsindex ist nicht verfügbar.",
+        empty: "Es sind keine Einträge für die Freigabe verfügbar.",
+        unavailableItem: "Nicht verfügbarer Eintrag",
+      },
       errors: {
         start: {
           title: "Der MCP-Server konnte nicht gestartet werden",

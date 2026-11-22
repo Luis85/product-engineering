@@ -1,6 +1,11 @@
 import { Schema } from "effect";
 import { expect, it } from "vitest";
-import { parseMcpPort } from "../../../../src/domain/shell";
+import {
+  decodeSettings,
+  encodeSettings,
+  parseMcpPort,
+  validatePatch,
+} from "../../../../src/domain/shell";
 import { CliExecutablePath, McpPort } from "../../../../src/domain/shell/agent-settings";
 
 it.each([
@@ -41,3 +46,33 @@ it.each(["claude", "../codex", "C:codex.exe", "~/bin/claude"])(
     );
   },
 );
+
+it("round-trips explicit shared item IDs in selection order and omits the empty default", () => {
+  const saved = decodeSettings({ mcpSharedItemIds: ["item-b", "item-a", "item-b"] });
+  expect(saved.issues).toEqual([]);
+  expect(saved.settings.mcpSharedItemIds).toEqual(["item-b", "item-a"]);
+  expect(encodeSettings(saved.settings)).toEqual({
+    schemaVersion: 1,
+    logLevel: "warn",
+    mcpSharedItemIds: ["item-b", "item-a"],
+  });
+  const empty = decodeSettings({ mcpSharedItemIds: [] });
+  expect(empty.settings.mcpSharedItemIds).toBeUndefined();
+  expect(encodeSettings(empty.settings)).not.toHaveProperty("mcpSharedItemIds");
+  expect(validatePatch({ mcpSharedItemIds: [] })).toEqual({
+    patch: { mcpSharedItemIds: undefined },
+    issues: [],
+  });
+});
+
+it("rejects a malformed sharing setting without recovering a partial list", () => {
+  const unsafe = { mcpSharedItemIds: ["item-a", null], mcpPort: 9170 };
+  const decoded = decodeSettings(unsafe);
+  expect(decoded.issues).toEqual([{ code: "mcpSharedItemIds.invalid" }]);
+  expect(decoded.settings).toMatchObject({ mcpPort: 9170 });
+  expect(decoded.settings.mcpSharedItemIds).toBeUndefined();
+  expect(validatePatch({ mcpSharedItemIds: [""] })).toEqual({
+    patch: {},
+    issues: [{ code: "mcpSharedItemIds.invalid" }],
+  });
+});

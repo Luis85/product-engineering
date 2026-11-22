@@ -9,8 +9,10 @@ import {
   installConsoleSpy,
   openView,
   pluginProblems,
+  readViewRoute,
   readVaultText,
   ROOT,
+  setViewRoute,
   TEST_LANGUAGE,
   VIEW_TYPE,
 } from "../support";
@@ -55,25 +57,6 @@ function layoutIncludesChat(value: unknown): boolean {
     );
   }
   return Object.values(value as Record<string, unknown>).some(layoutIncludesChat);
-}
-
-async function readRoute(): Promise<unknown> {
-  return browser.executeObsidian(({ app }, type) => {
-    const leaf = app.workspace.getLeavesOfType(type)[0];
-    return leaf?.getViewState().state?.route;
-  }, VIEW_TYPE);
-}
-
-async function setRoute(route: unknown): Promise<void> {
-  await browser.executeObsidian(
-    async ({ app }, type, value) => {
-      const leaf = app.workspace.getLeavesOfType(type)[0];
-      if (!leaf) throw new Error("Expected the routed view");
-      await leaf.setViewState({ type, active: true, state: { route: value } });
-    },
-    VIEW_TYPE,
-    route,
-  );
 }
 
 async function openMissingRouteProbe(): Promise<void> {
@@ -130,7 +113,7 @@ describe("routed view", () => {
     await expect(browser.$(settingsScreen)).toExist();
     await menuButton(ROOT, texts.integrations.chat.title).click();
     await expect(browser.$(chatScreen)).toExist();
-    expect(await readRoute()).toEqual(chat);
+    expect(await readViewRoute()).toEqual(chat);
     await expect(browser.$(`${ROOT} [data-testid=frame-history]`)).toExist();
     await browser.waitUntil(
       async () => {
@@ -149,13 +132,13 @@ describe("routed view", () => {
     await browser.reloadObsidian();
     await installConsoleSpy();
     await expect(browser.$(chatScreen)).toExist();
-    expect(await readRoute()).toEqual(chat);
+    expect(await readViewRoute()).toEqual(chat);
     await expect(browser.$(`${ROOT} [data-testid=frame-history]`)).not.toExist();
 
     for (const broken of [{ name: "unknown" }, { name: "settings", section: 42 }]) {
-      await setRoute(broken);
+      await setViewRoute(broken);
       await expect(browser.$(settingsScreen)).toExist();
-      expect(await readRoute()).toEqual(appRoutes.start);
+      expect(await readViewRoute()).toEqual(appRoutes.start);
       await menuButton(ROOT, texts.integrations.chat.title).click();
       await expect(browser.$(chatScreen)).toExist();
     }

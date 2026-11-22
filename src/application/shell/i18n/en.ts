@@ -10,6 +10,8 @@ const issues: IssueDescriptions = {
   "logLevel.unknown": ({ allowed }) =>
     `Choose one of the available log levels (${allowed.join(", ")}).`,
   "mcpPort.invalid": () => "Enter a whole number from 0 to 65535 for the MCP port.",
+  "mcpSharedItemIds.invalid": () =>
+    "Choose the items to share again in Product Engineering settings.",
   "claudeCodePath.invalid": () =>
     "Enter an absolute path to the Claude Code executable, or leave it blank to find it automatically.",
   "codexPath.invalid": () =>
