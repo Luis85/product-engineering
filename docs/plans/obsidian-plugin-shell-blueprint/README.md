@@ -184,6 +184,16 @@ Four phases. Run the tasks in order; each task's file names what it needs from e
 - **[Task 21 · GitHub workflows and dependency updates](21-github.md).** `ci.yml` (`verify`, `e2e`, `scanner-lint`), `nightly-mutation.yml` (cached incremental file, `full` by hand, the edge job, a failure issue), `release.yml` (started by hand on `main` with the input `version`, or by a tag; a read-only `build` job that checks the commit is on `main` and runs gate, e2e and packaging; a `release` job with write permissions, no checkout and no npm, that attests four assets, creates the tag last when started by hand, and a pre-release while the major is 0), Dependabot with cooldown and ignored majors, actions pinned by SHA, `docs/engineering/github-setup.md` and `releasing.md` with BRAT. The scheduled and release workflows cannot run before the repository is on GitHub.
 - **[Task 22 · Documentation and acceptance](22-docs-and-acceptance.md).** ADRs 0002 to 0008, the engineering guides with the tracer as the worked example of `adding-a-feature.md`, `AGENTS.md` as built (with the release rule and the issue tracker line), then the acceptance run from a fresh clone (`npm ci`, `npm run verify:full`, `npm run test:e2e`) and the hand-over list.
 
+## Local agent integrations
+
+Product Engineering includes two optional desktop integrations after the shell and record services are available. The plugin lifecycle owns their disposal. The normal plugin views continue to use the same application services.
+
+- **MCP server.** Add a user-controlled local Streamable HTTP server bound to loopback. Generate a credential each time it starts. Expose the endpoint and credential through an explicit copy action and keep the credential in memory. Register tools against the application feature APIs, including the tracer when it is available. Validate tool arguments with the feature schemas and test with an MCP client, including authentication failures and shutdown. [MCP transport specification](https://modelcontextprotocol.io/specification/latest/basic/transports)
+- **In-plugin chat.** Add a routed chat view with a choice of Claude Code or Codex. Use TanStack AI text adapters and launch the user's installed CLI for each request. Let the CLI resolve the signed-in account and available plan. Pass prompts through standard input, stream replies, and terminate the process when the user cancels or closes the view. Keep conversations in memory and send the messages entered for the chat. [TanStack AI](https://tanstack.com/ai/latest/docs/getting-started/overview), [Claude Code terms](https://code.claude.com/docs/en/legal-and-compliance), [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode)
+- **Verification.** Cover tool discovery and feature calls with the protocol client. Cover provider streams, missing executables, failures, and cancellation with local test fixtures. Run the repository gate and enforce the existing bundle and coverage thresholds after the integrations are registered.
+
+The local MCP listener and the provider CLIs are the runtime networking exceptions. Record their runtime packages and cost in the dependency ADR.
+
 ## Without note data
 
 A plugin whose data is not notes (for example one that only renders, or keeps all state in `data.json`) skips Tasks 13 to 17 and keeps everything else. What falls away with them:
