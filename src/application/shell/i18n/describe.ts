@@ -17,6 +17,12 @@ export function describeIssue(issue: SettingsIssue, messages: IssueDescriptions)
       return messages["migration.failed"](issue);
     case "logLevel.unknown":
       return messages["logLevel.unknown"](issue);
+    case "mcpPort.invalid":
+      return messages["mcpPort.invalid"](issue);
+    case "claudeCodePath.invalid":
+      return messages["claudeCodePath.invalid"](issue);
+    case "codexPath.invalid":
+      return messages["codexPath.invalid"](issue);
   }
 }
 

@@ -8,6 +8,12 @@ import { validatePatch } from "../../../domain/shell";
 import { runSafely } from "./run";
 import type { SettingsMirror } from "./settings-mirror";
 
+export interface SettingsTabPart {
+  readonly definitions: (refresh: () => void) => SettingDefinitionItem[];
+  readonly getControlValue: (key: string) => unknown;
+  readonly setControlValue: (key: string, value: unknown) => Promise<void>;
+}
+
 export class ShellSettingTab extends PluginSettingTab {
   constructor(
     app: App,
@@ -15,6 +21,7 @@ export class ShellSettingTab extends PluginSettingTab {
     private readonly runtime: AppRuntime,
     private readonly mirror: SettingsMirror,
     private readonly messages: ShellCatalog,
+    private readonly extra?: SettingsTabPart,
   ) {
     super(app, plugin);
   }
@@ -49,15 +56,27 @@ export class ShellSettingTab extends PluginSettingTab {
       });
       definitions.push({ name: title, desc });
     }
+    if (this.extra) definitions.push(...this.extra.definitions(() => this.update()));
     return definitions;
   }
 
   override getControlValue(key: string): unknown {
-    return key === "logLevel" ? this.mirror.current.logLevel : undefined;
+    return key === "logLevel" ? this.mirror.current.logLevel : this.extra?.getControlValue(key);
   }
 
   override async setControlValue(key: string, value: unknown): Promise<void> {
-    if (key !== "logLevel") return;
+    if (key !== "logLevel") {
+      if (this.extra) {
+        await this.extra.setControlValue(key, value);
+        await runSafely(
+          this.runtime,
+          Effect.promise(() => this.mirror.refresh()).pipe(
+            Effect.andThen(Effect.sync(() => this.update())),
+          ),
+        );
+      }
+      return;
+    }
 
     const change = Effect.matchEffect(setLogLevel(value), {
       onSuccess: () => Effect.void,

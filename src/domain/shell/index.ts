@@ -1,3 +1,4 @@
+export { parseMcpPort } from "./agent-settings";
 export { ReadOnlyReason } from "./settings-codec";
 export {
   decodeSettings,

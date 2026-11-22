@@ -46,3 +46,7 @@ export type LocalMcpServer = {
   readonly status: () => LocalMcpServerStatus;
   readonly dispose: () => Promise<void>;
 };
+
+export type McpController = Omit<LocalMcpServer, "start"> & {
+  readonly start: (port: number, selectedItemIds: readonly string[]) => Promise<LocalMcpConnection>;
+};

@@ -82,6 +82,13 @@ function runMigrations(
   return { ok: true, raw: value };
 }
 
+function hasAbsentDefault(field: {
+  readonly default: unknown;
+  readonly omitWhenDefault?: boolean;
+}) {
+  return field.default === undefined && field.omitWhenDefault === true;
+}
+
 export function makeSettingsCodec<Editable extends object, Issue>({
   version,
   fields,
@@ -89,10 +96,12 @@ export function makeSettingsCodec<Editable extends object, Issue>({
 }: SettingsCodecOptions<Editable, Issue>) {
   const keys = Object.keys(fields) as (keyof Editable & string)[];
   const defaults = Object.freeze(
-    Object.fromEntries(keys.map((key) => [key, fields[key].default])),
+    Object.fromEntries(
+      keys.filter((key) => !hasAbsentDefault(fields[key])).map((key) => [key, fields[key].default]),
+    ),
   ) as Editable;
 
-  function decodeFields(raw: RawSettings) {
+  function decodeFields(raw: RawSettings, source: "stored" | "patch") {
     const patch: Partial<Mutable<Editable>> = {};
     const issues: Issue[] = [];
 
@@ -100,7 +109,9 @@ export function makeSettingsCodec<Editable extends object, Issue>({
       if (!Object.hasOwn(raw, key)) continue;
       const field = fields[key];
       try {
-        patch[key] = Schema.decodeUnknownSync(field.schema)(raw[key]);
+        const value = Schema.decodeUnknownSync(field.schema)(raw[key]);
+        if (source === "stored" && value === undefined && hasAbsentDefault(field)) continue;
+        patch[key] = value;
       } catch {
         issues.push(field.issue);
       }
@@ -131,7 +142,7 @@ export function makeSettingsCodec<Editable extends object, Issue>({
         };
       }
 
-      const { patch, issues } = decodeFields(migrated.raw);
+      const { patch, issues } = decodeFields(migrated.raw, "stored");
       return { settings: { ...defaults, ...patch }, issues: [...file.issues, ...issues] };
     } catch {
       return { settings: defaults, issues: [{ code: "file.invalid" }] };
@@ -154,7 +165,7 @@ export function makeSettingsCodec<Editable extends object, Issue>({
     readonly issues: readonly (Issue | StructuralSettingsIssue)[];
   } {
     return isRecord(input)
-      ? decodeFields(input)
+      ? decodeFields(input, "patch")
       : { patch: {}, issues: [{ code: "file.invalid" }] };
   }
 

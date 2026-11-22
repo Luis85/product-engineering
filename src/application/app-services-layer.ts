@@ -1,4 +1,6 @@
 import { Layer } from "effect";
+import { unavailableAgentChat } from "./integrations";
+import type { AgentChat } from "./integrations";
 import { messagesLayer } from "./messages";
 import { servicesLayerOf } from "./module";
 import { APP_MODULES } from "./modules";
@@ -12,6 +14,7 @@ import type {
   LogSink,
   Notifier,
   SettingsStore,
+  SettingsService,
   ShellServices,
 } from "./shell";
 
@@ -23,6 +26,7 @@ export type AppAdapters = {
   readonly incidents: Layer.Layer<Incidents>;
   readonly logSink: Layer.Layer<LogSink>;
   readonly hostEvents: Layer.Layer<never, never, ShellServices>;
+  readonly agentChat?: Layer.Layer<AgentChat, never, SettingsService>;
 };
 
 export type AppServiceOptions = {
@@ -45,6 +49,7 @@ export function appServicesLayer(
   );
   const settings = Layer.provideMerge(SettingsServiceLive, ports);
   const shell = Layer.mergeAll(Layer.provideMerge(LoggerLive(options), settings), EventBusLive);
-  const services = Layer.provideMerge(servicesLayerOf(APP_MODULES), shell);
+  const chat = Layer.provideMerge(adapters.agentChat ?? unavailableAgentChat, shell);
+  const services = Layer.provideMerge(servicesLayerOf(APP_MODULES), chat);
   return Layer.provideMerge(adapters.hostEvents, services);
 }

@@ -9,6 +9,11 @@ const issues: IssueDescriptions = {
   "migration.failed": ({ version }) => `Settings from version ${version} could not be migrated.`,
   "logLevel.unknown": ({ allowed }) =>
     `Choose one of the available log levels (${allowed.join(", ")}).`,
+  "mcpPort.invalid": () => "Enter a whole number from 0 to 65535 for the MCP port.",
+  "claudeCodePath.invalid": () =>
+    "Enter an absolute path to the Claude Code executable, or leave it blank to find it automatically.",
+  "codexPath.invalid": () =>
+    "Enter an absolute path to the Codex executable, or leave it blank to find it automatically.",
 };
 
 export const en: ShellCatalog = {

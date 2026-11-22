@@ -62,6 +62,10 @@ export function useMessages(): Catalog {
   return useRuntimeContext().messages;
 }
 
+export function useService<A>(read: Effect.Effect<A, never, AppServices>): A {
+  return useRuntime().runSync(read);
+}
+
 export function reportVueError(runtime: AppRuntime, cause: unknown): void {
   void runRuntimeExit(
     runtime,

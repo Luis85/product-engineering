@@ -5,8 +5,8 @@
 @import "@nuxt/ui";
 @source not "../../node_modules/.nuxt-ui/ui";
 @source not "../../node_modules/@nuxt/ui/dist/runtime/components";
-@source "../../node_modules/.nuxt-ui/ui/{app,alert,button}.ts";
-@source "../../node_modules/@nuxt/ui/dist/runtime/components/{App,Alert,Button,Icon,LinkBase,OverlayProvider}.vue";
+@source "../../node_modules/.nuxt-ui/ui/{app,alert,button,textarea}.ts";
+@source "../../node_modules/@nuxt/ui/dist/runtime/components/{App,Alert,Button,Icon,LinkBase,OverlayProvider,Textarea}.vue";
 
 @theme {
   --color-old-neutral-*: initial;

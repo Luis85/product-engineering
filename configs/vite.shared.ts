@@ -11,6 +11,7 @@ export const SHELL_ICONS: readonly string[] = [
   "lucide:circle-x",
   "lucide:info",
   "lucide:loader-circle",
+  "lucide:message-square",
   "lucide:settings",
   "lucide:triangle-alert",
 ];

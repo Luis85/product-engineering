@@ -115,6 +115,8 @@ New runtime dependencies need a justification in this ADR. Add each override wit
 
 The read-only MCP tools and server added about 324 KB to the minified CommonJS probe. The provider adapters and session controller were tested with local fixtures. Authentication and billing follow the active account of the installed CLI. [MCP transport specification](https://modelcontextprotocol.io/specification/latest/basic/transports), [TanStack AI](https://tanstack.com/ai/latest/docs/getting-started/overview), [Claude Code terms](https://code.claude.com/docs/en/legal-and-compliance), [Codex non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-mode)
 
+The chat composer is the first consumer of `@tanstack/vue-form`. The native settings tab stores the optional MCP port and executable paths through the settings service. It reads those values at the next server start or chat request.
+
 ### Other choices
 
 The desktop-only manifest stays in place until mobile behavior can be verified. Prettier supplies the formatter while Oxfmt is in its 0.x series. Add packages when they are first used so the static analyzer can flag real unused dependencies.

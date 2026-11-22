@@ -6,5 +6,5 @@ export { useModal } from "./modal";
 export { mountSurface } from "./mount";
 export { useHistory, useNavigate, useRoute } from "./navigation";
 export type { ModuleScreens } from "./routing";
-export { useCommand, useMessages, useQuery } from "./runtime/use-runtime";
+export { useCommand, useMessages, useQuery, useService } from "./runtime/use-runtime";
 export { useSettings, useSettingsStatus, useStream } from "./runtime/use-stream";

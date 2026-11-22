@@ -1,8 +1,8 @@
 import { expect, it, vi } from "vitest";
 import { ProviderChatError } from "../../../../src/application/integrations";
 import type { ProviderChat } from "../../../../src/application/integrations";
-import { createChatSession } from "../../../../src/presentation/integrations";
-import type { ChatSessionState } from "../../../../src/presentation/integrations";
+import { createChatSession } from "../../../../src/presentation/integrations/chat-session";
+import type { ChatSessionState } from "../../../../src/presentation/integrations/chat-session";
 
 function latch() {
   let resolve: (() => void) | undefined;

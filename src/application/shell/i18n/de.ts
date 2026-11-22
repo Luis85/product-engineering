@@ -11,6 +11,11 @@ const issues: IssueDescriptions = {
     `Einstellungen der Version ${version} konnten nicht migriert werden.`,
   "logLevel.unknown": ({ allowed }) =>
     `Wähle eine verfügbare Protokollstufe (${allowed.map((level) => levelLabels[level]).join(", ")}).`,
+  "mcpPort.invalid": () => "Gib für den MCP-Port eine ganze Zahl von 0 bis 65535 ein.",
+  "claudeCodePath.invalid": () =>
+    "Gib den absoluten Pfad zur ausführbaren Datei von Claude Code ein oder lass das Feld für die automatische Suche leer.",
+  "codexPath.invalid": () =>
+    "Gib den absoluten Pfad zur ausführbaren Datei von Codex ein oder lass das Feld für die automatische Suche leer.",
 };
 
 export const de: ShellCatalog = {

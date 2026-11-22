@@ -129,6 +129,21 @@ export function fallowConfig({ modules, has }) {
           allow: ["adapters", "application", "application-composition", "domain"],
         },
         ...nodeAdapters.map(({ name }) => ({ from: name, allow: integrationPorts })),
+        ...(adapters.includes("adapters/integrations")
+          ? [
+              {
+                from: "adapters/integrations",
+                allow: [
+                  "adapters/shell",
+                  "application/integrations",
+                  "application/shell",
+                  "application-describe-error",
+                  "application-composition",
+                  "domain/shell",
+                ],
+              },
+            ]
+          : []),
         ...(presentation.length > 0
           ? [
               {

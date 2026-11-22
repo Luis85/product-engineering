@@ -2,6 +2,7 @@ import { Effect, Layer } from "effect";
 import type { Plugin } from "obsidian";
 import type { AppRuntime } from "./application/app-services";
 import { appCommands } from "./application/commands";
+import { configuredAgentChat } from "./application/integrations";
 import { catalogFor } from "./application/messages";
 import type { Route } from "./application/routes";
 import {
@@ -16,7 +17,9 @@ import {
 } from "./application/shell";
 import { consoleSinkLayer } from "./infrastructure/logging/console-sink";
 import { incidentsLayer } from "./infrastructure/logging/incidents";
+import { createMcpController } from "./infrastructure/mcp";
 import { appLayer } from "./infrastructure/obsidian/app-layer";
+import { createAgentSettingsPart } from "./infrastructure/obsidian/integrations";
 import {
   addRibbonIcon,
   hostLanguage,
@@ -91,10 +94,14 @@ export async function bootstrap(
   { signal }: { readonly signal: AbortSignal },
 ): Promise<BootstrapHandle> {
   const runtime = makeRuntime(
-    appLayer(plugin, {
-      developmentMode: import.meta.env.MODE === "development",
-      language: hostLanguage(),
-    }),
+    appLayer(
+      plugin,
+      { developmentMode: import.meta.env.MODE === "development", language: hostLanguage() },
+      configuredAgentChat(async (executablePaths) => {
+        const { createProviderCliChat } = await import("./infrastructure/provider-cli");
+        return createProviderCliChat({ executablePaths });
+      }),
+    ),
   );
   const undo: Release[] = [() => runtime.dispose()];
   let disposal: Promise<void> | undefined;
@@ -139,7 +146,26 @@ export async function bootstrap(
       if (!started) removeCommands();
     });
 
-    const tab = new ShellSettingTab(plugin.app, plugin, runtime, mirror, messages.shell);
+    const mcp = createMcpController({
+      version: plugin.manifest.version,
+      readItem: () => Promise.resolve(undefined),
+    });
+    undo.push(() => mcp.dispose());
+    const agentSettings = createAgentSettingsPart({
+      controller: mcp,
+      runtime,
+      mirror,
+      messages,
+      selectedItemIds: () => [],
+    });
+    const tab = new ShellSettingTab(
+      plugin.app,
+      plugin,
+      runtime,
+      mirror,
+      messages.shell,
+      agentSettings,
+    );
     addRibbonIcon(plugin, () =>
       runSafely(
         runtime,

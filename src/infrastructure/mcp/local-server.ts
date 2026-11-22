@@ -7,7 +7,7 @@ import type {
   LocalMcpServerStatus,
   LocalMcpTool,
 } from "../../application/integrations";
-import { createHttpHandler } from "./handler";
+import { serializeLifecycle } from "./lifecycle-queue";
 
 const host = "127.0.0.1";
 const path = "/mcp";
@@ -95,6 +95,7 @@ async function startListener(
   tools: readonly LocalMcpTool[],
   port: number,
 ): Promise<Listener> {
+  const { createHttpHandler } = await import("./handler");
   const token = randomBytes(32).toString("base64url");
   const tokenDigest = digest(token);
   const shutdown = new AbortController();
@@ -144,16 +145,7 @@ export function createLocalMcpServer({
 
   let listener: Listener | undefined;
   let disposed = false;
-  let pending = Promise.resolve();
-
-  function serialize<A>(operation: () => Promise<A>): Promise<A> {
-    const result = pending.then(operation);
-    pending = result.then(
-      () => undefined,
-      () => undefined,
-    );
-    return result;
-  }
+  const serialize = serializeLifecycle();
 
   async function stop(): Promise<void> {
     const running = listener;

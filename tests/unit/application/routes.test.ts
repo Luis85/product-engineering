@@ -16,7 +16,7 @@ it("starts at the item section and pins the ordered real sections", () => {
   expectTypeOf<SettingsSection>().toEqualTypeOf<"items">();
   expectTypeOf<RouteNameOf<"shell">>().toEqualTypeOf<"settings">();
   expectTypeOf<RouteNameOf<"items">>().toEqualTypeOf<never>();
-  expectTypeOf<RouteNameOf<"integrations">>().toEqualTypeOf<never>();
+  expectTypeOf<RouteNameOf<"integrations">>().toEqualTypeOf<"agent-chat">();
   expectTypeOf<SectionIdOf<"items">>().toEqualTypeOf<"items">();
   expectTypeOf<SectionIdOf<"integrations">>().toEqualTypeOf<never>();
 });
