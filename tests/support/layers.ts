@@ -1,145 +1,114 @@
 import { Effect, Layer } from "effect";
+import { appServicesLayer } from "../../src/application/app-services-layer";
+import type { AppEvent } from "../../src/application/events";
 import { messagesLayer } from "../../src/application/messages";
 import {
-  Clipboard,
-  ClipboardError,
-  HostInfo,
-  Incidents,
-  LoggerLive,
-  LogSink,
-  Notifier,
+  EventBus,
+  EventBusLive,
   SettingsServiceLive,
-  SettingsStore,
-  StorageError,
+  VaultReadError,
 } from "../../src/application/shell";
-import type { DatedLogEntry, Language, UserMessage } from "../../src/application/shell";
+import type { Language } from "../../src/application/shell";
+import { testAdapters } from "./adapters";
+import type { TestAdapterOptions } from "./adapters";
 
-type StoreOptions = { readonly uncancellableSaves?: boolean };
+type FixtureOptions = Omit<TestAdapterOptions, "initialSettings"> & {
+  readonly language?: Language;
+  readonly developmentMode?: boolean;
+};
 
-function inMemoryStore(initial?: unknown, { uncancellableSaves = false }: StoreOptions = {}) {
-  let data = initial;
-  let failLoad = false;
-  let failSave = false;
-  let pauseSaves = false;
-  const saved: unknown[] = [];
-  const heldSaves: (() => void)[] = [];
-  const saveWaiters: (() => void)[] = [];
+const testMessages = (language: Language = "de") => messagesLayer(language);
 
-  const write = (next: unknown) => {
-    data = next;
-    saved.push(next);
-  };
-  const save = (next: unknown) =>
-    Effect.suspend(() => {
-      if (failSave) return Effect.fail(new StorageError());
-      if (!pauseSaves) return Effect.sync(() => write(next));
-      return Effect.promise(
-        (signal) =>
-          new Promise<void>((resolve) => {
-            heldSaves.push(() => {
-              if (uncancellableSaves || !signal.aborted) write(next);
-              resolve();
-            });
-            for (const notify of saveWaiters.splice(0)) notify();
-          }),
-      );
-    });
-  const waitForHeldSave = Effect.promise(
-    () =>
-      new Promise<void>((resolve) => {
-        if (heldSaves.length > 0) resolve();
-        else saveWaiters.push(resolve);
-      }),
-  );
-  const layer = Layer.succeed(SettingsStore, {
-    load: Effect.suspend(() => (failLoad ? Effect.fail(new StorageError()) : Effect.succeed(data))),
-    save,
-  });
-
-  return {
-    layer,
-    saved,
-    heldSaves,
-    waitForHeldSave,
-    setFailLoad: (value: boolean) => {
-      failLoad = value;
-    },
-    setFailSave: (value: boolean) => {
-      failSave = value;
-    },
-    holdSaves: () => {
-      pauseSaves = true;
-    },
-    releaseSaves: () => {
-      pauseSaves = false;
-      for (const release of heldSaves.splice(0)) release();
-    },
-    writeExternally: (next: unknown) => {
-      data = next;
-    },
-  };
-}
-
-type SettingsFixtureOptions = StoreOptions & { readonly language?: Language };
-
-export function settingsFixture(initial?: unknown, options: SettingsFixtureOptions = {}) {
-  const store = inMemoryStore(initial, options);
-  const notices: UserMessage[] = [];
+export function settingsFixture(initial?: unknown, options: FixtureOptions = {}) {
+  const {
+    adapters,
+    store,
+    notifier: notices,
+  } = testAdapters({ ...options, initialSettings: initial });
   const ports = Layer.mergeAll(
-    store.layer,
-    messagesLayer(options.language ?? "de"),
-    Layer.succeed(Notifier, {
-      notify: (message) =>
-        Effect.sync(() => {
-          notices.push(message);
-        }),
-    }),
+    adapters.settingsStore,
+    adapters.notifier,
+    testMessages(options.language),
   );
   return { store, notices, layer: Layer.provideMerge(SettingsServiceLive, ports) };
 }
 
-type ShellFixtureOptions = SettingsFixtureOptions & { readonly developmentMode?: boolean };
+export function shellFixture(initial?: unknown, options: FixtureOptions = {}) {
+  const host = testAdapters({ ...options, initialSettings: initial });
+  return {
+    store: host.store,
+    notices: host.notifier,
+    log: host.logger,
+    clipboard: host.clipboard,
+    failClipboard: host.failClipboard,
+    layer: appServicesLayer(host.adapters, {
+      language: options.language ?? "de",
+      developmentMode: options.developmentMode ?? false,
+    }),
+  };
+}
 
-export function shellFixture(initial?: unknown, options: ShellFixtureOptions = {}) {
-  const settings = settingsFixture(initial, options);
-  const log: DatedLogEntry[] = [];
-  const clipboard: string[] = [];
-  let incident = 0;
-  let clipboardFailed = false;
-  const ports = Layer.mergeAll(
-    settings.layer,
-    Layer.succeed(HostInfo, {
-      pluginVersion: "0.1.0",
-      apiVersion: "1.15.1",
-      platform: "Windows",
-    }),
-    Layer.succeed(Incidents, { nextId: Effect.sync(() => `T-${++incident}`) }),
-    Layer.succeed(LogSink, {
-      write: (entry) =>
-        Effect.sync(() => {
-          log.push(entry);
-        }),
-    }),
-    Layer.succeed(Clipboard, {
-      write: (text) =>
+export function recordingEventBus() {
+  const events: AppEvent[] = [];
+  let failPublication = false;
+  const layer = Layer.effect(
+    EventBus,
+    Effect.map(EventBus, (bus) => ({
+      subscribe: bus.subscribe,
+      publish: (event) =>
         Effect.suspend(() => {
-          if (clipboardFailed) return Effect.fail(new ClipboardError());
-          return Effect.sync(() => {
-            clipboard.push(text);
-          });
+          if (failPublication) {
+            failPublication = false;
+            return Effect.die(new Error("Event publication failed"));
+          }
+          return Effect.tap(bus.publish(event), () =>
+            Effect.sync(() => {
+              events.push(event);
+            }),
+          );
         }),
-    }),
+    })),
+  ).pipe(Layer.provide(EventBusLive));
+  return {
+    layer,
+    events,
+    failNextPublish: () => {
+      failPublication = true;
+    },
+  };
+}
+
+export function controllableRead(initial: number | "fail") {
+  let value = initial;
+  let paused = false;
+  const waiters = new Set<() => void>();
+  const readValue = Effect.suspend(() =>
+    value === "fail" ? Effect.fail(new VaultReadError()) : Effect.succeed(value),
+  );
+  const wait = Effect.promise(
+    (signal) =>
+      new Promise<void>((resolve) => {
+        const settle = () => {
+          waiters.delete(settle);
+          signal.removeEventListener("abort", settle);
+          resolve();
+        };
+        waiters.add(settle);
+        signal.addEventListener("abort", settle, { once: true });
+      }),
   );
   return {
-    ...settings,
-    log,
-    clipboard,
-    failClipboard: () => {
-      clipboardFailed = true;
+    read: Effect.suspend(() => (paused ? Effect.andThen(wait, readValue) : readValue)),
+    hold: () => {
+      paused = true;
     },
-    layer: Layer.provideMerge(
-      LoggerLive({ developmentMode: options.developmentMode ?? false }),
-      ports,
-    ),
+    release: () => {
+      paused = false;
+      for (const settle of waiters) settle();
+    },
+    held: () => waiters.size,
+    set: (next: number | "fail") => {
+      value = next;
+    },
   };
 }

@@ -1,3 +1,4 @@
+import { Layer } from "effect";
 import type { Effect } from "effect";
 import type { Language, UserMessage } from "./shell";
 
@@ -25,13 +26,18 @@ export type PluginCommand<Messages, Route, Services> = {
 
 type CommandPart<Command> = { readonly commands?: readonly Command[] };
 
+type ServiceLayer = Layer.Layer<never, never, unknown>;
+type ServicePart<Services extends ServiceLayer> = { readonly services?: Services };
+
 export type ModuleManifest<
   Name extends string,
   Catalog,
   E extends Tagged = never,
   Command = never,
+  Services extends ServiceLayer = never,
 > = ModuleBase<Name, Catalog> &
-  CommandPart<Command> & {
+  CommandPart<Command> &
+  ServicePart<Services> & {
     readonly errors?: ErrorPart<E, Catalog>;
   };
 
@@ -40,15 +46,29 @@ export function defineModule<
   Catalog,
   E extends Tagged = never,
   Command = never,
+  Services extends ServiceLayer = never,
 >(
-  manifest: ModuleManifest<Name, Catalog, E, Command> & { readonly errors: ErrorPart<E, Catalog> },
-): ModuleManifest<Name, Catalog, E, Command> & { readonly errors: ErrorPart<E, Catalog> };
-export function defineModule<const Name extends string, Catalog, Command = never>(
-  manifest: ModuleManifest<Name, Catalog, never, Command> & { readonly errors?: never },
-): ModuleBase<Name, Catalog> & CommandPart<Command>;
-export function defineModule<const Name extends string, Catalog, E extends Tagged, Command>(
-  manifest: ModuleManifest<Name, Catalog, E, Command>,
-): ModuleManifest<Name, Catalog, E, Command> {
+  manifest: ModuleManifest<Name, Catalog, E, Command, Services> & {
+    readonly errors: ErrorPart<E, Catalog>;
+  },
+): ModuleManifest<Name, Catalog, E, Command, Services> & { readonly errors: ErrorPart<E, Catalog> };
+export function defineModule<
+  const Name extends string,
+  Catalog,
+  Command = never,
+  Services extends ServiceLayer = never,
+>(
+  manifest: ModuleManifest<Name, Catalog, never, Command, Services> & { readonly errors?: never },
+): ModuleBase<Name, Catalog> & CommandPart<Command> & ServicePart<Services>;
+export function defineModule<
+  const Name extends string,
+  Catalog,
+  E extends Tagged,
+  Command,
+  Services extends ServiceLayer,
+>(
+  manifest: ModuleManifest<Name, Catalog, E, Command, Services>,
+): ModuleManifest<Name, Catalog, E, Command, Services> {
   return manifest;
 }
 
@@ -66,6 +86,17 @@ export type ErrorOf<M> = M extends {
 
 export function commandsOf<Command>(modules: readonly CommandPart<Command>[]): readonly Command[] {
   return modules.flatMap(({ commands }) => commands ?? []);
+}
+
+export type ServicesOf<M> =
+  M extends ServicePart<infer Services extends ServiceLayer> ? Layer.Success<Services> : never;
+
+export function servicesLayerOf<M extends ServicePart<ServiceLayer>>(modules: readonly M[]) {
+  // The constraint widens each property read, but every retained layer came from M.
+  const layers = modules.flatMap(({ services }) =>
+    services === undefined ? [] : [services],
+  ) as NonNullable<M["services"]>[];
+  return Layer.mergeAll(Layer.empty, ...layers);
 }
 
 type DescribableModule = ModuleBase & {

@@ -15,7 +15,7 @@ function configureElement(element: HTMLElement, options: DomElementInfo): void {
 }
 
 function createEl<K extends keyof HTMLElementTagNameMap>(
-  this: HTMLElement,
+  this: HTMLElement | DocumentFragment,
   tag: K,
   options: DomElementInfo | string = {},
   callback?: (element: HTMLElementTagNameMap[K]) => void,
@@ -29,15 +29,17 @@ function createEl<K extends keyof HTMLElementTagNameMap>(
   return element;
 }
 
+function createDiv(
+  this: HTMLElement | DocumentFragment,
+  options?: DomElementInfo | string,
+  callback?: (element: HTMLDivElement) => void,
+) {
+  return this.createEl("div", options, callback);
+}
+
 const methods = {
   createEl,
-  createDiv(
-    this: HTMLElement,
-    options?: DomElementInfo | string,
-    callback?: (element: HTMLDivElement) => void,
-  ) {
-    return this.createEl("div", options, callback);
-  },
+  createDiv,
   createSpan(
     this: HTMLElement,
     options?: DomElementInfo | string,
@@ -62,12 +64,16 @@ const methods = {
   },
 };
 
-export function installDomExtensions(window: Pick<typeof globalThis, "HTMLElement">): void {
-  for (const [name, value] of Object.entries(methods)) {
-    Object.defineProperty(window.HTMLElement.prototype, name, {
-      value,
-      configurable: true,
-      writable: true,
-    });
+export function installDomExtensions(
+  window: Pick<typeof globalThis, "HTMLElement" | "DocumentFragment">,
+): void {
+  const prototypes = [
+    [window.HTMLElement.prototype, methods],
+    [window.DocumentFragment.prototype, { createEl, createDiv }],
+  ] as const;
+  for (const [prototype, extensions] of prototypes) {
+    for (const [name, value] of Object.entries(extensions)) {
+      Object.defineProperty(prototype, name, { value, configurable: true, writable: true });
+    }
   }
 }

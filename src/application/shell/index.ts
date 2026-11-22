@@ -1,5 +1,7 @@
 export { reportDefect, reportUnexpected } from "./defects";
 export { copyDiagnostics } from "./diagnostics";
+export { EventBus, EventBusLive } from "./event-bus";
+export type { ShellEvents } from "./events";
 export {
   ClipboardError,
   InvalidSettingsError,

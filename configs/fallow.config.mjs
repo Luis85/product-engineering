@@ -24,6 +24,9 @@ const compositionFiles = [
 export function fallowConfig({ modules, has }) {
   const domain = siblings(modules.all, has, "domain");
   const application = siblings(modules.all, has, "application");
+  const adapters = modules.all
+    .filter((module) => has("infrastructure/obsidian", module))
+    .map((module) => `adapters/${module}`);
 
   return {
     $schema: "../node_modules/fallow/schema.json",
@@ -50,6 +53,12 @@ export function fallowConfig({ modules, has }) {
           name: "application-composition",
           patterns: compositionFiles.map((file) => `src/application/${file}.ts`),
         },
+        {
+          name: "adapters",
+          autoDiscover: ["src/infrastructure/obsidian"],
+          publicFiles: ["index.ts"],
+        },
+        { name: "infrastructure", patterns: ["src/infrastructure/**"] },
       ],
       rules: [
         { from: "domain", allow: domain },
@@ -69,6 +78,33 @@ export function fallowConfig({ modules, has }) {
           allow: ["application-module", ...domain.filter((zone) => zone === "domain/shell")],
           allowTypeOnly: ["application-composition"],
         },
+        {
+          from: "adapters",
+          allow: [
+            ...adapters,
+            "infrastructure",
+            "application",
+            "application-composition",
+            "domain",
+          ],
+        },
+        {
+          from: "infrastructure",
+          allow: ["adapters", "application", "application-composition", "domain"],
+        },
+        ...(adapters.includes("adapters/shell")
+          ? [
+              {
+                from: "adapters/shell",
+                allow: [
+                  "infrastructure",
+                  "application/shell",
+                  "application-composition",
+                  "domain/shell",
+                ],
+              },
+            ]
+          : []),
       ],
       coverage: {
         requireAllFiles: true,

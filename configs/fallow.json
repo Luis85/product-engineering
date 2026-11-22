@@ -43,7 +43,13 @@
           "src/application/note-types.ts",
           "src/application/commands.ts"
         ]
-      }
+      },
+      {
+        "name": "adapters",
+        "autoDiscover": ["src/infrastructure/obsidian"],
+        "publicFiles": ["index.ts"]
+      },
+      { "name": "infrastructure", "patterns": ["src/infrastructure/**"] }
     ],
     "rules": [
       { "from": "domain", "allow": ["domain/shell"] },
@@ -65,6 +71,24 @@
         "from": "application/shell",
         "allow": ["application-module", "domain/shell"],
         "allowTypeOnly": ["application-composition"]
+      },
+      {
+        "from": "adapters",
+        "allow": [
+          "adapters/shell",
+          "infrastructure",
+          "application",
+          "application-composition",
+          "domain"
+        ]
+      },
+      {
+        "from": "infrastructure",
+        "allow": ["adapters", "application", "application-composition", "domain"]
+      },
+      {
+        "from": "adapters/shell",
+        "allow": ["infrastructure", "application/shell", "application-composition", "domain/shell"]
       }
     ],
     "coverage": {
