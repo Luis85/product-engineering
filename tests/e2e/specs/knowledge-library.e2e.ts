@@ -63,7 +63,7 @@ async function makeActor(title: string, kind: "human" | "system", owner = "") {
   if (owner) await dialog.$("select[name=owner_id]").selectByAttribute("value", owner);
   await dialog.$("button[type=submit]").click();
   const path = `${customerFolder}/${title}.md`;
-  await browser.waitUntil(async () => (await activeFile()) === path);
+  await expect(browser.$(`${ROOT} textarea[name=markdown]`)).toBeFocused();
   const raw = await readVaultText(path);
   if (!raw) throw new Error(`Missing created actor ${path}`);
   return splitNoteText(raw);
@@ -358,7 +358,7 @@ it("keeps the library and PRD form inside a 390px leaf and saves or cancels draf
   await panel.$(`input[value=${JSON.stringify(jobOne)}]`).click();
   await panel.$(`input[value=${JSON.stringify(jobTwo)}]`).click();
   await panel.$("button[type=submit]").click();
-  await browser.waitUntil(async () => (await activeFile()) === initial);
+  await expect(browser.$(`${scope} textarea[name=markdown]`)).toBeFocused();
   const raw = await readVaultText(initial);
   expect(raw).toContain("display_id: PRD-01");
   expect(raw).toContain("requirement_id: REQ-01");

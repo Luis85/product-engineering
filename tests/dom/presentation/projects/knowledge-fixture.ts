@@ -2,10 +2,15 @@ import { expect } from "vitest";
 import { createProject, projectOverviewRoute } from "../../../../src/application/projects";
 import type { Route } from "../../../../src/application/routes";
 import { appSurface } from "../../../../src/presentation/app-surface";
+import { knowledgeScreens } from "../../../../src/presentation/knowledge/screens";
 import { mountSurface } from "../../../../src/presentation/shell";
 import { memoryNavigation } from "../../../../src/presentation/shell/host";
+import type { MarkdownHost } from "../../../../src/presentation/shell/host";
+import { preloadSurface } from "../../../support/preload";
 import { testRuntime } from "../../../support/runtime";
 import { eventually } from "../../../support/wait";
+
+await Promise.all([preloadSurface(), knowledgeScreens.projectRecords.knowledge.load()]);
 
 export const first = "project-33333333-3333-4333-8333-000000000001";
 export const second = "project-33333333-3333-4333-8333-000000000002";
@@ -48,6 +53,7 @@ export async function withProject(
     host: ReturnType<typeof testRuntime>;
     navigation: ReturnType<typeof memoryNavigation<Route>>;
   }) => Promise<void>,
+  markdownHost?: MarkdownHost,
 ) {
   const host = testRuntime({ language: "en" });
   const root = document.body.appendChild(document.createElement("div"));
@@ -62,7 +68,11 @@ export async function withProject(
       }),
     );
     await host.vaultReady();
-    close = await mountSurface(root, host.runtime, { surface: appSurface, navigation });
+    close = await mountSurface(root, host.runtime, {
+      surface: appSurface,
+      navigation,
+      ...(markdownHost ? { markdownHost } : {}),
+    });
     await eventually(() => expect(root.querySelector("h1")?.textContent).toBe("Kundenportal"));
     await test({ root, host, navigation });
   } finally {

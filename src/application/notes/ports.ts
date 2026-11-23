@@ -17,7 +17,7 @@ export type Note = {
   readonly frontmatter: Frontmatter;
 };
 
-type NoteContent = Note & { readonly body: string };
+export type NoteContent = Note & { readonly body: string; readonly text: string };
 
 export type CreateNoteInput = {
   readonly folder: string;
@@ -33,6 +33,10 @@ type UpdateNoteError =
 export type FrontmatterChange<E = never> = (
   current: Frontmatter,
 ) => Result.Result<FrontmatterPatch, E>;
+
+export type NoteContentChange<E = never> = (
+  current: Pick<NoteContent, "frontmatter" | "body">,
+) => Result.Result<{ readonly patch: FrontmatterPatch; readonly body?: string }, E>;
 
 export class NoteStore extends Context.Service<
   NoteStore,
@@ -51,6 +55,10 @@ export class NoteStore extends Context.Service<
       path: string,
       change: FrontmatterChange<E>,
     ) => Effect.Effect<Note, E | UpdateNoteError>;
+    readonly updateContent: <E>(
+      path: string,
+      change: NoteContentChange<E>,
+    ) => Effect.Effect<NoteContent, E | UpdateNoteError>;
     readonly rename: (
       path: string,
       newName: string,

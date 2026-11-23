@@ -66,7 +66,7 @@ export type {
   ProjectCriterionDraft,
   ProjectGatePhase,
 } from "../../domain/projects";
-export { projectTemplateGroups } from "./templates";
+export { projectTemplateGroups, projectTemplateIds } from "./templates";
 export type { ProjectTemplateId } from "./templates";
 export {
   currentProjectMcpCandidate,

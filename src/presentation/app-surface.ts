@@ -8,13 +8,16 @@ import { itemsScreens } from "./items/screens";
 import { knowledgeScreens } from "./knowledge/screens";
 import { notesScreens } from "./notes/screens";
 import { projectFrame, projectsScreens } from "./projects/screens";
-import type { ProjectSearchPart, ProjectTemplatePart } from "./projects";
+import type { ProjectRecordPart, ProjectSearchPart, ProjectTemplatePart } from "./projects";
 import type { ModuleScreens, SurfaceDefinition, SurfaceSection } from "./shell/host";
 import type { ScreenLoader, SettingsSectionPart } from "./shell/host";
 import { shellScreens } from "./shell/screens";
 
 const MODULE_SCREENS: {
-  readonly [Name in AppModuleName]: ModuleScreens<Name> & ProjectSearchPart & ProjectTemplatePart;
+  readonly [Name in AppModuleName]: ModuleScreens<Name> &
+    ProjectSearchPart &
+    ProjectTemplatePart &
+    ProjectRecordPart;
 } = {
   shell: shellScreens,
   notes: notesScreens,
@@ -38,10 +41,14 @@ const sections = SETTINGS_SECTIONS.flatMap((id): SurfaceSection<Route>[] => {
 const context = modules.find((module) => module.context)?.context;
 const projectSearch = modules.flatMap((module) => module.projectSearch ?? []);
 const projectTemplates = modules.flatMap((module) => module.projectTemplates ?? []);
+const projectRecords = modules.reduce<NonNullable<ProjectRecordPart["projectRecords"]>>(
+  (records, module) => ({ ...records, ...module.projectRecords }),
+  {},
+);
 
 export const appSurface: SurfaceDefinition<Route> = {
   ...appRoutes,
-  frame: () => projectFrame(projectSearch, projectTemplates),
+  frame: () => projectFrame(projectSearch, projectTemplates, projectRecords),
   screen: (route) => screens[route.name],
   sections,
   menu: modules.flatMap((module) => module.menu ?? []),

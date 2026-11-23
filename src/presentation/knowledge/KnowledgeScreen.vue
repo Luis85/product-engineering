@@ -15,6 +15,7 @@ import {
 } from "../../application/knowledge";
 import type { KnowledgeKind, KnowledgeRecord, KnowledgeShelf } from "../../application/knowledge";
 import { rebuildNoteIndex } from "../../application/notes";
+import type { Note } from "../../application/notes";
 import {
   projectChanges,
   projectMembers,
@@ -24,6 +25,7 @@ import {
 import { useRestoreWorkspacePosition } from "../projects";
 import { useCommand, useMessages, useNavigate, useQuery, useRoute, useStream } from "../shell";
 import { libraryDefaults, useLibraryPreferences } from "./library-preferences";
+import { useKnowledgeDraftNavigation } from "./draft-navigation";
 import KnowledgeCreateDialog from "./KnowledgeCreateDialog.vue";
 import KnowledgeFilters from "./KnowledgeFilters.vue";
 import KnowledgeRows from "./KnowledgeRows.vue";
@@ -33,6 +35,7 @@ const text = catalog.knowledge;
 const templates = catalog.projects.templates.labels;
 const route = useRoute();
 const navigate = useNavigate();
+const { openDraft } = useKnowledgeDraftNavigation();
 const restorePosition = useRestoreWorkspacePosition();
 const preferences = useLibraryPreferences();
 const projects = useStream(projectSnapshot, projectChanges);
@@ -87,6 +90,13 @@ async function closeCreation() {
   creation.value = undefined;
   await nextTick();
   createButton.value?.$el.focus({ preventScroll: true });
+}
+
+async function created(note: Note) {
+  const id = creation.value?.projectId;
+  if (!id) return;
+  creation.value = undefined;
+  await openDraft(note, id, { section: "knowledge" }, createButton.value?.$el);
 }
 watch(projectId, () => {
   creation.value = undefined;
@@ -252,6 +262,7 @@ function view(record: KnowledgeRecord) {
       v-if="creation"
       :project-id="creation.projectId"
       :initial-template="creation.template"
+      :on-created="created"
       @dismiss="closeCreation"
     />
   </div>

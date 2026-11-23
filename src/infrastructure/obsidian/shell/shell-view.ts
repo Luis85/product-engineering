@@ -14,6 +14,7 @@ import type {
   SurfaceDefinition,
   SurfaceLoader,
 } from "../../../presentation/shell/host";
+import { markdownHost } from "./markdown-host";
 
 export const SHELL_VIEW_TYPE = "product-engineering-view";
 
@@ -99,6 +100,7 @@ export class ShellView<R extends RouteLike> extends ItemView {
       unmount = await mountSurface(this.contentEl, this.runtime, {
         surface: this.definition,
         navigation: this.#viewNavigation,
+        markdownHost: markdownHost(this.app),
       });
     } catch (cause) {
       if (this.#close !== close) return;

@@ -29,6 +29,7 @@ export const knowledgeType = defineNoteType({
     vision_id: text({ schema: knowledgeId, issue: "vision.invalid" }),
     job_ids: list({ schema: Schema.Array(knowledgeId), issue: "job.invalid" }),
     deliverable_id: text({ schema: lineOfText(160), issue: "deliverable.invalid" }),
+    references: list({ schema: Schema.Array(lineOfText(1024)), issue: "reference.invalid" }),
   },
   migrations: {},
 });

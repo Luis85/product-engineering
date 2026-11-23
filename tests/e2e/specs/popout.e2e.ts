@@ -11,7 +11,7 @@ type MountedView = ItemView & {
     readonly mountSurface: (
       root: HTMLElement,
       runtime: unknown,
-      options: { content: { mounted(): void; render(): null } },
+      options: { content: { render(): null } },
     ) => Promise<() => void>;
   }>;
 };
@@ -69,30 +69,27 @@ async function mountDialogProbe() {
       try {
         const { mountSurface } = await view.loadSurface();
         const unmount = await mountSurface(probe, view.runtime, {
-          content: {
-            mounted() {
-              const portal = probe.querySelector(`.${portalClass}`);
-              if (!portal) throw new Error("Expected a surface portal");
-              const dialog = owner.createElement("dialog");
-              dialog.textContent = "Pop-out probe";
-              dialog.setAttribute("aria-label", "Pop-out probe");
-              portal.append(dialog);
-              dialog.showModal();
-            },
-            render: () => null,
-          },
+          content: { render: () => null },
         });
+        const portal = probe.querySelector(`.${portalClass}`);
+        if (!portal) {
+          unmount();
+          throw new Error("Expected a surface portal");
+        }
+        const dialog = owner.createElement("dialog");
+        dialog.textContent = "Pop-out probe";
+        dialog.setAttribute("aria-label", "Pop-out probe");
+        portal.append(dialog);
+        dialog.showModal();
         probe.closeProbe = () => {
-          probe.querySelector("dialog")?.close();
+          dialog.close();
           unmount();
           probe.remove();
         };
-        const portal = probe.querySelector(`.${portalClass}`);
-        const dialog = portal?.querySelector("dialog[open]");
         return {
           surfaceOwnedByPopout: probe.matches(rootSelector) && probe.ownerDocument === owner,
-          portalCreatedInPopout: portal?.ownerDocument === owner && !madeByMain.has(portal),
-          dialogInsidePortal: dialog?.ownerDocument === owner,
+          portalCreatedInPopout: portal.ownerDocument === owner && !madeByMain.has(portal),
+          dialogInsidePortal: dialog.open && dialog.ownerDocument === owner,
           mainPortals: document.querySelectorAll(`.${portalClass}`).length,
           mainProbeDialogs: Array.from(document.querySelectorAll("dialog")).filter(
             (element) => element.textContent === "Pop-out probe",

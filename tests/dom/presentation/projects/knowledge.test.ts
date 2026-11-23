@@ -202,9 +202,14 @@ it("uses the library filter to start a PRD and saves its requirement, selected v
     find<HTMLInputElement>(dialog, `[value="${jobOne}"]`).click();
     find<HTMLInputElement>(dialog, `[value="${jobTwo}"]`).click();
     find<HTMLButtonElement>(dialog, "button[type=submit]").click();
-    await eventually(() => expect(host.notes.opened()).toHaveLength(1));
-    const [path] = host.notes.opened();
-    if (!path) throw new Error("Missing opened PRD");
+    await eventually(() => expect(root.querySelector("[name=markdown]")).not.toBeNull());
+    const path = await eventually(() => {
+      const current = root
+        .querySelector("[data-testid=knowledge-file]")
+        ?.getAttribute("data-note-path");
+      if (!current) throw new Error("Missing indexed PRD path");
+      return current;
+    });
     const note = await host.runtime.runPromise(NoteStore.use((store) => store.readContent(path)));
     expect(note.frontmatter).toMatchObject({
       kind: "prd",
@@ -368,8 +373,12 @@ it("requires a subtype, then saves both actor kinds as scoped Markdown and keeps
     expect(host.notes.opened()).toEqual([]);
     input(find<HTMLSelectElement>(human, "[name=actor_type]"), "human");
     submit(human);
-    await eventually(() => expect(host.notes.opened()).toHaveLength(1));
-    await eventually(() => expect(root.querySelector("[role=dialog]")).toBeNull());
+    await eventually(() => expect(root.querySelector("[name=markdown]")).not.toBeNull());
+    find<HTMLButtonElement>(root, "[data-testid=project-record-return]").click();
+    const actorControl = await eventually(() =>
+      find<HTMLButtonElement>(root, "[data-template=actor]"),
+    );
+    await eventually(() => expect(document.activeElement).toBe(actorControl));
 
     const system = await newActor("Customer Identity Service");
     input(find<HTMLSelectElement>(system, "[name=actor_type]"), "system");
@@ -377,7 +386,7 @@ it("requires a subtype, then saves both actor kinds as scoped Markdown and keeps
     await eventually(() => expect(owner.options).toHaveLength(2));
     input(owner, mara);
     submit(system);
-    await eventually(() => expect(host.notes.opened()).toHaveLength(2));
+    await eventually(() => expect(root.querySelector("[name=markdown]")).not.toBeNull());
 
     const records = (await host.runtime.runPromise(NoteStore.use((store) => store.list))).filter(
       ({ frontmatter }) => frontmatter.kind === "actor",
@@ -400,10 +409,11 @@ it("requires a subtype, then saves both actor kinds as scoped Markdown and keeps
       actor_type: "system",
       owner_id: mara,
     });
-    expect(host.notes.opened().map(host.notes.body)).toEqual([
+    expect(records.map(({ path }) => host.notes.body(path))).toEqual([
       expect.stringContaining("## Role and goal"),
       expect.stringContaining("## Role and goal"),
     ]);
+    expect(host.notes.opened()).toEqual([]);
     expect(await host.runtime.runPromise(projectMemberChoices(first))).toMatchObject([
       { id: mara, name: "Mara König" },
     ]);

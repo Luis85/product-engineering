@@ -45,12 +45,13 @@ watch(
   { immediate: true },
 );
 
-function open(factory: ProjectTemplateFactory) {
+function open(factory: ProjectTemplateFactory, event: MouseEvent) {
   const { template } = factory;
   const request = {
     projectId: project.id,
     template,
     returnTo: projectTemplateReturnRoute(project.id, template),
+    trigger: event.currentTarget as HTMLElement,
     dismiss() {
       creation.value = undefined;
       void focusTemplate(template);
@@ -76,7 +77,7 @@ function open(factory: ProjectTemplateFactory) {
             variant="soft"
             :data-template="factory.template"
             :data-pe-focus-key="`project-template-${factory.template}`"
-            @click="open(factory)"
+            @click="open(factory, $event)"
             >{{ text.create(text.labels[factory.template]) }}</UButton
           >
         </li>

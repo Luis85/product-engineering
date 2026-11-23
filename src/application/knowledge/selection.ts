@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { isKnowledgeId, knowledgeType } from "../../domain/knowledge";
 import type { KnowledgeId } from "../../domain/knowledge";
 import { NoteNotFoundError, NoteStore, openNote } from "../notes";
+import type { NoteContent } from "../notes";
 import type { ProjectId } from "../projects";
 import { knowledgeRecord, knowledgeSnapshot, projectKnowledge } from "./library";
 
@@ -23,6 +24,25 @@ export function resolveKnowledgeNote(projectId: ProjectId, id: KnowledgeId) {
     return current?.id === id && current.projectId === projectId ? current : undefined;
   });
 }
+
+export function readKnowledgeNote(projectId: ProjectId, id: string, path: string) {
+  return Effect.gen(function* () {
+    const store = yield* NoteStore;
+    const content = yield* store.readContent(path);
+    const note = knowledgeNoteOf(content);
+    if (note?.id !== id || note.projectId !== projectId) return yield* new NoteNotFoundError();
+    return note;
+  });
+}
+
+export function knowledgeNoteOf(content: NoteContent) {
+  const decoded = knowledgeType.decode(content);
+  const record = knowledgeRecord(decoded);
+  if (!record) return;
+  return { ...content, ...record, editable: decoded.kind === "editable" };
+}
+
+export type KnowledgeNote = NonNullable<ReturnType<typeof knowledgeNoteOf>>;
 
 export function openKnowledgeNote(projectId: ProjectId, recordId: string) {
   return Effect.gen(function* () {

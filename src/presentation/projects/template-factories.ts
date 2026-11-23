@@ -11,6 +11,7 @@ export type ProjectTemplateRequest = {
   readonly template: ProjectTemplateId;
   readonly returnTo: ProjectAdministrationRoute;
   readonly dismiss: () => void;
+  readonly trigger: HTMLElement;
 };
 
 export type ProjectTemplateFactory = {

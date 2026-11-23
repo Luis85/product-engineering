@@ -2,11 +2,14 @@ import { defineComponent, h } from "vue";
 import type { Component } from "vue";
 import ProjectFrame from "./components/ProjectFrame.vue";
 import ProjectWorkspace from "./components/ProjectWorkspace.vue";
+import { provideProjectRecordScreens } from "./record-screens";
+import type { ProjectRecordScreens } from "./record-screens";
 import type { ProjectSearchSource } from "./search-sources";
 import type { ProjectTemplateFactory } from "./template-factories";
 
-export { useRestoreWorkspacePosition } from "./workspace-position";
+export { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "./workspace-position";
 export { leafModalUi } from "./overlay-ui";
+export type { ProjectRecordPart } from "./record-screens";
 export type { ProjectSearchPart } from "./search-sources";
 export type {
   ProjectTemplateFactory,
@@ -18,9 +21,13 @@ export const workspaceScreen: Component = ProjectWorkspace;
 export function workspaceFrame(
   sources: readonly ProjectSearchSource[],
   templates: readonly ProjectTemplateFactory[],
+  records: ProjectRecordScreens,
 ): Component {
   return defineComponent({
     name: "WorkspaceFrame",
-    setup: () => () => h(ProjectFrame, { sources, templates }),
+    setup: () => {
+      provideProjectRecordScreens(records);
+      return () => h(ProjectFrame, { sources, templates });
+    },
   });
 }

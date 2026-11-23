@@ -14,9 +14,16 @@ type Position = {
 
 const focusSelector = "[data-pe-focus-key]";
 const restoreKey: InjectionKey<(phase?: "settled") => void> = Symbol("workspace-position-restore");
+const originKey: InjectionKey<(control: HTMLElement | undefined) => void> = Symbol(
+  "workspace-position-origin",
+);
 
 export function useRestoreWorkspacePosition() {
   return inject(restoreKey, () => undefined);
+}
+
+export function useRememberWorkspaceOrigin() {
+  return inject(originKey, () => undefined);
 }
 
 function activeControl(workspace: HTMLElement) {
@@ -89,6 +96,10 @@ export function useWorkspacePosition(
     if (phase === "settled") restoreSettledScroll();
     else restore();
   });
+  function rememberOrigin(control: HTMLElement | undefined) {
+    origin = control;
+  }
+  provide(originKey, rememberOrigin);
 
   onScopeDispose(
     navigation.onChange((route) => {
@@ -116,9 +127,7 @@ export function useWorkspacePosition(
   );
 
   return {
-    rememberOrigin: (control: HTMLElement | undefined) => {
-      origin = control;
-    },
+    rememberOrigin,
     focusHeading: () => heading()?.focus({ preventScroll: true }),
   };
 }

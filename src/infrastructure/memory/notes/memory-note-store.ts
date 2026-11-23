@@ -9,11 +9,13 @@ import {
   NoteUnreadableError,
   NoteWriteError,
 } from "../../../application/notes";
-import type { CreateNoteInput, FrontmatterChange, Note } from "../../../application/notes";
+import type { CreateNoteInput, Note, NoteContentChange } from "../../../application/notes";
 import {
   applyPatch,
   copyFrontmatter,
   createNote,
+  newNoteText,
+  patchContent,
   pathsInFolder,
   planRename,
   recordNotes,
@@ -52,6 +54,11 @@ function markdown(file: File): boolean {
 
 function noteOf(file: File): Note {
   return { path: file.path, frontmatter: structuredClone(copyFrontmatter(file.frontmatter)) };
+}
+
+function contentOf(file: File) {
+  const note = noteOf(file);
+  return { ...note, body: file.body, text: newNoteText(note.frontmatter, file.body) };
 }
 
 function synthetic<E extends Error>(error: E): E {
@@ -166,7 +173,7 @@ export function memoryNoteStore() {
     });
   }
 
-  function update<E>(path: string, change: FrontmatterChange<E>) {
+  function update<E>(path: string, change: NoteContentChange<E>) {
     return Effect.gen(function* () {
       const file = fileAt(path);
       if (!file) return yield* Effect.fail(new NoteNotFoundError());
@@ -179,12 +186,14 @@ export function memoryNoteStore() {
           if (failWrites) return yield* Effect.fail(synthetic(new NoteWriteError()));
           if (file.frontmatter === "broken") return yield* Effect.fail(new NoteUnreadableError());
           const current = copyFrontmatter(file.frontmatter);
-          const changeResult = change(structuredClone(current));
+          const changeResult = change({ frontmatter: structuredClone(current), body: file.body });
           if (Result.isFailure(changeResult)) return yield* Effect.fail(changeResult.failure);
-          const next = applyPatch(current, changeResult.success);
-          if (sameFrontmatter(current, next)) return noteOf(file);
+          const next = applyPatch(current, changeResult.success.patch);
+          const body = changeResult.success.body ?? file.body;
+          if (sameFrontmatter(current, next) && body === file.body) return contentOf(file);
           file.frontmatter = structuredClone(next);
-          const written = noteOf(file);
+          file.body = body;
+          const written = contentOf(file);
           yield* publishedWrite(written.path, "FileModified");
           return written;
         }),
@@ -267,7 +276,7 @@ export function memoryNoteStore() {
           const file = yield* readable(() => fileAt(path));
           if (!file) return yield* new NoteNotFoundError();
           if (file.frontmatter === "broken") return yield* new NoteUnreadableError();
-          return { ...noteOf(file), body: file.body };
+          return contentOf(file);
         }),
       unreadable: (folder) =>
         readable(() =>
@@ -279,7 +288,12 @@ export function memoryNoteStore() {
           ),
         ),
       create,
-      update,
+      update: (path, change) =>
+        Effect.map(update(path, patchContent(change)), ({ path: target, frontmatter }) => ({
+          path: target,
+          frontmatter,
+        })),
+      updateContent: update,
       rename,
       trash,
     }),

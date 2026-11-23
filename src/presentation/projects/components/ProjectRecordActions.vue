@@ -7,6 +7,8 @@ import {
   projectAdministrationRoute,
   projectOverviewRoute,
   projectRecordRoute,
+  projectTemplateIds,
+  projectTemplateReturnRoute,
 } from "../../../application/projects";
 import type {
   ProjectId,
@@ -14,17 +16,25 @@ import type {
   ProjectSearchRecord,
 } from "../../../application/projects";
 import type { Route } from "../../../application/routes";
-import { useCommand, useMessages, useNavigate } from "../../shell";
+import { useCommand, useHistory, useMessages, useNavigate, useRouting } from "../../shell";
 
-const { record, resolved, administration } = defineProps<{
+const {
+  record,
+  resolved,
+  administration,
+  integrated = false,
+} = defineProps<{
   readonly record: ProjectRecordRoute;
   readonly resolved:
     ProjectSearchRecord<Extract<Route, { readonly projectId: ProjectId }>> | undefined;
   readonly administration: boolean;
+  readonly integrated?: boolean;
 }>();
 const texts = useMessages();
 const text = texts.projects;
 const navigate = useNavigate();
+const { history } = useRouting();
+const { back } = useHistory();
 const { pending: filePending, message: fileMessage, run: openFile } = useCommand(openKnowledgeNote);
 const destination = computed(() => {
   if (administration || resolved?.route.name === PROJECT_RECORD) return undefined;
@@ -32,18 +42,40 @@ const destination = computed(() => {
 });
 
 function leave() {
-  const { origin, projectId, reference } = record;
-  if (origin?.section === "knowledge") return navigate(projectKnowledgeRoute(projectId));
-  if (origin?.reference) {
-    const previous = origin.reference;
-    if (previous.kind !== reference.kind || previous.recordId !== reference.recordId) {
-      return navigate(projectRecordRoute({ projectId, ...previous }));
-    }
+  const { projectId, reference } = record;
+  const { section, reference: previous } = record.origin ?? {};
+  if (section === "knowledge") return navigate(projectKnowledgeRoute(projectId));
+  if (section === "templates") {
+    const template = projectTemplateIds.find((id) => id === previous?.recordId);
+    return navigate(
+      template
+        ? projectTemplateReturnRoute(projectId, template)
+        : projectAdministrationRoute(projectId, "templates"),
+    );
+  }
+  if (previous && !sameReference(reference, previous)) {
+    const last = history.value.back.at(-1);
+    if (returnsTo(last, projectId, previous)) return back();
+    return navigate(projectRecordRoute({ projectId, ...previous }));
   }
   return navigate(
-    origin?.section === "administration"
+    section === "administration"
       ? projectAdministrationRoute(projectId)
       : projectOverviewRoute(projectId),
+  );
+}
+
+type Reference = ProjectRecordRoute["reference"];
+
+function sameReference(first: Reference, second: Reference) {
+  return first.kind === second.kind && first.recordId === second.recordId;
+}
+
+function returnsTo(last: Route | undefined, projectId: ProjectId, previous: Reference) {
+  return (
+    last?.name === PROJECT_RECORD &&
+    last.projectId === projectId &&
+    sameReference(last.reference, previous)
   );
 }
 
@@ -54,7 +86,7 @@ function open() {
 
 <template>
   <p v-if="!resolved" role="status">{{ text.missingRecord }}</p>
-  <p v-if="resolved?.displayId" class="pe:text-muted">{{ resolved.displayId }}</p>
+  <p v-if="resolved?.displayId && !integrated" class="pe:text-muted">{{ resolved.displayId }}</p>
   <UButton
     v-if="resolved?.notePath"
     type="button"

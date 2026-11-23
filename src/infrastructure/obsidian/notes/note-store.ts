@@ -8,18 +8,19 @@ import {
   NoteTrashError,
   NoteWriteError,
 } from "../../../application/notes";
-import type { CreateNoteInput, FrontmatterChange, Note } from "../../../application/notes";
+import type { CreateNoteInput, NoteContentChange, Note } from "../../../application/notes";
 import {
   asDefect,
   copyFrontmatter,
   createNote,
+  patchContent,
   pathsInFolder,
   planRename,
   readNoteFrontmatter,
   recordNotes,
   resolveFolderPath,
   trashCommand,
-  updateNoteText,
+  updateNoteContent,
   writeCommand,
 } from "../../../application/notes/adapter";
 import { VaultReadError } from "../../../application/shell";
@@ -112,10 +113,10 @@ function create(app: App, request: CreateNoteInput) {
   });
 }
 
-function processNote<E>(vault: Vault, file: TFile, change: FrontmatterChange<E>) {
+function processNote<E>(vault: Vault, file: TFile, change: NoteContentChange<E>) {
   return Effect.gen(function* () {
     const edit: {
-      result?: ReturnType<typeof updateNoteText<E>>;
+      result?: ReturnType<typeof updateNoteContent<E>>;
       defect?: { cause: unknown };
     } = {};
     const processed = yield* Effect.result(
@@ -123,7 +124,7 @@ function processNote<E>(vault: Vault, file: TFile, change: FrontmatterChange<E>)
         try: () =>
           vault.process(file, (text) => {
             try {
-              const result = updateNoteText(text, change, parseYaml);
+              const result = updateNoteContent(text, change, parseYaml);
               edit.result = result;
               return Result.isSuccess(result) ? result.success.text : text;
             } catch (cause) {
@@ -142,12 +143,12 @@ function processNote<E>(vault: Vault, file: TFile, change: FrontmatterChange<E>)
     }
     if (!edit.result) return yield* Effect.die(new Error("Vault.process skipped the note editor"));
 
-    const { frontmatter } = yield* Effect.fromResult(edit.result);
-    return { path: normalizePath(file.path), frontmatter };
+    const saved = yield* Effect.fromResult(edit.result);
+    return { path: normalizePath(file.path), ...saved };
   });
 }
 
-function update<E>(vault: Vault, path: string, change: FrontmatterChange<E>) {
+function update<E>(vault: Vault, path: string, change: NoteContentChange<E>) {
   return Effect.gen(function* () {
     const file = yield* Effect.try({
       try: () => noteFile(vault, path),
@@ -230,7 +231,7 @@ export function noteStoreLayer(app: App) {
         catch: () => new VaultReadError(),
       });
       const frontmatter = yield* Effect.fromResult(readNoteFrontmatter(text, parseYaml));
-      return { path: normalizePath(file.path), frontmatter, body: splitNoteText(text).body };
+      return { path: normalizePath(file.path), frontmatter, body: splitNoteText(text).body, text };
     });
   return Layer.succeed(NoteStore, {
     list: readVault(() =>
@@ -256,7 +257,12 @@ export function noteStoreLayer(app: App) {
         ),
       ),
     create: (request) => create(app, request),
-    update: (path, change) => update(vault, path, change),
+    update: (path, change) =>
+      Effect.map(update(vault, path, patchContent(change)), ({ path: target, frontmatter }) => ({
+        path: target,
+        frontmatter,
+      })),
+    updateContent: (path, change) => update(vault, path, change),
     rename: (path, newName) => rename(app, path, newName),
     trash: (path) => trash(app, path),
   });

@@ -11,6 +11,7 @@ import {
   resolveProjectReference,
 } from "../../../application/projects";
 import { useMessages, useNavigate, useRoute, useStream } from "../../shell";
+import { useProjectRecordScreens } from "../record-screens";
 import { useProjectSearchSources } from "../search-sources";
 import ProjectAdministration from "./ProjectAdministration.vue";
 import ProjectChooser from "./ProjectChooser.vue";
@@ -28,6 +29,15 @@ const project = computed(() => {
     : undefined;
 });
 const record = computed(() => (route.value.name === PROJECT_RECORD ? route.value : undefined));
+const recordScreens = useProjectRecordScreens();
+const recordScreen = computed(() => {
+  const current = record.value;
+  if (!current) return undefined;
+  const screen = recordScreens(current.reference.kind)?.component;
+  return screen
+    ? { screen, record: current, key: current.projectId + "/" + current.reference.recordId }
+    : undefined;
+});
 const contributors = useProjectSearchSources();
 const resolved = computed(() => {
   const current = record.value;
@@ -40,9 +50,12 @@ const administration = computed(
     route.value.name === PROJECT_ADMINISTRATION ||
     (resolved.value?.kind === "project" && resolved.value.route.name === PROJECT_ADMINISTRATION),
 );
-const description = computed(() =>
-  !resolved.value || administration.value ? project.value?.description : undefined,
-);
+const title = computed(() => resolved.value?.title ?? project.value?.name);
+const description = computed(() => {
+  if (!recordScreen.value && (!resolved.value || administration.value))
+    return project.value?.description;
+  return undefined;
+});
 </script>
 
 <template>
@@ -50,8 +63,15 @@ const description = computed(() =>
     <p v-if="!snapshot.ready" role="status">{{ text.loading }}</p>
     <p v-else-if="snapshot.failed" role="alert">{{ text.unavailable }}</p>
     <template v-else-if="project">
-      <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">
-        {{ resolved?.title ?? project.name }}
+      <component
+        :is="recordScreen.screen"
+        v-if="recordScreen"
+        :key="recordScreen.key"
+        :record="recordScreen.record"
+        :resolved="resolved"
+      />
+      <h1 v-else tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">
+        {{ title }}
       </h1>
       <p v-if="description">{{ description }}</p>
       <UButton
@@ -71,6 +91,7 @@ const description = computed(() =>
         :record="record"
         :resolved="resolved"
         :administration="administration"
+        :integrated="Boolean(recordScreen)"
       />
     </template>
     <ProjectChooser v-else :projects="snapshot.projects" :missing="'projectId' in route" />

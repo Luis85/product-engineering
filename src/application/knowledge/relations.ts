@@ -5,7 +5,43 @@ import { NoteStore } from "../notes";
 import type { Note } from "../notes";
 import type { ProjectId } from "../projects";
 import { KnowledgeCreateError } from "./errors";
-import { knowledgeRecord } from "./library";
+import { knowledgeRecord, projectKnowledge } from "./library";
+import type { KnowledgeRecord } from "./library";
+
+function relationIds({ values }: KnowledgeRecord) {
+  return new Set([values.vision_id, ...(values.job_ids ?? [])]);
+}
+
+export function knowledgeRelationships(
+  current: KnowledgeRecord,
+  records: readonly KnowledgeRecord[],
+) {
+  const scoped = projectKnowledge(current.projectId, records)
+    .filter(({ id }) => id !== current.id)
+    .toSorted((a, b) => a.displayId.localeCompare(b.displayId) || a.id.localeCompare(b.id));
+  const ids = relationIds(current);
+  const sources = scoped.filter((record) =>
+    record.kind === "vision"
+      ? current.values.vision_id === record.id
+      : record.kind === "jtbd" && ids.has(record.id),
+  );
+  const backlinks = scoped.filter((record) => {
+    if (current.kind === "vision")
+      return record.kind === "prd" && record.values.vision_id === current.id;
+    return (
+      current.kind === "jtbd" &&
+      ["vision", "research", "prd"].includes(record.kind) &&
+      record.values.job_ids?.includes(current.id)
+    );
+  });
+  const visions =
+    current.kind === "jtbd"
+      ? scoped.filter(
+          (record) => record.kind === "vision" && !backlinks.some(({ id }) => id === record.id),
+        )
+      : [];
+  return { sources, backlinks, visions };
+}
 
 export function currentKnowledgeTarget(
   projectId: ProjectId,

@@ -24,6 +24,7 @@ import type { Note } from "../../application/notes";
 import { openNote } from "../../application/notes";
 import { projectChanges, projectMemberChoices, projectSnapshot } from "../../application/projects";
 import type { ProjectId } from "../../application/projects";
+import type { KnowledgeId } from "../../domain/knowledge";
 import { leafModalUi } from "../projects";
 import {
   ErrorNotice,
@@ -43,11 +44,13 @@ const {
   projectId,
   initialTemplate,
   origin = undefined,
+  initialVision = undefined,
   onCreated = undefined,
 } = defineProps<{
   readonly projectId: ProjectId;
   readonly initialTemplate: KnowledgeKind;
   readonly origin?: KnowledgeOrigin;
+  readonly initialVision?: KnowledgeId | undefined;
   readonly onCreated?: (note: Note) => void | Promise<void>;
 }>();
 const emit = defineEmits<{ dismiss: [] }>();
@@ -95,7 +98,7 @@ const initial: KnowledgeDraft = {
   title: titleFor(initialTemplate),
   actor_type: "",
   owner_id: "",
-  vision_id: origin?.kind === "vision" ? origin.recordId : "",
+  vision_id: origin?.kind === "vision" ? origin.recordId : (initialVision ?? ""),
   job_ids: origin?.kind === "job" ? [origin.recordId] : [],
 };
 
@@ -263,7 +266,9 @@ function dismiss() {
           >
             {{ text.cancel }}
           </UButton>
-          <UButton type="submit" :loading="pending">{{ text.submit }}</UButton>
+          <UButton type="submit" :loading="pending">{{
+            onCreated ? text.openDraft : text.submit
+          }}</UButton>
         </div>
       </form>
     </template>

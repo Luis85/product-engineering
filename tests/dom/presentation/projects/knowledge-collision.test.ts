@@ -74,12 +74,13 @@ it("keeps dirty fields and focuses the filename field after bounded allocation i
     expect(host.notes.body(`${project.folder}/Review.md`)).toBe("Unrelated file");
     set("input[name=title]", "Review service");
     element<HTMLButtonElement>("button[type=submit]").click();
-    await eventually(() =>
-      expect(host.notes.opened()).toEqual([`${project.folder}/Review service.md`]),
-    );
+    await eventually(() => expect(root.querySelector("[name=markdown]")).not.toBeNull());
     const records = await host.runtime.runPromise(NoteStore.use((store) => store.list));
     expect(records.filter(({ frontmatter }) => frontmatter.kind === "actor")).toMatchObject([
-      { frontmatter: { display_id: "AKT-01", actor_type: "system", owner_id: memberId } },
+      {
+        path: `${project.folder}/Review service.md`,
+        frontmatter: { display_id: "AKT-01", actor_type: "system", owner_id: memberId },
+      },
     ]);
   } finally {
     close?.();

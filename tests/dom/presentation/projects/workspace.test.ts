@@ -305,3 +305,24 @@ it("keeps a missing record link scoped to its project and restores its administr
     await view.dispose();
   }
 });
+
+it("treats an unregistered record kind as missing even when it matches an object property", async () => {
+  const view = await fixture();
+  const projectId = "project-33333333-3333-4333-8333-000000000001";
+  try {
+    await view.runtime.runPromise(
+      createProject(projectId, {
+        name: "Kundenportal",
+        description: "Product description",
+        repository: "team/product",
+      }),
+    );
+    await view.navigation.navigate(
+      projectRecordRoute({ projectId, kind: "constructor", recordId: "OLD-01" }),
+    );
+    await eventually(() => expect(view.root.querySelector("h1")?.textContent).toBe("Kundenportal"));
+    expect(view.root.textContent).toContain("This record is unavailable in the current project.");
+  } finally {
+    await view.dispose();
+  }
+}, 15_000);

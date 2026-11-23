@@ -62,7 +62,7 @@ export const knowledgeBodyChanges = Stream.unwrap(
   EventBus.use(({ subscribe }) =>
     Effect.map(subscribe, (events) =>
       events.pipe(
-        Stream.filter((event) => event._tag === "FileModified"),
+        Stream.filter((event) => event._tag === "FileModified" || event._tag === "MetadataChanged"),
         Stream.filter(({ extension }) => extension.toLowerCase() === "md"),
         Stream.map(({ path }) => ({ path })),
       ),

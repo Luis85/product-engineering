@@ -1,7 +1,7 @@
 import { Result } from "effect";
 import { expect, it } from "vitest";
 import { parse } from "yaml";
-import { updateNoteText } from "../../../../src/application/notes/note-text";
+import { updateNoteContent, updateNoteText } from "../../../../src/application/notes/note-text";
 
 const edited = () => Result.succeed({ set: { status: "done" } });
 
@@ -10,6 +10,60 @@ const parseDifferent = (yaml: string): unknown =>
 
 const reorder = (yaml: string): unknown =>
   yaml.includes("status: done") ? { status: "done", title: "Example" } : parse(yaml);
+
+it.each([
+  {
+    input: "\uFEFF---\r\nstatus: open # Keep\r\n---\r\nprior\r\n",
+    body: "next\n",
+    saved: "\uFEFF---\r\nstatus: open # Keep\r\n---\r\nnext\r\n",
+    savedBody: "next\r\n",
+    frontmatter: { status: "open" },
+  },
+  {
+    input: "---\nstatus: open\n---",
+    body: "new content",
+    saved: "---\nstatus: open\n---\nnew content",
+    savedBody: "new content",
+    frontmatter: { status: "open" },
+  },
+  {
+    input: "---\nstatus: open\n---\nprior",
+    body: "",
+    saved: "---\nstatus: open\n---\n",
+    savedBody: "",
+    frontmatter: { status: "open" },
+  },
+  {
+    input: "Plain Markdown",
+    body: "Replacement",
+    saved: "Replacement",
+    savedBody: "Replacement",
+    frontmatter: {},
+  },
+])(
+  "changes the body of $input without rewriting its existing properties",
+  ({ input, body, saved, savedBody, frontmatter }) => {
+    expect(updateNoteContent(input, () => Result.succeed({ patch: {}, body }), parse)).toEqual(
+      Result.succeed({ text: saved, frontmatter, body: savedBody }),
+    );
+  },
+);
+
+it("rejects an ambiguous body edit while preserving a semantic no-op", () => {
+  const text = "---\nstatus: open\n--- invalid\nOriginal";
+  expect(
+    updateNoteContent(text, () => Result.succeed({ patch: {}, body: "Original" }), parse),
+  ).toEqual(Result.succeed({ text, frontmatter: { status: "open" }, body: "Original" }));
+  const changed = updateNoteContent(
+    text,
+    () => Result.succeed({ patch: {}, body: "Draft" }),
+    parse,
+  );
+  expect(Result.isFailure(changed) && changed.failure).toMatchObject({
+    _tag: "NoteWriteRefusedError",
+    reason: "layout",
+  });
+});
 
 it("preserves a BOM, CRLF, trailing comment and accepted closing line when changing a key", () => {
   const text = "\uFEFF---\r\nzip: 01067\r\nstatus: open  # Keep\r\n----\r\n# body\r\n";

@@ -16,3 +16,8 @@ export class KnowledgeCreateError extends Schema.TaggedError<KnowledgeCreateErro
     ]),
   },
 ) {}
+
+export class KnowledgeEditError extends Schema.TaggedError<KnowledgeEditError>()(
+  "KnowledgeEditError",
+  { reason: Schema.Literals(["title", "approval", "owner_id", "references"]) },
+) {}

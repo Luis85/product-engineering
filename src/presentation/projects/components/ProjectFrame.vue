@@ -3,6 +3,7 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import USlideover from "@nuxt/ui/components/Slideover.vue";
 import { computed, nextTick, onScopeDispose, ref, watch } from "vue";
 import {
+  PROJECT_RECORD,
   projectAdministrationRoute,
   projectChanges,
   projectOverviewRoute,
@@ -23,6 +24,7 @@ import {
   useRouting,
   useStream,
 } from "../../shell";
+import { useProjectRecordScreens } from "../record-screens";
 import { provideProjectSearchSources } from "../search-sources";
 import type { ProjectSearchSource } from "../search-sources";
 import { provideProjectTemplateFactories } from "../template-factories";
@@ -71,11 +73,18 @@ const activeProject = computed(() => {
 });
 const extras = frameMenu(definition).map((entry) => ({ ...entry, label: entry.label(catalog) }));
 const groups = computed(() => projectGroups(catalog, activeProject.value?.id, extras));
+const recordScreen = useProjectRecordScreens();
+const section = computed(() => {
+  const current = route.value;
+  return current.name === PROJECT_RECORD
+    ? (recordScreen(current.reference.kind)?.section ?? current.name)
+    : current.name;
+});
 const breadcrumb = computed(() => {
   if (!activeProject.value) return text.title;
   const active = groups.value
     .flatMap(({ items }) => items)
-    .find((entry) => entry.route.name === route.value.name);
+    .find((entry) => entry.route.name === section.value);
   return active?.label ?? text.overview;
 });
 
@@ -179,20 +188,29 @@ function restoreSearchFocus() {
 async function selectSearchResult(destination: Route) {
   const changed = !definition.equals(route.value, destination);
   if (changed) position.rememberOrigin(searchTrigger);
-  if (!(await navigate(destination))) {
+  const result = navigate(destination);
+  if (result === false) {
     position.rememberOrigin(undefined);
     return;
   }
   searchDestination = changed ? destination : undefined;
   search.value = false;
+  if (!(await result)) {
+    position.rememberOrigin(undefined);
+  }
 }
 
 async function select(destination: Route) {
-  if (!(await navigate(destination))) return;
   const restoreToContent = picker.value || creating.value || drawer.value;
-  picker.value = false;
-  creating.value = false;
-  drawer.value = false;
+  const result = navigate(destination);
+  if (result === false) return;
+  if (restoreToContent) {
+    skipPickerFocus = true;
+    picker.value = false;
+    creating.value = false;
+    drawer.value = false;
+  }
+  if (!(await result)) return;
   if (restoreToContent) {
     await nextTick();
     position.focusHeading();
@@ -291,6 +309,7 @@ function switchProject(project: Project) {
         <ProjectNavigation
           :project="activeProject"
           :groups="groups"
+          :section="section"
           :collapsed="collapsed"
           @pick="openPicker"
           @select="select"
@@ -318,6 +337,7 @@ function switchProject(project: Project) {
           <ProjectNavigation
             :project="activeProject"
             :groups="groups"
+            :section="section"
             :collapsed="false"
             @pick="openPicker"
             @select="select"

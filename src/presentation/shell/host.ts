@@ -1,6 +1,7 @@
 export { releaseAll } from "./release";
 export { loadSurface } from "./surface";
 export type { SurfaceLoader } from "./surface";
+export type { MarkdownHost, VaultFile } from "./markdown-host";
 export { memoryNavigation } from "./routing";
 export type {
   MemoryNavigation,

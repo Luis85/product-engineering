@@ -3,17 +3,17 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
 import type { Route } from "../../../application/routes";
 import type { Project } from "../../../application/projects";
-import { useMessages, useRoute } from "../../shell";
+import { useMessages } from "../../shell";
 import type { NavigationGroup } from "../sections";
 
-const { collapsed, groups, project } = defineProps<{
+const { collapsed, groups, project, section } = defineProps<{
   readonly project: Project | undefined;
   readonly collapsed: boolean;
   readonly groups: readonly NavigationGroup[];
+  readonly section: Route["name"];
 }>();
 const emit = defineEmits<{ pick: [trigger: HTMLElement]; select: [route: Route] }>();
 const text = useMessages().projects;
-const route = useRoute();
 const title = computed(() => project?.name ?? text.title);
 const buttons = computed(() =>
   groups.map((group) => ({
@@ -21,7 +21,7 @@ const buttons = computed(() =>
     items: group.items.map((entry) => ({
       ...entry,
       attributes:
-        route.value.name === entry.route.name
+        section === entry.route.name
           ? ({ "aria-current": "page", color: "primary", variant: "soft" } as const)
           : ({ color: "neutral", variant: "ghost" } as const),
     })),

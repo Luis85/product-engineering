@@ -73,32 +73,16 @@ textarea {
   }
 }
 
-ol,
-ul,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-fieldset,
-legend {
+:is(ol, ul, h1, h2, h3, h4, h5, h6, p, fieldset, legend):not(:where(.markdown-rendered *)) {
   margin: 0;
   padding: 0;
 }
 
-ol,
-ul {
+:is(ol, ul):not(:where(.markdown-rendered *)) {
   list-style: none;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+:is(h1, h2, h3, h4, h5, h6):not(:where(.markdown-rendered *)) {
   font: inherit;
 }
 
