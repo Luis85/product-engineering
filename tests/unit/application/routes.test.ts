@@ -5,20 +5,46 @@ import { defineModule, routeSchemasOf, sectionsOf } from "../../../src/applicati
 import type { RouteOf, SectionOf } from "../../../src/application/module";
 import { appRoutes, Route, SETTINGS_SECTIONS } from "../../../src/application/routes";
 import type { RouteNameOf, SectionIdOf, SettingsSection } from "../../../src/application/routes";
+import {
+  projectIdSchema,
+  projectOriginSchema,
+  projectRecordRoute,
+} from "../../../src/application/projects";
+import type { ProjectOrigin, ProjectRecordRoute } from "../../../src/application/projects";
 
-it("starts at the item section and pins the ordered real sections", () => {
+it("starts at the project chooser and pins the ordered settings sections", () => {
   expect(SETTINGS_SECTIONS).toEqual(["items", "data-issues"]);
-  expect(appRoutes.start).toEqual({ name: "settings", section: "items" });
+  expect(appRoutes.start).toEqual({ name: "projects" });
   expect(appRoutes.decode({ name: "settings", section: "unknown" })).toBe(appRoutes.start);
-  expect(Schema.decodeUnknownSync(Route)({ name: "settings", section: "items" })).toEqual(
-    appRoutes.start,
-  );
+  expect(Schema.decodeUnknownSync(Route)({ name: "settings", section: "items" })).toEqual({
+    name: "settings",
+    section: "items",
+  });
   expectTypeOf<SettingsSection>().toEqualTypeOf<"items" | "data-issues">();
   expectTypeOf<RouteNameOf<"shell">>().toEqualTypeOf<"settings">();
   expectTypeOf<RouteNameOf<"items">>().toEqualTypeOf<never>();
   expectTypeOf<RouteNameOf<"integrations">>().toEqualTypeOf<"agent-chat">();
   expectTypeOf<SectionIdOf<"items">>().toEqualTypeOf<"items">();
   expectTypeOf<SectionIdOf<"integrations">>().toEqualTypeOf<never>();
+});
+
+it("restores a scoped record and same-project origin from a saved leaf", () => {
+  const projectId = Schema.decodeUnknownSync(projectIdSchema)(
+    "project-33333333-3333-4333-8333-000000000001",
+  );
+  const origin: ProjectOrigin = Schema.decodeUnknownSync(projectOriginSchema)({
+    section: "knowledge",
+    reference: { kind: "knowledge", recordId: "PRD-02" },
+  });
+  const saved: ProjectRecordRoute = projectRecordRoute(
+    { projectId, kind: "knowledge", recordId: "PRD-03" },
+    origin,
+  );
+  expect(appRoutes.decode(saved)).toEqual(saved);
+  expect(appRoutes.decode({ ...saved, projectId: "../Kundenportal" })).toBe(appRoutes.start);
+  expect(appRoutes.decode({ ...saved, reference: { kind: "knowledge", recordId: "" } })).toBe(
+    appRoutes.start,
+  );
 });
 
 it("sorts section definitions across modules and preserves their ID union", () => {

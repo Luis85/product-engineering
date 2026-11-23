@@ -14,13 +14,21 @@ it.each([
     "de",
     "Product Engineering öffnen",
     "Diagnose kopieren",
+    "Projekt durchsuchen",
     "Protokollstufe",
     "Einstellungen sind schreibgeschützt",
   ],
-  ["en", "Open Product Engineering", "Copy diagnostics", "Log level", "Settings are read-only"],
+  [
+    "en",
+    "Open Product Engineering",
+    "Copy diagnostics",
+    "Search project",
+    "Log level",
+    "Settings are read-only",
+  ],
 ])(
   "uses %s for commands, settings and notices while keeping the ribbon title",
-  async (language, open, copy, logLevel, notice) => {
+  async (language, open, copy, search, logLevel, notice) => {
     setLanguage(language);
     const { plugin, registry } = createTestPlugin(ShellPlugin);
     registry.setFailLoadData();
@@ -29,6 +37,7 @@ it.each([
       expect([...registry.commands.values()].map(({ name }) => name)).toEqual([
         `Product Engineering: ${open}`,
         `Product Engineering: ${copy}`,
+        `Product Engineering: ${search}`,
       ]);
       const tab = registry.settingTabs[0];
       if (!tab) throw new Error("Settings tab was not registered");

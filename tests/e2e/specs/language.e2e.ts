@@ -7,7 +7,7 @@ import {
   closeSettings,
   installConsoleSpy,
   openSettings,
-  openView,
+  openViewSettings,
   PLUGIN_ID,
   pluginProblems,
   reloadPlugin,
@@ -30,7 +30,7 @@ async function verifyLanguage(language: Language): Promise<void> {
       ),
     { timeoutMsg: `Expected the read-only notice in ${language}` },
   );
-  await openView();
+  await openViewSettings();
   const frame = browser.$(`${ROOT} [data-testid=app-frame]`);
   await expect(frame).toHaveAttribute("lang", language);
   await expect(browser.$(`${ROOT} [data-testid=items-empty]`)).toHaveText(

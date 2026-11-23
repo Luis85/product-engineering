@@ -2,6 +2,7 @@ import { Plugin } from "obsidian";
 import { expect, it, vi } from "vitest";
 import { createTestPlugin } from "@test/obsidian";
 import { SHELL_VIEW_TYPE, ShellView } from "../../../../src/infrastructure/obsidian/shell";
+import { appSurface } from "../../../../src/presentation/app-surface";
 import { preloadSurface } from "../../../support/preload";
 import { testRuntime } from "../../../support/runtime";
 import { testSurface } from "../../../support/surface";
@@ -73,6 +74,41 @@ it("falls back for broken state and keeps each view's route independent", async 
     expect(workspace.layoutSaves).toBe(2);
   } finally {
     await Promise.all([first.detach(), second.detach()]);
+    await runtime.dispose();
+  }
+});
+
+it("persists the collapsed rail in the leaf state and restores it for that leaf", async () => {
+  const { plugin, registry } = createTestPlugin(ViewPlugin);
+  const { runtime } = testRuntime({ language: "en" });
+  const surfaces = new Set<() => void>();
+  plugin.registerView(
+    SHELL_VIEW_TYPE,
+    (leaf) => new ShellView(leaf, runtime, surfaces, appSurface),
+  );
+  const initial = registry.plugin.app.workspace.getLeaf(true);
+  const restored = registry.plugin.app.workspace.getLeaf(true);
+  try {
+    await initial.setViewState({ type: SHELL_VIEW_TYPE });
+    const collapse = await eventually(() => {
+      const control = initial.view?.contentEl.querySelector<HTMLButtonElement>(
+        'button[aria-label="Collapse side navigation"]',
+      );
+      expect(control).toBeDefined();
+      if (!control) throw new Error("Rail control is missing");
+      return control;
+    });
+    collapse.click();
+    const state = initial.view?.getState();
+    expect(state).toMatchObject({ collapsedRail: true });
+    await restored.setViewState({ type: SHELL_VIEW_TYPE, ...(state && { state }) });
+    await eventually(() =>
+      expect(
+        restored.view?.contentEl.querySelector('button[aria-label="Expand side navigation"]'),
+      ).not.toBeNull(),
+    );
+  } finally {
+    await Promise.all([initial.detach(), restored.detach()]);
     await runtime.dispose();
   }
 });

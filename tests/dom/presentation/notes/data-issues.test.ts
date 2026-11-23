@@ -19,7 +19,9 @@ it("shows an issue count beside the real section and opens an affected note", as
       }),
     );
     await fixture.vaultReady();
-    const opened = await mountApp(root, fixture.runtime);
+    const opened = await mountApp(root, fixture.runtime, {
+      initial: { name: "settings", section: "items" },
+    });
     close = opened.close;
     const button = await eventually(() => {
       const target = Array.from(

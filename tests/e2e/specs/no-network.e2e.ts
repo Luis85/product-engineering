@@ -121,7 +121,7 @@ it("renders a view and dialog without sending a missing-icon request", async () 
   await spyOnLookups();
   try {
     await openView();
-    await expect(browser.$(`${ROOT} [data-testid=items-screen]`)).toExist();
+    await expect(browser.$(`${ROOT} [data-testid=project-workspace]`)).toExist();
     await openIconProbe();
     await expect(browser.$(`[data-e2e=icon-probe] ${ROOT} dialog[open]`)).toExist();
     await browser.waitUntil(

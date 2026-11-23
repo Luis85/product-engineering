@@ -126,7 +126,7 @@ it("keeps a moved view, its portal, and an open dialog in the pop-out document",
   await installConsoleSpy();
   await setTheme("light");
   await openView();
-  await expect(browser.$(`${ROOT} [data-testid=items-screen]`)).toExist();
+  await expect(browser.$(`${ROOT} [data-testid=project-workspace]`)).toExist();
   try {
     await moveToPopout();
     expect(await mountDialogProbe()).toEqual({

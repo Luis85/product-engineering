@@ -17,6 +17,7 @@ import { DEFAULT_SETTINGS } from "../src/domain/shell";
 import { consoleSinkLayer } from "../src/infrastructure/logging/console-sink";
 import { incidentsLayer } from "../src/infrastructure/logging/incidents";
 import { memoryNoteStore, sequentialIdGenerator } from "../src/infrastructure/memory/notes";
+import { memoryProjectFiles } from "../src/infrastructure/memory/projects";
 
 export const SCENARIOS = ["loaded", "empty", "invalid", "readonly", "failure"] as const;
 type Scenario = (typeof SCENARIOS)[number];
@@ -129,6 +130,7 @@ export function harnessLayer(scenario: Scenario, { language, notify }: HarnessOp
       noteStore: scenario === "failure" ? failFirstIndexRead(notes.layer) : notes.layer,
       noteOpener: notes.opener,
       idGenerator: sequentialIdGenerator(),
+      projectFiles: memoryProjectFiles(notes.occupied).layer,
       hostEvents: Layer.effectDiscard(
         Effect.gen(function* () {
           const events = yield* EventBus;

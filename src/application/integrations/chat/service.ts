@@ -28,6 +28,9 @@ export function configuredAgentChat(
     Effect.map(SettingsService, ({ current }) => ({
       async *stream(request, signal) {
         const settings = await Effect.runPromise(current, { signal });
+        if (settings.aiEnabled !== true) {
+          throw new ProviderChatError({ provider: request.provider, reason: "consent-required" });
+        }
         const paths = {
           ...(settings.claudeCodePath ? { "claude-code": settings.claudeCodePath } : {}),
           ...(settings.codexPath ? { codex: settings.codexPath } : {}),

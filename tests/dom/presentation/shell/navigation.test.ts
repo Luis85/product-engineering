@@ -1,9 +1,13 @@
 import { expect, it } from "vitest";
+import { defineComponent, h } from "vue";
 import { HISTORY_LIMIT } from "../../../../src/application/shell";
+import { useNavigationGuard } from "../../../../src/presentation/shell";
+import type { BeforeNavigation } from "../../../../src/presentation/shell";
 import { memoryNavigation } from "../../../../src/presentation/shell/host";
 import { preloadSurface } from "../../../support/preload";
 import { testRuntime } from "../../../support/runtime";
 import { mountTest, testSurface } from "../../../support/surface";
+import type { TestRoute } from "../../../support/surface";
 import { eventually } from "../../../support/wait";
 
 await preloadSurface();
@@ -99,7 +103,7 @@ it("shows a not-found state with a route back to the start for a missing screen"
     );
     button(view.root, "Back to start").click();
     await eventually(() => expect(screen(view.root, "home")).not.toBeNull());
-    view.navigation.navigate({ name: "item", id: "unavailable" });
+    await view.navigation.navigate({ name: "item", id: "unavailable" });
     await eventually(() => expect(screen(view.root, "not-found")).not.toBeNull());
   } finally {
     await view.dispose();
@@ -109,14 +113,49 @@ it("shows a not-found state with a route back to the start for a missing screen"
 it("caps history, ignores equal visits and clears forward history after a new visit", () => {
   const navigation = memoryNavigation(testSurface());
   for (let index = 0; index <= HISTORY_LIMIT; index += 1) {
-    navigation.navigate({ name: "item", id: String(index) });
+    void navigation.navigate({ name: "item", id: String(index) });
   }
   expect(navigation.history().back).toHaveLength(HISTORY_LIMIT);
   const history = navigation.history();
-  navigation.navigate({ name: "item", id: String(HISTORY_LIMIT) });
+  void navigation.navigate({ name: "item", id: String(HISTORY_LIMIT) });
   expect(navigation.history()).toBe(history);
-  navigation.back();
+  void navigation.back();
   expect(navigation.history().forward).toHaveLength(1);
-  navigation.navigate({ name: "other" });
+  void navigation.navigate({ name: "other" });
   expect(navigation.history().forward).toHaveLength(0);
+});
+
+it("keeps the current record and history while a dirty editor refuses navigation", async () => {
+  const { runtime } = testRuntime();
+  const root = document.body.appendChild(document.createElement("div"));
+  const record = { name: "item", id: "draft" } as const;
+  let allow = true;
+  const guard: BeforeNavigation<TestRoute> = async () => allow;
+  const editor = defineComponent({
+    setup() {
+      useNavigationGuard(guard);
+      return () => h("textarea", { value: "Unsaved text" });
+    },
+  });
+  const { close, navigation } = await mountTest(root, runtime, { content: editor });
+  try {
+    await navigation.navigate(record);
+    const before = navigation.history();
+    allow = false;
+    await navigation.back();
+    expect(navigation.history()).toBe(before);
+    expect(root.querySelector("textarea")?.value).toBe("Unsaved text");
+    await navigation.navigate({ name: "other" });
+    expect(navigation.current()).toEqual(record);
+
+    allow = true;
+    await navigation.back();
+    expect(navigation.current()).toEqual({ name: "home" });
+    await navigation.forward();
+    expect(navigation.current()).toEqual(record);
+  } finally {
+    close();
+    root.remove();
+    await runtime.dispose();
+  }
 });

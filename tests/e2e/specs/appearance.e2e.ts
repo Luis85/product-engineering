@@ -71,7 +71,11 @@ async function verifySidebar(): Promise<void> {
   await browser.executeObsidian(async ({ app }, type) => {
     const leaf = app.workspace.getRightLeaf(false);
     if (!leaf) throw new Error("A right sidebar leaf is unavailable");
-    await leaf.setViewState({ type, active: true });
+    await leaf.setViewState({
+      type,
+      active: true,
+      state: { route: { name: "settings", section: "items" } },
+    });
     leaf.view.containerEl.dataset.e2e = "appearance-sidebar";
     await app.workspace.revealLeaf(leaf);
   }, VIEW_TYPE);

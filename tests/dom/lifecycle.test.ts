@@ -30,9 +30,10 @@ it("registers one shell on every load and removes its registrations on unload", 
     expect([...registry.commands.keys()]).toEqual([
       "product-engineering:open-view",
       "product-engineering:copy-diagnostics",
+      "product-engineering:search-project",
     ]);
     expect([...registry.views.keys()]).toEqual(["product-engineering-view"]);
-    expect(registrationCounts(registry)).toEqual([2, 1, 1, 1]);
+    expect(registrationCounts(registry)).toEqual([3, 1, 1, 1]);
     expect([...registry.ribbonIcons.keys()]).toEqual(["product-engineering:Product Engineering"]);
 
     registry.runCommand("product-engineering:open-view");
@@ -48,7 +49,7 @@ it("registers one shell on every load and removes its registrations on unload", 
     expect(registrationCounts(registry)).toEqual([0, 0, 0, 0]);
 
     await registry.load();
-    expect(registrationCounts(registry)).toEqual([2, 1, 1, 1]);
+    expect(registrationCounts(registry)).toEqual([3, 1, 1, 1]);
   } finally {
     plugin.unload();
   }
@@ -90,7 +91,7 @@ it("loads with read-only settings when the Obsidian data read fails", async () =
   registry.setFailLoadData();
   try {
     await registry.load();
-    expect(registrationCounts(registry)).toEqual([2, 1, 1, 1]);
+    expect(registrationCounts(registry)).toEqual([3, 1, 1, 1]);
     expect(registry.notices).toHaveLength(1);
     expect(registry.notices[0]).toContain("Einstellungen sind schreibgeschützt");
     expect(registry.saved).toEqual([]);

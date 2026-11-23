@@ -3,6 +3,7 @@ import type { ViewStateResult, WorkspaceLeaf } from "obsidian";
 import type { AppRuntime } from "../../../application/app-services";
 import { PRODUCT_NAME } from "../../../application/shell";
 import type { RouteLike } from "../../../application/shell";
+import { isPlainRecord } from "../../../domain/shell";
 import {
   loadSurface as importSurface,
   memoryNavigation,
@@ -15,10 +16,6 @@ import type {
 } from "../../../presentation/shell/host";
 
 export const SHELL_VIEW_TYPE = "product-engineering-view";
-
-function savedRoute(state: unknown): unknown {
-  return typeof state === "object" && state !== null && "route" in state ? state.route : undefined;
-}
 
 export class ShellView<R extends RouteLike> extends ItemView {
   override navigation = false;
@@ -50,18 +47,26 @@ export class ShellView<R extends RouteLike> extends ItemView {
   }
 
   override getState(): Record<string, unknown> {
-    return { ...super.getState(), route: this.#viewNavigation.current() };
+    const { signal: _signal, collapsedRail: _rail, ...state } = super.getState();
+    return {
+      ...state,
+      route: this.#viewNavigation.current(),
+      ...(this.#viewNavigation.railCollapsed() && { collapsedRail: true }),
+    };
   }
 
   override async setState(state: unknown, result: ViewStateResult): Promise<void> {
     await super.setState(state, result);
-    const route = this.definition.decode(savedRoute(state));
+    const saved = isPlainRecord(state) ? state : {};
+    const route = this.definition.decode(saved.route);
     if (this.#restored) {
-      this.#viewNavigation.navigate(route);
+      await this.#viewNavigation.navigate(route);
     } else {
       this.#restored = true;
       this.#viewNavigation.reset(route);
+      this.#viewNavigation.setRailCollapsed(saved.collapsedRail === true);
     }
+    if (typeof saved.signal === "string") this.#viewNavigation.sendSignal(saved.signal);
   }
 
   protected override async onOpen(): Promise<void> {
@@ -69,6 +74,7 @@ export class ShellView<R extends RouteLike> extends ItemView {
 
     let previousRoute = this.#viewNavigation.current();
     const releases = [
+      this.#viewNavigation.onRailChange(() => this.app.workspace.requestSaveLayout()),
       this.#viewNavigation.onChange((route) => {
         if (this.definition.equals(route, previousRoute)) return;
         previousRoute = route;

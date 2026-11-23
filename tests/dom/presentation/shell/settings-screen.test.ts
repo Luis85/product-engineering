@@ -46,12 +46,19 @@ it("keeps the chosen section button focused while its section changes", async ()
   }
 });
 
-it("shows the items section first with both app sections in the switcher", async () => {
+it("shows the items section first after opening app settings", async () => {
   const { runtime } = testRuntime();
   const root = document.body.appendChild(document.createElement("div"));
   let close: (() => void) | undefined;
   try {
     ({ close } = await mountApp(root, runtime));
+    await eventually(() => {
+      const settings = root.querySelector<HTMLButtonElement>(
+        '[data-testid="frame-navigation"] [data-pe-focus-key="settings"]',
+      );
+      expect(settings).not.toBeNull();
+      settings?.click();
+    });
     await eventually(() => expect(find(root, "items-screen")).not.toBeNull());
     expect(find(root, "settings-screen")).not.toBeNull();
     const sections = find(root, "settings-sections");

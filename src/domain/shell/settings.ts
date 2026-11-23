@@ -18,6 +18,7 @@ const InvalidMcpPort = Schema.Struct({ code: Schema.Literal("mcpPort.invalid") }
 const InvalidMcpSharedItemIds = Schema.Struct({ code: Schema.Literal("mcpSharedItemIds.invalid") });
 const InvalidClaudeCodePath = Schema.Struct({ code: Schema.Literal("claudeCodePath.invalid") });
 const InvalidCodexPath = Schema.Struct({ code: Schema.Literal("codexPath.invalid") });
+const InvalidAiEnabled = Schema.Struct({ code: Schema.Literal("aiEnabled.invalid") });
 const InvalidRootFolder = Schema.Struct({
   code: Schema.Literal("rootFolder.invalid"),
   max: Schema.Number,
@@ -29,6 +30,7 @@ export const SettingsIssue = Schema.Union([
   InvalidMcpSharedItemIds,
   InvalidClaudeCodePath,
   InvalidCodexPath,
+  InvalidAiEnabled,
   InvalidRootFolder,
 ]);
 export type SettingsIssue = typeof SettingsIssue.Type;
@@ -40,6 +42,7 @@ export type Settings = {
   readonly mcpSharedItemIds?: readonly string[] | undefined;
   readonly claudeCodePath?: string | undefined;
   readonly codexPath?: string | undefined;
+  readonly aiEnabled?: boolean | undefined;
 };
 
 const OptionalCliExecutablePath = Schema.UndefinedOr(CliExecutablePath).pipe(
@@ -84,6 +87,12 @@ const FIELDS = {
     default: undefined,
     omitWhenDefault: true,
     issue: { code: "codexPath.invalid" },
+  },
+  aiEnabled: {
+    schema: Schema.UndefinedOr(Schema.Boolean),
+    default: undefined,
+    omitWhenDefault: true,
+    issue: { code: "aiEnabled.invalid" },
   },
 } satisfies SettingsFields<Settings, SettingsIssue>;
 

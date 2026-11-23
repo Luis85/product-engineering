@@ -11,7 +11,7 @@ export function registerCommands(
   runtime: AppRuntime,
   commands: readonly AppCommand[],
   messages: Catalog,
-  open: (route?: Route) => Promise<unknown>,
+  open: (route?: Route, signal?: string) => Promise<unknown>,
 ): () => void {
   const registered: string[] = [];
 
@@ -31,7 +31,11 @@ export function registerCommands(
     for (const { id, name, action } of commands) {
       const localizedName = name(messages);
       const effect =
-        action._tag === "open" ? Effect.promise(() => open(action.route)) : action.effect;
+        action._tag === "open"
+          ? Effect.promise(() =>
+              action.signal ? open(action.route, action.signal) : open(action.route),
+            )
+          : action.effect;
       // The host can throw after inserting a command.
       registered.push(id);
       plugin.addCommand({

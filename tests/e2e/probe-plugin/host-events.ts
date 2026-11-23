@@ -6,6 +6,7 @@ import { NoteIndex, noteSnapshot } from "../../../src/application/notes";
 import { EventBus } from "../../../src/application/shell";
 import type { NoteType } from "../../../src/domain/notes";
 import { notesAdapters } from "../../../src/infrastructure/obsidian/notes";
+import { projectFilesLayer } from "../../../src/infrastructure/obsidian/projects";
 import { hostLanguage } from "../../../src/infrastructure/obsidian/shell/language";
 import { shellAdapters } from "../../../src/infrastructure/obsidian/shell/layers";
 import { referenceNoteTypes } from "../../support/notes/reference-types";
@@ -56,7 +57,12 @@ function observeHost(startup: StartupRecorder) {
 export function startupRuntime(plugin: Plugin, startup: StartupRecorder): AppRuntime {
   const { hostEvents, ...shell } = shellAdapters(plugin);
   const services = appServicesLayer(
-    { ...shell, ...notesAdapters(plugin), hostEvents: Layer.empty },
+    {
+      ...shell,
+      ...notesAdapters(plugin),
+      projectFiles: projectFilesLayer(plugin.app.vault),
+      hostEvents: Layer.empty,
+    },
     { language: hostLanguage(), developmentMode: false, noteTypes: types },
   );
   const observed = Layer.provide(

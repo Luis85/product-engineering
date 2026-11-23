@@ -67,6 +67,11 @@ export const en: IntegrationsCatalog = {
     speakers: { user: "You", assistant: "Assistant" },
   },
   chatFailures: {
+    "consent-required": () => ({
+      severity: "warning",
+      title: "AI is disabled",
+      detail: "AI chat requires your explicit consent.",
+    }),
     "provider-not-found": (provider) => ({
       severity: "error",
       action: "retry",

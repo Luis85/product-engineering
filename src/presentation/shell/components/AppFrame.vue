@@ -8,6 +8,7 @@ import RouteOutlet from "./RouteOutlet.vue";
 
 const catalog = useMessages();
 const { definition } = useRouting();
+const frame = definition.frame ? defineAsyncComponent(definition.frame) : undefined;
 const route = useRoute();
 const navigate = useNavigate();
 const { canGoBack, canGoForward, back, forward } = useHistory();
@@ -29,7 +30,8 @@ const buttons = computed(() =>
 </script>
 
 <template>
-  <div data-testid="app-frame" :lang="catalog.shell.language" class="pe:@container">
+  <component :is="frame" v-if="frame" />
+  <div v-else data-testid="app-frame" :lang="catalog.shell.language" class="pe:@container">
     <div class="pe:grid pe:min-w-0 pe:gap-4 pe:p-4 pe:@min-[860px]:grid-cols-[12rem_minmax(0,1fr)]">
       <nav
         :aria-label="catalog.shell.frame.navigation"

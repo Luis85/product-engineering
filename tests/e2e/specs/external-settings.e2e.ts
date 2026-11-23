@@ -5,7 +5,7 @@ import {
   DATA_FILE,
   installConsoleSpy,
   openSettings,
-  openView,
+  openViewSettings,
   PLUGIN_ID,
   pluginProblems,
   readDataText,
@@ -72,7 +72,7 @@ async function readRuntimeLevel(): Promise<string | undefined> {
 
 it("reloads external data in place and preserves a newer file while the view remains open", async () => {
   await installConsoleSpy();
-  await openView();
+  await openViewSettings();
   await $(settingsScreen).waitForExist();
   await openSettings();
   await writeDataFile({ schemaVersion: 1, logLevel: "debug" });

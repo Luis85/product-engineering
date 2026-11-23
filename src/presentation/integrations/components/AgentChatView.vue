@@ -2,14 +2,16 @@
 import UButton from "@nuxt/ui/components/Button.vue";
 import UTextarea from "@nuxt/ui/components/Textarea.vue";
 import { useForm } from "@tanstack/vue-form";
-import { computed, onScopeDispose, ref, shallowRef, useId } from "vue";
+import { computed, onScopeDispose, ref, shallowRef, useId, watch } from "vue";
 import type { ChatProvider } from "../../../application/integrations";
-import { ErrorNotice, useMessages } from "../../shell";
+import { ErrorNotice, useMessages, useSettings } from "../../shell";
 import { createChatSession } from "../chat-session";
 import { useProviderChat } from "../use-provider-chat";
 
 const catalog = useMessages().integrations;
 const text = catalog.chat;
+const settings = useSettings();
+const enabled = computed(() => settings.value.aiEnabled === true);
 const provider = ref<ChatProvider>("codex");
 const providers = ["codex", "claude-code"] as const;
 const providerId = useId();
@@ -28,11 +30,14 @@ onScopeDispose(() => {
   unsubscribe();
   session.dispose();
 });
+watch(enabled, (allowed) => {
+  if (!allowed) session.cancel();
+});
 
 const form = useForm({
   defaultValues: { message: "" },
   async onSubmit({ value, formApi }) {
-    if (state.value.pending || !value.message.trim()) return;
+    if (!enabled.value || state.value.pending || !value.message.trim()) return;
     stopRequested.value = false;
     const sending = session.send(provider.value, value.message);
     formApi.setFieldValue("message", "");
@@ -44,7 +49,9 @@ const form = useForm({
 });
 
 const message = form.useStore((snapshot) => snapshot.values.message);
-const canSend = computed(() => !state.value.pending && message.value.trim().length > 0);
+const canSend = computed(
+  () => enabled.value && !state.value.pending && message.value.trim().length > 0,
+);
 const canStop = computed(() => state.value.pending && !stopRequested.value);
 const status = computed(() => {
   if (state.value.pending) return stopRequested.value ? text.stopping : text.responding;
@@ -75,7 +82,7 @@ function stop(): void {
 </script>
 
 <template>
-  <div data-testid="agent-chat-screen" class="pe:grid pe:min-w-0 pe:gap-4">
+  <div v-if="enabled" data-testid="agent-chat-screen" class="pe:grid pe:min-w-0 pe:gap-4">
     <header class="pe:flex pe:flex-wrap pe:items-end pe:justify-between pe:gap-3">
       <h2 class="pe:text-lg pe:font-semibold">{{ text.title }}</h2>
       <div class="pe:grid pe:min-w-0 pe:gap-1">
@@ -160,5 +167,9 @@ function stop(): void {
         </div>
       </div>
     </form>
+  </div>
+  <div v-else data-testid="agent-chat-screen" class="pe:grid pe:gap-3">
+    <h2 class="pe:text-lg pe:font-semibold">{{ text.title }}</h2>
+    <ErrorNotice :message="catalog.chatFailures['consent-required'](catalog.providers[provider])" />
   </div>
 </template>

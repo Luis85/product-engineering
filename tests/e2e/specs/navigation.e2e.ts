@@ -3,18 +3,28 @@ import { afterEach, before, describe, it } from "mocha";
 import type { ItemView, WorkspaceLeaf } from "obsidian";
 import { AGENT_CHAT } from "../../../src/application/integrations";
 import { catalogFor } from "../../../src/application/messages";
+import {
+  isProjectId,
+  projectOverviewRoute,
+  projectRecordRoute,
+} from "../../../src/application/projects";
 import { appRoutes } from "../../../src/application/routes";
 import type { RouteLike } from "../../../src/application/shell";
+import { writeNote } from "../items";
 import {
   installConsoleSpy,
   openView,
+  PLUGIN_ID,
   pluginProblems,
   readViewRoute,
   readVaultText,
+  readDataText,
+  removeDataFile,
   ROOT,
   setViewRoute,
   TEST_LANGUAGE,
   VIEW_TYPE,
+  writeDataFile,
 } from "../support";
 
 type ProbeDefinition = {
@@ -37,9 +47,11 @@ type ProbeHost = ItemView & {
 const texts = catalogFor(TEST_LANGUAGE);
 const chat = { name: AGENT_CHAT };
 const chatScreen = `${ROOT} [data-testid=agent-chat-screen]`;
-const settingsScreen = `${ROOT} [data-testid=items-screen]`;
+const workspaceScreen = `${ROOT} [data-testid=project-workspace]`;
 function menuButton(root: string, label: string) {
-  return browser.$(`${root} [data-testid=frame-navigation]`).$(`button=${label}`);
+  return browser.$(
+    `${root} [data-testid=frame-navigation] button[aria-label=${JSON.stringify(label)}]`,
+  );
 }
 
 function isChatRoute(value: unknown): boolean {
@@ -109,10 +121,16 @@ describe("routed view", () => {
   });
 
   it("persists the chat route and resets the history on restart", async () => {
+    await writeDataFile({
+      schemaVersion: 1,
+      codexPath: "C:/product-engineering-fixture/codex.exe",
+    });
     await openView();
-    await expect(browser.$(settingsScreen)).toExist();
-    await menuButton(ROOT, texts.integrations.chat.title).click();
+    await expect(browser.$(workspaceScreen)).toExist();
+    await setViewRoute(chat);
     await expect(browser.$(chatScreen)).toExist();
+    await expect(browser.$(`${chatScreen} textarea`)).not.toExist();
+    await expect(browser.$(chatScreen)).toHaveText(expect.stringContaining("KI ist deaktiviert"));
     expect(await readViewRoute()).toEqual(chat);
     await expect(browser.$(`${ROOT} [data-testid=frame-history]`)).toExist();
     await browser.waitUntil(
@@ -134,12 +152,14 @@ describe("routed view", () => {
     await expect(browser.$(chatScreen)).toExist();
     expect(await readViewRoute()).toEqual(chat);
     await expect(browser.$(`${ROOT} [data-testid=frame-history]`)).not.toExist();
+    await expect(browser.$(`${chatScreen} textarea`)).not.toExist();
+    await removeDataFile();
 
     for (const broken of [{ name: "unknown" }, { name: "settings", section: 42 }]) {
       await setViewRoute(broken);
-      await expect(browser.$(settingsScreen)).toExist();
+      await expect(browser.$(workspaceScreen)).toExist();
       expect(await readViewRoute()).toEqual(appRoutes.start);
-      await menuButton(ROOT, texts.integrations.chat.title).click();
+      await setViewRoute(chat);
       await expect(browser.$(chatScreen)).toExist();
     }
   });
@@ -150,20 +170,21 @@ describe("routed view", () => {
     const root = `[data-e2e=navigation-probe] ${ROOT}`;
     const history = `${root} [data-testid=frame-history]`;
     const missing = `${root} [data-testid=not-found]`;
-    const items = `${root} [data-testid=items-screen]`;
+    const workspace = `${root} [data-testid=project-workspace]`;
     const back = `${history} [aria-label=${JSON.stringify(texts.shell.frame.back)}]`;
     const forward = `${history} [aria-label=${JSON.stringify(texts.shell.frame.forward)}]`;
     try {
-      await expect(browser.$(items)).toExist();
+      await width(960, root);
+      await expect(browser.$(workspace)).toExist();
       await expect(browser.$(history)).not.toExist();
       await menuButton(root, "Probe").click();
       await expect(browser.$(missing)).toExist();
       await browser.$(missing).$(`button=${texts.shell.notFound.back}`).click();
-      await expect(browser.$(items)).toExist();
+      await expect(browser.$(workspace)).toExist();
       await browser.$(back).click();
       await expect(browser.$(missing)).toExist();
       await browser.$(back).click();
-      await expect(browser.$(items)).toExist();
+      await expect(browser.$(workspace)).toExist();
       await expect(browser.$(back)).toHaveAttribute("aria-disabled", "true");
       await expect(browser.$(back)).toBeEnabled();
       await browser.$(back).click();
@@ -198,5 +219,170 @@ describe("routed view", () => {
       };
     }, VIEW_TYPE);
     expect(opened).toEqual({ usedShellLeaf: false, shellViewType: VIEW_TYPE, matchesNote: true });
+  });
+});
+
+const project = texts.projects;
+const content = `${ROOT} [data-testid=project-content]`;
+const dialog = `${ROOT} [role=dialog]`;
+const projectRoot = "Product Engineering/Projects";
+
+function named(root: string, label: string) {
+  return browser.$(`${root} button[aria-label=${JSON.stringify(label)}]`);
+}
+
+async function width(value: number, scope = ROOT) {
+  return browser.execute(
+    (selector, pixels) => {
+      const root = document.querySelector<HTMLElement>(selector);
+      if (!root) throw new Error("Project surface is missing");
+      root.style.width = pixels + "px";
+      root.style.maxWidth = pixels + "px";
+      return { width: root.clientWidth, scroll: root.scrollWidth };
+    },
+    scope,
+    value,
+  );
+}
+
+async function createProjectFromForm(name: string, description: string, repository: string) {
+  const form = browser.$(dialog);
+  await form.$("input[name=name]").setValue(name);
+  await form.$("input[name=description]").setValue(description);
+  await form.$("input[name=repository]").setValue(repository);
+  await form.$("button[type=submit]").click();
+  await expect(browser.$(`${content} h1`)).toHaveText(name);
+  const route = await readViewRoute();
+  if (
+    !route ||
+    typeof route !== "object" ||
+    !("projectId" in route) ||
+    !isProjectId(route.projectId)
+  ) {
+    throw new Error("The project identity was not saved in the native leaf");
+  }
+  return route.projectId;
+}
+
+describe("project workspace", () => {
+  it("creates projects through the native view and recovers their identity without preferences", async () => {
+    await setViewRoute(appRoutes.start);
+    await width(960);
+    const protectedFolder = `${projectRoot}/Kundenportal`;
+    const sentinel = `${protectedFolder}/Sentinel.md`;
+    await writeNote(sentinel, "Keep this existing note.\n");
+
+    await browser.$(workspaceScreen).$(`button=${project.create}`).click();
+    await browser.$(dialog).$("button[type=submit]").click();
+    await expect(browser.$(dialog)).toHaveText(expect.stringContaining(project.errors.name));
+    await expect(browser.$(`${dialog} input[name=name]`)).toBeFocused();
+    await browser.$(dialog).$(`button=${project.cancel}`).click();
+    await expect(browser.$(dialog)).not.toBeDisplayed();
+    expect(await readVaultText(`${protectedFolder}/Project.md`)).toBeNull();
+
+    await browser.$(workspaceScreen).$(`button=${project.create}`).click();
+    const first = await createProjectFromForm(
+      "Kundenportal",
+      "Serviceprozesse für B2B-Kunden",
+      "produktteam/kundenportal",
+    );
+    const folder = `${protectedFolder} (2)`;
+    const projectNote = await readVaultText(`${folder}/Project.md`);
+    const backlog = await readVaultText(`${folder}/Backlog.base`);
+    expect(projectNote).toContain(first);
+    expect(backlog).toContain(first);
+    expect(await readVaultText(sentinel)).toBe("Keep this existing note.\n");
+    await menuButton(ROOT, project.administration).click();
+    await expect(browser.$(content)).toHaveText(expect.stringContaining(`${folder}/Backlog.base`));
+    await expect(browser.$(content)).toHaveText(expect.stringContaining("main"));
+
+    await named(ROOT, project.picker).click();
+    await browser.$(dialog).$(`button=${project.create}`).click();
+    const second = await createProjectFromForm(
+      "Admin Console",
+      "Rollen und Zugriffe verwalten",
+      "produktteam/admin-console",
+    );
+    expect(second).not.toBe(first);
+    expect(await readDataText()).toBeNull();
+    const record = projectRecordRoute(
+      { projectId: first, kind: "project", recordId: first },
+      { section: "overview" },
+    );
+    await browser.executeObsidian(
+      async ({ app }, type, route) => {
+        const leaf = app.workspace.getLeaf("split");
+        await leaf.setViewState({ type, active: true, state: { route } });
+        leaf.view.containerEl.dataset.e2e = "project-secondary";
+        await app.workspace.revealLeaf(leaf);
+      },
+      VIEW_TYPE,
+      record,
+    );
+    await expect(browser.$(`[data-e2e=project-secondary] ${content} h1`)).toHaveText(
+      "Kundenportal",
+    );
+    expect(await readViewRoute()).toEqual(projectOverviewRoute(second));
+
+    await browser.waitUntil(
+      async () => (await readVaultText(".obsidian/workspace.json"))?.includes(first) ?? false,
+    );
+    await browser.reloadObsidian();
+    await installConsoleSpy();
+    const leafRoutes = await browser.executeObsidian(
+      ({ app }, type) =>
+        app.workspace.getLeavesOfType(type).map((leaf) => leaf.getViewState().state?.route),
+      VIEW_TYPE,
+    );
+    expect(leafRoutes).toContainEqual(record);
+    expect(leafRoutes).toContainEqual(projectOverviewRoute(second));
+    expect(await readVaultText(`${folder}/Project.md`)).toBe(projectNote);
+    expect(await readVaultText(`${folder}/Backlog.base`)).toBe(backlog);
+    await browser.executeObsidian(
+      ({ app }, type, projectId) => {
+        for (const leaf of app.workspace.getLeavesOfType(type)) {
+          const route = leaf.getViewState().state?.route as
+            { readonly projectId?: string } | undefined;
+          if (route?.projectId !== projectId) leaf.detach();
+        }
+      },
+      VIEW_TYPE,
+      first,
+    );
+    expect(await pluginProblems()).toEqual([]);
+  });
+
+  it("opens project search from the host command and restores focus in a narrow leaf", async () => {
+    await openView();
+    await expect(browser.$(`${content} h1`)).toHaveText("Kundenportal");
+    await width(960);
+    const expandedWidth = await browser.$(content).getSize("width");
+    await named(ROOT, project.collapse).click();
+    await expect(named(ROOT, project.expand)).toBeFocused();
+    await expect(named(ROOT, project.overview)).toBeDisplayed();
+    expect(await browser.$(content).getSize("width")).toBeGreaterThan(expandedWidth + 90);
+
+    const narrow = await width(390);
+    expect(narrow.scroll).toBeLessThanOrEqual(narrow.width + 1);
+    const drawer = named(ROOT, project.openNavigation);
+    await drawer.click();
+    await expect(named(dialog, project.picker)).toBeFocused();
+    await browser.keys("Escape");
+    await expect(drawer).toBeFocused();
+
+    await browser.executeObsidianCommand(PLUGIN_ID + ":search-project");
+    const searchbox = browser.$(`${dialog} input[type=search]`);
+    await searchbox.waitForDisplayed();
+    await searchbox.setValue(project.overview);
+    await expect(browser.$(dialog)).toHaveText(expect.stringContaining(project.overview));
+    await browser.keys("Escape");
+    const search = named(ROOT, project.search.open);
+    await expect(search).toBeFocused();
+    await search.click();
+    await expect(searchbox).toHaveValue(project.overview);
+    await browser.keys("Enter");
+    await expect(browser.$(dialog)).not.toBeDisplayed();
+    expect(await readViewRoute()).toMatchObject({ name: "project-overview" });
+    expect(await pluginProblems()).toEqual([]);
   });
 });

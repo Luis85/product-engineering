@@ -95,7 +95,10 @@
       { "name": "composition", "patterns": ["src/main.ts", "src/bootstrap.ts"] }
     ],
     "rules": [
-      { "from": "domain", "allow": ["domain/shell", "domain/notes", "domain/items"] },
+      {
+        "from": "domain",
+        "allow": ["domain/shell", "domain/notes", "domain/items", "domain/projects"]
+      },
       { "from": "domain/shell", "allow": [] },
       {
         "from": "application",
@@ -105,6 +108,7 @@
           "application/notes",
           "application/items",
           "application/integrations",
+          "application/projects",
           "application-module",
           "application-composition"
         ]
@@ -132,6 +136,7 @@
           "adapters/shell",
           "adapters/notes",
           "adapters/integrations",
+          "adapters/projects",
           "infrastructure",
           "application",
           "application/notes-adapter",
@@ -191,6 +196,7 @@
           "presentation/notes",
           "presentation/items",
           "presentation/integrations",
+          "presentation/projects",
           "presentation/shell",
           "application",
           "application-composition",
@@ -222,6 +228,7 @@
           "presentation/notes",
           "presentation/items",
           "presentation/integrations",
+          "presentation/projects",
           "application",
           "application-composition",
           "domain"

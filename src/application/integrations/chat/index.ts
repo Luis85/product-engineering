@@ -5,6 +5,7 @@ export type ChatProvider = typeof ChatProvider.Type;
 
 const ChatFailure = Schema.Literals([
   "provider-not-found",
+  "consent-required",
   "authentication-required",
   "process-failed",
   "invalid-response",

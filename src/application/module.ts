@@ -21,7 +21,7 @@ export type PluginCommand<Messages, Route, Services> = {
   readonly id: string;
   readonly name: (messages: Messages) => string;
   readonly action:
-    | { readonly _tag: "open"; readonly route?: Route }
+    | { readonly _tag: "open"; readonly route?: Route; readonly signal?: string }
     | { readonly _tag: "run"; readonly effect: Effect.Effect<void, never, Services> };
 };
 

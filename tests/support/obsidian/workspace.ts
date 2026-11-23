@@ -49,6 +49,10 @@ export class Workspace
     return [...this.#leaves].filter((leaf) => leaf.view?.getViewType() === type);
   }
 
+  getMostRecentLeaf(): WorkspaceLeaf | null {
+    return this.revealedLeaves.findLast((leaf) => this.#leaves.has(leaf)) ?? null;
+  }
+
   revealLeaf(leaf: WorkspaceLeaf): Promise<void> {
     this.revealedLeaves.push(leaf);
     return Promise.resolve();

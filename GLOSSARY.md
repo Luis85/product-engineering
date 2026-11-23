@@ -16,6 +16,12 @@
 | Shared item | `sharedItem` |
 | Note | `note` |
 | Root folder | `rootFolder` |
+| Product project | `project` |
+| Product name | `name` |
+| Short description | `description` |
+| Git repository | `repository` |
+| Branch | `branch` |
+| Backlog Base | `backlog_base` |
 | Record | `record` |
 | Schema marker | `schema` |
 | Frontmatter patch | `patch` |

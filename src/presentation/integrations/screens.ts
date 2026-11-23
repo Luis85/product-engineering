@@ -1,14 +1,10 @@
 import { AGENT_CHAT } from "../../application/integrations";
 import type { ModuleScreens } from "../shell";
 
+const chat = () => import("./index").then((module) => module.agentChat);
+
 export const integrationsScreens = {
-  screens: { [AGENT_CHAT]: () => import("./index").then(({ agentChat }) => agentChat) },
+  screens: { [AGENT_CHAT]: chat },
+  context: chat,
   sections: {},
-  menu: [
-    {
-      route: { name: AGENT_CHAT },
-      label: (catalog) => catalog.integrations.chat.title,
-      icon: "i-lucide-message-square",
-    },
-  ],
 } satisfies ModuleScreens<"integrations">;

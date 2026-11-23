@@ -1,10 +1,13 @@
 export { default as ErrorNotice } from "./components/ErrorNotice.vue";
 export { default as NotFoundState } from "./components/NotFoundState.vue";
+export { default as RouteOutlet } from "./components/RouteOutlet.vue";
 export { default as SettingsScreen } from "./components/SettingsScreen.vue";
 export { useDelayed } from "./delay";
 export { useModal } from "./modal";
 export { mountSurface } from "./mount";
-export { useHistory, useNavigate, useRoute } from "./navigation";
+export { useHistory, useNavigate, useNavigationGuard, useRoute, useRouting } from "./navigation";
+export { frameMenu } from "./routing";
+export type { BeforeNavigation } from "./routing";
 export type { ModuleScreens } from "./routing";
 export { useCommand, useMessages, useQuery, useService } from "./runtime/use-runtime";
 export type { UseCaseFn } from "./runtime/use-runtime";

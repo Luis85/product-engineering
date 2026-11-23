@@ -3,7 +3,7 @@ import { catalogFor } from "../../src/application/messages";
 import { newNoteText, schemaMarker } from "../../src/domain/notes";
 import type { Frontmatter } from "../../src/domain/notes";
 import { DEFAULT_SETTINGS } from "../../src/domain/shell";
-import { openView, readVaultText, ROOT, TEST_LANGUAGE } from "./support";
+import { openViewSettings, readVaultText, ROOT, TEST_LANGUAGE } from "./support";
 
 export const texts = catalogFor(TEST_LANGUAGE);
 export const ITEMS_FOLDER = DEFAULT_SETTINGS.rootFolder + "/Items";
@@ -58,7 +58,7 @@ export async function writeNote(path: string, text: string): Promise<void> {
 }
 
 export async function openItems(): Promise<void> {
-  await openView();
+  await openViewSettings();
   await browser
     .$(`${ROOT} [data-testid='items-screen'][data-index-ready='true']`)
     .waitForDisplayed({

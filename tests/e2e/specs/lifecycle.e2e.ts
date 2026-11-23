@@ -12,7 +12,7 @@ import {
   VIEW_TYPE,
 } from "../support";
 
-const surface = ROOT + ' [data-testid="items-screen"]';
+const surface = ROOT + ' [data-testid="project-workspace"]';
 
 function viewCount(): Promise<number> {
   return browser.executeObsidian(

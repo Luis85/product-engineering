@@ -15,6 +15,20 @@ afterEach(() => vi.restoreAllMocks());
 
 class TestPlugin extends Plugin {}
 
+it("registers project search without overriding Obsidian hotkeys", async () => {
+  const { plugin, registry } = createTestPlugin(TestPlugin);
+  const { runtime } = testRuntime();
+  try {
+    registerCommands(plugin, runtime, appCommands, catalogFor("en"), () => Promise.resolve());
+    expect(registry.commands.get("product-engineering:search-project")).toMatchObject({
+      name: "Product Engineering: Search project",
+    });
+    expect(registry.commands.get("product-engineering:search-project")?.hotkeys).toBeUndefined();
+  } finally {
+    await runtime.dispose();
+  }
+});
+
 it("registers localized commands without hotkeys and opens the requested view", async () => {
   const { plugin, registry } = createTestPlugin(TestPlugin);
   const { runtime } = testRuntime();
@@ -24,6 +38,7 @@ it("registers localized commands without hotkeys and opens the requested view", 
     expect([...registry.commands.values()].map(({ name, hotkeys }) => [name, hotkeys])).toEqual([
       ["Product Engineering: Open Product Engineering", undefined],
       ["Product Engineering: Copy diagnostics", undefined],
+      ["Product Engineering: Search project", undefined],
     ]);
     registry.runCommand("product-engineering:open-view");
     await eventually(() => expect(open).toHaveBeenCalledExactlyOnceWith(undefined));

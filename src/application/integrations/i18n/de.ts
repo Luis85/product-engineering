@@ -70,6 +70,11 @@ export const de: IntegrationsCatalog = {
     speakers: { user: "Du", assistant: "Assistent" },
   },
   chatFailures: {
+    "consent-required": () => ({
+      severity: "warning",
+      title: "KI ist deaktiviert",
+      detail: "Der KI-Chat erfordert deine ausdrückliche Zustimmung.",
+    }),
     "provider-not-found": (provider) => ({
       severity: "error",
       action: "retry",

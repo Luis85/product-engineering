@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { browser } from "@wdio/globals";
 
@@ -109,6 +109,24 @@ function waitForPluginCommand(registered: boolean) {
 export async function openView(): Promise<void> {
   await waitForPluginCommand(true);
   await browser.executeObsidianCommand(OPEN_VIEW_COMMAND);
+}
+
+export async function openViewSettings(): Promise<void> {
+  await openView();
+  await browser.$(`${ROOT} [data-testid=app-frame]`).waitForDisplayed();
+  const route = await readViewRoute();
+  if (route && typeof route === "object" && "name" in route && route.name === "settings") {
+    if ("section" in route && route.section === "items") return;
+    await browser.$(`${ROOT} [data-testid=settings-sections] button:first-child`).click();
+    return;
+  }
+  const rail = browser.$(`${ROOT} [data-testid=project-rail]`);
+  if (await rail.isDisplayed()) {
+    await rail.$("[data-pe-focus-key=settings]").click();
+  } else {
+    await browser.$(`${ROOT} [data-testid=app-frame] header button[aria-expanded]`).click();
+    await browser.$(`${ROOT} [role=dialog] [data-pe-focus-key=settings]`).click();
+  }
 }
 
 export function readViewRoute(): Promise<unknown> {
@@ -238,6 +256,10 @@ export async function writeVaultText(name: string, text: string): Promise<void> 
 
 export function readDataText(): Promise<string | null> {
   return readVaultText(DATA_FILE);
+}
+
+export function removeDataFile(): Promise<void> {
+  return rm(vaultPath(DATA_FILE), { force: true });
 }
 
 export async function readDataFile(): Promise<unknown> {

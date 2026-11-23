@@ -292,6 +292,7 @@ export function memoryNoteStore() {
     settle: Effect.void,
     body: (path: string) => files.get(path)?.body,
     isFolder: (path: string) => folders.has(normalizeMemoryPath(path)),
+    occupied,
     setFailReads(value: boolean) {
       failReads = value;
     },

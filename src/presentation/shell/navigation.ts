@@ -1,8 +1,8 @@
-import { computed, inject, shallowRef } from "vue";
+import { computed, inject, onScopeDispose, shallowRef } from "vue";
 import type { App, InjectionKey, ShallowRef } from "vue";
 import type { Route } from "../../application/routes";
 import type { RouteHistory, RouteLike } from "../../application/shell";
-import type { SurfaceDefinition, ViewNavigation } from "./routing";
+import type { BeforeNavigation, SurfaceDefinition, ViewNavigation } from "./routing";
 
 type Routing<R extends RouteLike> = {
   readonly definition: SurfaceDefinition<R>;
@@ -36,9 +36,13 @@ export function useRoute<R extends RouteLike = Route>() {
   return computed(() => history.value.current);
 }
 
-export function useNavigate<R extends RouteLike = Route>(): (route: R) => void {
+export function useNavigate<R extends RouteLike = Route>(): ViewNavigation<R>["navigate"] {
   const { navigation } = useRouting<R>();
   return (route) => navigation.navigate(route);
+}
+
+export function useNavigationGuard<R extends RouteLike = Route>(guard: BeforeNavigation<R>): void {
+  onScopeDispose(useRouting<R>().navigation.beforeNavigate(guard));
 }
 
 export function useHistory() {
@@ -49,10 +53,10 @@ export function useHistory() {
     canGoBack,
     canGoForward,
     back() {
-      if (canGoBack.value) navigation.back();
+      return canGoBack.value && navigation.back();
     },
     forward() {
-      if (canGoForward.value) navigation.forward();
+      return canGoForward.value && navigation.forward();
     },
   };
 }

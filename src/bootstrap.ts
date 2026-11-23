@@ -138,9 +138,9 @@ export async function bootstrap(
     }
 
     let opening = Promise.resolve();
-    const open = (route?: Route) => {
+    const open = (route?: Route, surfaceSignal?: string) => {
       const request = opening.then(() => {
-        if (!aborted() && !disposal) return openRoute(plugin.app.workspace, route);
+        if (!aborted() && !disposal) return openRoute(plugin.app.workspace, route, surfaceSignal);
       });
       opening = request.catch(() => undefined);
       return request;

@@ -32,8 +32,8 @@ function find<E extends Element>(root: HTMLElement, selector: string): E {
   return element;
 }
 
-async function fixture() {
-  const { runtime } = testRuntime({ language: "en" });
+async function fixture(aiEnabled = true) {
+  const { runtime } = testRuntime({ language: "en", initialSettings: { aiEnabled } });
   const root = document.body.appendChild(document.createElement("div"));
   try {
     const content = defineComponent({ render: () => h(agentChat) });
@@ -72,13 +72,24 @@ function submit(root: HTMLElement) {
   find<HTMLFormElement>(root, "form").dispatchEvent(new Event("submit", { cancelable: true }));
 }
 
-it("adds the localized AI chat screen to the application routes and menu", async () => {
+it("preserves the chat route while keeping it out of default navigation", async () => {
   const route = appSurface.decode({ name: AGENT_CHAT });
   expect(route).toEqual({ name: AGENT_CHAT });
   const menu = appSurface.menu.find((entry) => entry.route.name === AGENT_CHAT);
-  expect(menu?.label(catalogFor("en"))).toBe("AI chat");
-  expect(menu?.label(catalogFor("de"))).toBe("KI-Chat");
+  expect(menu).toBeUndefined();
+  expect(catalogFor("de").integrations.chat.title).toBe("KI-Chat");
   await expect(appSurface.screen(route)?.()).resolves.toBe(agentChat);
+});
+
+it("hides send controls on a saved chat route without consent", async () => {
+  const view = await fixture(false);
+  try {
+    expect(view.root.querySelector("form")).toBeNull();
+    expect(view.root.textContent).toContain("AI is disabled");
+    expect(stream).not.toHaveBeenCalled();
+  } finally {
+    await view.dispose();
+  }
 });
 
 it("guards a blank or overlapping submit and renders the streamed response as plain text", async () => {

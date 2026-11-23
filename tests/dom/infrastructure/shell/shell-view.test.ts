@@ -122,7 +122,9 @@ it("closes the bootstrapped view before the managed runtime is disposed", async 
 
   try {
     await leaf.setViewState({ type: SHELL_VIEW_TYPE });
-    expect(leaf.view?.contentEl.querySelector('[data-testid="app-frame"]')).toBeTruthy();
+    await eventually(() =>
+      expect(leaf.view?.contentEl.querySelector('[data-testid="app-frame"]')).toBeTruthy(),
+    );
     const dispose = vi.spyOn(handle.runtime, "dispose").mockImplementation(async () => {
       expect(leaf.view?.contentEl.childElementCount).toBe(0);
       await disposeRuntime();

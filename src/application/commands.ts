@@ -7,4 +7,4 @@ import type { Route } from "./routes";
 
 export type AppCommand = PluginCommand<Catalog, Route, AppServices>;
 
-export const appCommands: readonly AppCommand[] = commandsOf(APP_MODULES);
+export const appCommands = commandsOf<AppCommand>(APP_MODULES);

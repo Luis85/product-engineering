@@ -12,6 +12,7 @@ import {
 } from "../../src/application/shell";
 import type { DatedLogEntry, UserMessage } from "../../src/application/shell";
 import { memoryNoteStore, sequentialIdGenerator } from "../../src/infrastructure/memory/notes";
+import { memoryProjectFiles } from "../../src/infrastructure/memory/projects";
 
 type StoreOptions = { readonly uncancellableSaves?: boolean };
 
@@ -93,6 +94,7 @@ const testHostInfo = Layer.succeed(HostInfo, {
 export function testAdapters(options: TestAdapterOptions = {}) {
   const store = inMemoryStore(options.initialSettings, options);
   const notes = memoryNoteStore();
+  const projectFiles = memoryProjectFiles(notes.occupied);
   const notifier: UserMessage[] = [];
   const logger: DatedLogEntry[] = [];
   const clipboard: string[] = [];
@@ -128,11 +130,13 @@ export function testAdapters(options: TestAdapterOptions = {}) {
     noteStore: notes.layer,
     noteOpener: notes.opener,
     idGenerator: sequentialIdGenerator(),
+    projectFiles: projectFiles.layer,
   };
   return {
     adapters,
     store,
     notes,
+    projectFiles,
     notifier,
     clipboard,
     logger,

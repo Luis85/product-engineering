@@ -61,7 +61,7 @@ export async function openItems(...seeds: Seed[]) {
     async function openSettings(section: SettingsSection) {
       const entry = appSurface.sections?.find(({ id }) => id === section);
       if (!entry) throw new Error(`Settings section ${section} is missing`);
-      navigation.navigate(entry.route);
+      await navigation.navigate(entry.route);
       await until(() =>
         expect(
           find(root, '[data-testid="settings-sections"] [aria-current="page"]').textContent,

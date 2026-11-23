@@ -12,6 +12,7 @@ import {
 } from "../support";
 
 const section = { name: "settings", section: "data-issues" };
+const items = { name: "settings", section: "items" };
 const navigation = `${ROOT} [data-testid='settings-sections']`;
 const issues = `${ROOT} [data-testid='data-issues-list']`;
 
@@ -55,7 +56,7 @@ it("navigates settings sections accessibly, persists the selection, and fits 320
 
   const back = `${ROOT} [data-testid='frame-history'] button[aria-label=${JSON.stringify(texts.shell.frame.back)}]`;
   await browser.$(back).click();
-  expect(await readViewRoute()).toEqual(appRoutes.start);
+  expect(await readViewRoute()).toEqual(items);
   await dataIssueButton().click();
   await browser.waitUntil(
     async () => {
@@ -76,7 +77,7 @@ it("navigates settings sections accessibly, persists the selection, and fits 320
   await browser.$(issues).waitForDisplayed();
   expect(await readViewRoute()).toEqual(section);
   await setViewRoute({ name: "settings", section: "no-longer-registered" });
-  await browser.$(`${ROOT} [data-testid='items-screen']`).waitForDisplayed();
+  await browser.$(`${ROOT} [data-testid='project-workspace']`).waitForDisplayed();
   expect(await readViewRoute()).toEqual(appRoutes.start);
   expect(await pluginProblems()).toEqual([]);
 });

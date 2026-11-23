@@ -15,8 +15,30 @@ async function collect(output: AsyncIterable<string>): Promise<string[]> {
   return chunks;
 }
 
+it("blocks a configured desktop provider before global AI consent", async () => {
+  const fixture = testRuntime({ initialSettings: { codexPath: "/bin/codex" } });
+  const factory = vi.fn<() => ProviderChat>(() => ({
+    async *stream() {
+      yield "Provider output";
+    },
+  }));
+  try {
+    const chat = await fixture.runtime.runPromise(
+      Effect.provide(AgentChat, configuredAgentChat(factory)),
+    );
+    await expect(collect(chat.stream({ provider: "codex", messages: [] }))).rejects.toMatchObject({
+      reason: "consent-required",
+    });
+    expect(factory).not.toHaveBeenCalled();
+  } finally {
+    await fixture.runtime.dispose();
+  }
+});
+
 it("reads configured executable paths for each chat request", async () => {
-  const fixture = testRuntime({ initialSettings: { claudeCodePath: "/bin/claude" } });
+  const fixture = testRuntime({
+    initialSettings: { claudeCodePath: "/bin/claude", aiEnabled: true },
+  });
   const factory = vi.fn<(paths: Readonly<Partial<Record<ChatProvider, string>>>) => ProviderChat>(
     (paths) => ({
       async *stream() {
