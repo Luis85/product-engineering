@@ -1,5 +1,19 @@
 # Repository instructions
 
-- Run `npm run verify` after each task once it is available and read its exit code.
-- Write each behavior test first and confirm it fails for the expected reason before implementing the behavior.
-- The repository is built by the plan in `docs/plans/obsidian-plugin-shell-blueprint/README.md`. Run its tasks in order.
+- Run `npm run verify` after each task and read the exit code. The gate stops at the first failure. `npm run verify:full` adds mutation testing. [Testing](docs/engineering/testing.md)
+- Write the behavior test first and confirm it fails for the expected reason. Use the Obsidian double in `tests/support/obsidian`, the adapter fixtures under `tests/support`, and the real suite in `tests/e2e`. [Testing](docs/engineering/testing.md)
+- Run `npm run test:e2e` for lifecycle, settings-tab, theme, pop-out, view-state, or vault changes. Use Xvfb for Linux without a display. [Testing](docs/engineering/testing.md)
+- Keep the four layers directed inward. Import `obsidian` from the main entry, bootstrap, and Obsidian adapters. In presentation, use `effect` through `src/presentation/shell/runtime`. [Architecture](docs/engineering/architecture.md)
+- Follow feature → notes → shell. Use module indexes and the documented host, adapter-kit, and screen-manifest entries. [Module structure](docs/adr/0006-module-structure.md)
+- Register feature application and presentation manifests in `src/application/modules.ts` and `src/presentation/app-surface.ts`. [Adding a feature](docs/engineering/adding-a-feature.md)
+- Localize visible text in the module’s English and German catalogs. Keep domain issues as codes and use English for identifiers and data keys from `GLOSSARY.md`. [UI language](docs/adr/0005-ui-language.md)
+- Access vault records through `NoteStore`, register types in the application manifests for `appNoteTypes`, and take lists from the index. [Vault access](docs/adr/0007-vault-data-access.md) · [Item contract](docs/contracts/item-v1.md)
+- Use tagged errors for expected failures and report defects once at a boundary. Keep record values and credentials out of logs. [Error handling](docs/engineering/error-handling.md)
+- Use TanStack Form with domain validation. Give each setting one edit location and keep product data in notes. [Architecture](docs/engineering/architecture.md)
+- Scope CSS to the plugin root, use the `pe` prefix, and keep overlays in the owning surface. Register component sources in `src/styles/app.css` and icons in `SHELL_ICONS`. [Architecture](docs/engineering/architecture.md)
+- Follow the Obsidian lint rules, including owner-document access, registered listeners, and explicit command IDs with no default hotkeys. [Testing](docs/engineering/testing.md)
+- Use Effect 4 APIs such as `Context.Service` and `Schema.TaggedError`. Check installed declarations in `node_modules/effect/dist` before adding a new usage. [Architecture](docs/engineering/architecture.md)
+- Keep source files at most 400 code lines and test files at most 450. Use Conventional Commits. [Architecture](docs/engineering/architecture.md)
+- Bump releases through a pull request with `npm version <x.y.z> --no-git-tag-version` and a `chore: release <x.y.z>` commit. Dispatch Release on `main` with `version` only when the owner asks for publication. [Releasing](docs/engineering/releasing.md)
+- The repository has not chosen an issue tracker yet. Pull requests leave the issue field out until that decision is made. [GitHub setup](docs/engineering/github-setup.md)
+- The repository was built from the ordered tasks in `docs/plans/obsidian-plugin-shell-blueprint`. [Blueprint](docs/plans/obsidian-plugin-shell-blueprint/README.md)

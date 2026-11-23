@@ -55,7 +55,7 @@ Build and stage the current version locally.
 npm run build && npm run release:package
 ```
 
-The package is staged in `release/product-engineering/` as `main.js`, `manifest.json`, and `styles.css`. To install by hand, copy those files from a published release or the local package into `.obsidian/plugins/product-engineering/` in the vault. Enable **Product Engineering** under **Community plugins** in Obsidian.
+The package is staged in `release/product-engineering/` as `main.js`, `manifest.json`, and `styles.css`. To install by hand, copy those files from a published release or the local package into `<vault>/.obsidian/plugins/product-engineering/`. Enable **Product Engineering** under **Community plugins** in Obsidian.
 
 `THIRD-PARTY-NOTICES.txt` is the fourth published asset. The local staging script leaves it beside the plugin folder. It records licenses for the packages in the bundle. [Third-party notices](../../THIRD-PARTY-NOTICES.txt)
 

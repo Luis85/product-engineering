@@ -36,6 +36,10 @@ The adapter publishes `VaultReady` after `LayoutReady` when every current Markdo
 
 In one live Windows run the index built in 32.1 ms from the cold readiness edge and 33 ms from the warm edge. Three outside edits appeared in the index 141 to 153 ms after their writes. The counted-work test separately checks one decode per record on the first build, zero extra decodes on an unchanged rebuild, and one read and one decode for a single outside edit. [Native index spec](../../tests/e2e/specs/note-index.e2e.ts), [Counted-work test](../../tests/unit/application/notes/note-index-budget.test.ts)
 
+### Consumer rule · 23 November 2026
+
+Establish subscriptions while the service graph is built. The Obsidian event adapter starts after the consumers subscribe. Use `LayoutReady` for host layout work and `VaultReady` for the initial vault snapshot. The index discards earlier file events and re-reads later changes by path. A change queued during the initial read is safe to apply again because the worker replaces the state for that path. [Service composition](../../src/application/app-services-layer.ts), [Index worker](../../src/application/notes/index-live.ts), [Build and follow race test](../../tests/unit/application/notes/note-index-follow.test.ts)
+
 ## Consequences
 
 Each file event describes a write or path change. Consumers that require indexed data use metadata readiness and reread from the store. An unbounded bus preserves observations for a slow subscriber while its scope is active, so subscribers release their scopes promptly. [Application event bus](../../src/application/shell/event-bus.ts)

@@ -4,6 +4,7 @@ import { catalogFor } from "../../../src/application/messages";
 import { NoteStore } from "../../../src/application/notes";
 import type { SettingsSection } from "../../../src/application/routes";
 import type { Frontmatter } from "../../../src/domain/notes";
+import { appSurface } from "../../../src/presentation/app-surface";
 import { testRuntime } from "../runtime";
 import { mountApp } from "../surface";
 import { eventually } from "../wait";
@@ -57,16 +58,14 @@ export async function openItems(...seeds: Seed[]) {
     await fixture.vaultReady();
     const { navigation, close: closeApp } = await mountApp(root, fixture.runtime);
     unmount = closeApp;
-    const sectionLabels = {
-      items: text.items.settings.label,
-      "data-issues": text.notes.unindexed.label,
-    };
     async function openSettings(section: SettingsSection) {
-      navigation.navigate({ name: "settings", section });
+      const entry = appSurface.sections?.find(({ id }) => id === section);
+      if (!entry) throw new Error(`Settings section ${section} is missing`);
+      navigation.navigate(entry.route);
       await until(() =>
         expect(
           find(root, '[data-testid="settings-sections"] [aria-current="page"]').textContent,
-        ).toContain(sectionLabels[section]),
+        ).toContain(entry.label(text)),
       );
     }
     await openSettings("items");
