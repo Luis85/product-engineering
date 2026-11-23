@@ -3,7 +3,8 @@ import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
-import { sharedConfig } from "./vite.shared.ts";
+import { bundledPackages } from "../scripts/bundled-packages.mjs";
+import { sharedConfig, SHELL_ICONS } from "./vite.shared.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const entry = fileURLToPath(new URL("../src/main.ts", import.meta.url));
@@ -33,7 +34,11 @@ export default defineConfig(({ mode }) => {
     ...shared,
     root,
     publicDir: false,
-    plugins: [...shared.plugins, bundleManifest()],
+    plugins: [
+      ...shared.plugins,
+      bundleManifest(),
+      bundledPackages({ root, icons: SHELL_ICONS, stylesheets: ["src/styles/app.css"] }),
+    ],
     build: {
       outDir: "dist",
       emptyOutDir: true,

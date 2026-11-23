@@ -10,6 +10,7 @@ export const STEPS = [
   "analyze",
   "build",
   "check:dist",
+  "check:notices",
 ];
 export const FULL_STEPS = [...STEPS, "test:mutation"];
 

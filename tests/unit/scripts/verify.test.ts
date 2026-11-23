@@ -20,6 +20,7 @@ describe("verification gate", () => {
       "analyze",
       "build",
       "check:dist",
+      "check:notices",
     ]);
     expect(spawn.mock.calls).toEqual(
       STEPS.map((step) => [
@@ -42,7 +43,7 @@ describe("verification gate", () => {
     expect(result.code).toBe(7);
     expect(spawn).toHaveBeenCalledTimes(2);
     expect(summary(result.steps)).toMatch(
-      /ok\s+format:check\s+[\d.]+s\r?\nFAIL\s+lint\s+[\d.]+s\r?\nnot run\s+typecheck\r?\nnot run\s+test:coverage\r?\nnot run\s+analyze\r?\nnot run\s+build\r?\nnot run\s+check:dist/,
+      /ok\s+format:check\s+[\d.]+s\r?\nFAIL\s+lint\s+[\d.]+s\r?\nnot run\s+typecheck\r?\nnot run\s+test:coverage\r?\nnot run\s+analyze\r?\nnot run\s+build\r?\nnot run\s+check:dist\r?\nnot run\s+check:notices/,
     );
   });
 
