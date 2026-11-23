@@ -11,6 +11,7 @@ type ScopedRoute = {
 export type ProjectSearchRecord<R extends ScopedRoute = ScopedRoute> = ProjectReference & {
   readonly title: string;
   readonly displayId?: string;
+  readonly notePath?: string;
   readonly route: R;
 };
 

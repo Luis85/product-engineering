@@ -27,7 +27,7 @@ export { IdGenerator, NoteOpener, NoteStore } from "./ports";
 export type { CreateNoteInput, FrontmatterChange, Note } from "./ports";
 export { defineRecords } from "./record-kit";
 export type { RecordList, RecordRow } from "./record-list";
-export { editChange, newRecordFrontmatter } from "./records";
+export { editChange, newRecordFrontmatter, recordFrontmatter } from "./records";
 export { DATA_ISSUES_SECTION } from "./routes";
 export type { NotesServices } from "./services";
 export { describeNoteIssue, describeUnindexedIssue } from "./user-messages";

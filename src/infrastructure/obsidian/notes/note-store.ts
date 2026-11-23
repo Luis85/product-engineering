@@ -23,7 +23,7 @@ import {
   writeCommand,
 } from "../../../application/notes/adapter";
 import { VaultReadError } from "../../../application/shell";
-import { clashKey } from "../../../domain/notes";
+import { clashKey, splitNoteText } from "../../../domain/notes";
 
 export function noteFile(vault: Vault, path: string): TFile | undefined {
   const file = vault.getFileByPath(normalizePath(path));
@@ -221,6 +221,17 @@ function trash(app: App, path: string) {
 
 export function noteStoreLayer(app: App) {
   const { vault, metadataCache } = app;
+  const readContent = (path: string) =>
+    Effect.gen(function* () {
+      const file = yield* readVault(() => noteFile(vault, path));
+      if (!file) return yield* new NoteNotFoundError();
+      const text = yield* Effect.tryPromise({
+        try: () => vault.read(file),
+        catch: () => new VaultReadError(),
+      });
+      const frontmatter = yield* Effect.fromResult(readNoteFrontmatter(text, parseYaml));
+      return { path: normalizePath(file.path), frontmatter, body: splitNoteText(text).body };
+    });
   return Layer.succeed(NoteStore, {
     list: readVault(() =>
       recordNotes(vault.getMarkdownFiles().map((file) => cachedNote(app, file))),
@@ -232,16 +243,8 @@ export function noteStoreLayer(app: App) {
         return yield* readVault(() => cachedNote(app, file));
       }),
     readFresh: (path) =>
-      Effect.gen(function* () {
-        const file = yield* readVault(() => noteFile(vault, path));
-        if (!file) return yield* new NoteNotFoundError();
-        const text = yield* Effect.tryPromise({
-          try: () => vault.read(file),
-          catch: () => new VaultReadError(),
-        });
-        const frontmatter = yield* Effect.fromResult(readNoteFrontmatter(text, parseYaml));
-        return { path: normalizePath(file.path), frontmatter };
-      }),
+      Effect.map(readContent(path), (note) => ({ path: note.path, frontmatter: note.frontmatter })),
+    readContent,
     unreadable: (folder) =>
       readVault(() =>
         pathsInFolder(

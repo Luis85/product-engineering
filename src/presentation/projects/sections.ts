@@ -1,3 +1,4 @@
+import { projectKnowledgeRoute } from "../../application/knowledge";
 import type { Catalog } from "../../application/messages";
 import { projectAdministrationRoute, projectOverviewRoute } from "../../application/projects";
 import type { ProjectId } from "../../application/projects";
@@ -26,6 +27,11 @@ export function projectGroups(
             label: projects.overview,
             route: projectOverviewRoute(id),
             icon: "i-lucide-layout-grid",
+          },
+          {
+            label: catalog.knowledge.title,
+            route: projectKnowledgeRoute(id),
+            icon: "i-lucide-book-open",
           },
         ]
       : [],

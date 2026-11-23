@@ -14,7 +14,7 @@ import { IdGenerator } from "../notes";
 import { projectById } from "./discovery";
 import type { ProjectSettings } from "./discovery";
 import { ProjectMemberError } from "./errors";
-import { updateProjectFrontmatter } from "./registration";
+import { readFreshProject, updateProjectFrontmatter } from "./registration";
 
 function membersOf(frontmatter: Frontmatter) {
   const result = projectType.fields.team.check(frontmatter.team);
@@ -27,8 +27,9 @@ export const projectMemberChoices = (id: ProjectId) =>
   Effect.map(projectById(id), (project) => project && projectMembers(project));
 
 export const resolveProjectMember = (projectId: ProjectId, memberId: ProjectMemberId) =>
-  Effect.map(projectMemberChoices(projectId), (members) =>
-    members?.find(({ id }) => id === memberId),
+  Effect.map(
+    readFreshProject(projectId),
+    (project) => project && membersOf(project.frontmatter)?.find(({ id }) => id === memberId),
   );
 
 export const newProjectMemberId = IdGenerator.use(({ nextId }) =>

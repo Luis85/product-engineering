@@ -262,6 +262,13 @@ export function memoryNoteStore() {
       list: readable(() => recordNotes([...files.values()].filter(markdown).map(noteOf))),
       read,
       readFresh: read,
+      readContent: (path) =>
+        Effect.gen(function* () {
+          const file = yield* readable(() => fileAt(path));
+          if (!file) return yield* new NoteNotFoundError();
+          if (file.frontmatter === "broken") return yield* new NoteUnreadableError();
+          return { ...noteOf(file), body: file.body };
+        }),
       unreadable: (folder) =>
         readable(() =>
           pathsInFolder(

@@ -4,6 +4,7 @@ export {
   newProjectId,
   projectBacklogStatus,
   projectDraftIssues,
+  readFreshProject,
   projectDetails,
   projectDetailsIssues,
   repairProjectBacklog,

@@ -1,5 +1,6 @@
 import { integrationsModule } from "./integrations";
 import { itemsModule } from "./items";
+import { knowledgeModule } from "./knowledge";
 import { notesModule } from "./notes";
 import { projectsModule } from "./projects";
 import { shellModule } from "./shell";
@@ -10,6 +11,7 @@ export const APP_MODULES = [
   itemsModule,
   integrationsModule,
   projectsModule,
+  knowledgeModule,
 ] as const;
 
 export type AppModule = (typeof APP_MODULES)[number];

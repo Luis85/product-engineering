@@ -15,6 +15,16 @@
 | MCP tool | `tool` |
 | Shared item | `sharedItem` |
 | Note | `note` |
+| Knowledge | `knowledge` |
+| Knowledge type | `kind` |
+| Short record ID | `display_id` |
+| Approval | `approval` |
+| Assigned project member | `owner_id` |
+| Actor subtype | `actor_type` |
+| PRD requirement ID | `requirement_id` |
+| Related product vision | `vision_id` |
+| Related Jobs to Be Done | `job_ids` |
+| Originating deliverable | `deliverable_id` |
 | Root folder | `rootFolder` |
 | Product project | `project` |
 | Product name | `name` |

@@ -161,7 +161,8 @@ it("restores project search scroll after Escape and after returning from a resul
   await search.click();
   await expect(input).toBeFocused();
   const initial = await scrollPosition(45);
-  expect(initial).toEqual({ top: 45, count: 4 });
+  expect(initial).toEqual({ top: 45, count: 5 });
+  await expect(browser.$(list)).toHaveText(expect.stringContaining(catalog.knowledge.title));
   await browser.keys("Escape");
   await expect(search).toBeFocused();
   await search.click();

@@ -15,7 +15,7 @@ export type ProjectTemplateRequest = {
 
 export type ProjectTemplateFactory = {
   readonly template: ProjectTemplateId;
-  readonly create: (request: ProjectTemplateRequest) => Component;
+  readonly create: (request: ProjectTemplateRequest) => Component | Promise<Component>;
 };
 
 export type ProjectTemplatePart = { readonly projectTemplates?: readonly ProjectTemplateFactory[] };

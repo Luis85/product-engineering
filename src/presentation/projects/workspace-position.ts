@@ -1,5 +1,5 @@
-import { nextTick, onScopeDispose } from "vue";
-import type { Ref } from "vue";
+import { inject, nextTick, onScopeDispose, provide } from "vue";
+import type { InjectionKey, Ref } from "vue";
 import { HISTORY_LIMIT } from "../../application/shell";
 import type { Route } from "../../application/routes";
 import { useRouting } from "../shell";
@@ -13,6 +13,11 @@ type Position = {
 };
 
 const focusSelector = "[data-pe-focus-key]";
+const restoreKey: InjectionKey<(phase?: "settled") => void> = Symbol("workspace-position-restore");
+
+export function useRestoreWorkspacePosition() {
+  return inject(restoreKey, () => undefined);
+}
 
 function activeControl(workspace: HTMLElement) {
   const active = workspace.ownerDocument.activeElement;
@@ -37,6 +42,12 @@ function scrollOwner(element: HTMLElement) {
   return element.ownerDocument.scrollingElement ?? element;
 }
 
+function restoreScroll(workspace: HTMLElement, target: Position | undefined) {
+  const scroll = scrollOwner(workspace);
+  scroll.scrollLeft = target?.left ?? 0;
+  scroll.scrollTop = target?.top ?? 0;
+}
+
 export function useWorkspacePosition(
   frame: Ref<HTMLElement | undefined>,
   content: Ref<HTMLElement | undefined>,
@@ -45,10 +56,39 @@ export function useWorkspacePosition(
   let previous = navigation.current();
   let origin: HTMLElement | undefined;
   const positions: Position[] = [];
+  let restoredControl: HTMLElement | undefined;
 
   function heading() {
     return content.value?.querySelector<HTMLElement>("h1[tabindex]") ?? content.value;
   }
+
+  function currentPosition() {
+    const route = navigation.current();
+    return positions.findLast((candidate) => definition.equals(candidate.route, route));
+  }
+
+  function restore(fallback = false) {
+    const workspace = frame.value;
+    if (!workspace || restoredControl) return;
+    const target = currentPosition();
+    const focused = positionControl(workspace, target);
+    if (!focused && !fallback) return;
+    (focused ?? heading())?.focus({ preventScroll: true });
+    restoreScroll(workspace, target);
+    restoredControl = focused;
+  }
+
+  function restoreSettledScroll() {
+    const workspace = frame.value;
+    if (!workspace || !restoredControl || workspace.ownerDocument.activeElement !== restoredControl)
+      return;
+    const target = currentPosition();
+    if (target) restoreScroll(workspace, target);
+  }
+  provide(restoreKey, (phase) => {
+    if (phase === "settled") restoreSettledScroll();
+    else restore();
+  });
 
   onScopeDispose(
     navigation.onChange((route) => {
@@ -65,16 +105,12 @@ export function useWorkspacePosition(
       });
       if (positions.length > HISTORY_LIMIT) positions.shift();
       origin = undefined;
+      restoredControl = undefined;
       const sectionChange = previous.name === "settings" && route.name === "settings";
       previous = route;
       if (sectionChange) return;
-      const target = positions.findLast((candidate) => definition.equals(candidate.route, route));
       void nextTick(() => {
-        if (navigation.current() !== route) return;
-        const focused = positionControl(workspace, target) ?? heading();
-        focused?.focus({ preventScroll: true });
-        scroll.scrollLeft = target?.left ?? 0;
-        scroll.scrollTop = target?.top ?? 0;
+        if (navigation.current() === route) restore(true);
       });
     }),
   );

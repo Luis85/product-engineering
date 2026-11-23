@@ -97,7 +97,13 @@
     "rules": [
       {
         "from": "domain",
-        "allow": ["domain/shell", "domain/notes", "domain/items", "domain/projects"]
+        "allow": [
+          "domain/shell",
+          "domain/notes",
+          "domain/items",
+          "domain/projects",
+          "domain/knowledge"
+        ]
       },
       { "from": "domain/shell", "allow": [] },
       {
@@ -109,6 +115,7 @@
           "application/items",
           "application/integrations",
           "application/projects",
+          "application/knowledge",
           "application-module",
           "application-composition"
         ]
@@ -197,6 +204,7 @@
           "presentation/items",
           "presentation/integrations",
           "presentation/projects",
+          "presentation/knowledge",
           "presentation/shell",
           "application",
           "application-composition",
@@ -229,6 +237,7 @@
           "presentation/items",
           "presentation/integrations",
           "presentation/projects",
+          "presentation/knowledge",
           "application",
           "application-composition",
           "domain"

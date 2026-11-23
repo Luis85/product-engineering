@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import { nextTick, ref, shallowRef, watch } from "vue";
+import { defineAsyncComponent, nextTick, ref, shallowRef, watch } from "vue";
 import type { Component } from "vue";
 import {
   PROJECT_ADMINISTRATION,
@@ -47,7 +47,7 @@ watch(
 
 function open(factory: ProjectTemplateFactory) {
   const { template } = factory;
-  creation.value = factory.create({
+  const request = {
     projectId: project.id,
     template,
     returnTo: projectTemplateReturnRoute(project.id, template),
@@ -55,7 +55,8 @@ function open(factory: ProjectTemplateFactory) {
       creation.value = undefined;
       void focusTemplate(template);
     },
-  });
+  };
+  creation.value = defineAsyncComponent(async () => factory.create(request));
 }
 </script>
 

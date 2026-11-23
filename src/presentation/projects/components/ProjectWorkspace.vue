@@ -1,20 +1,25 @@
 <script setup lang="ts">
+import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
+import { projectKnowledgeRoute } from "../../../application/knowledge";
 import {
   PROJECT_ADMINISTRATION,
+  PROJECT_OVERVIEW,
   PROJECT_RECORD,
   projectChanges,
   projectSnapshot,
   resolveProjectReference,
 } from "../../../application/projects";
-import { useMessages, useRoute, useStream } from "../../shell";
+import { useMessages, useNavigate, useRoute, useStream } from "../../shell";
 import { useProjectSearchSources } from "../search-sources";
 import ProjectAdministration from "./ProjectAdministration.vue";
 import ProjectChooser from "./ProjectChooser.vue";
 import ProjectRecordActions from "./ProjectRecordActions.vue";
 
-const text = useMessages().projects;
+const catalog = useMessages();
+const text = catalog.projects;
 const route = useRoute();
+const navigate = useNavigate();
 const snapshot = useStream(projectSnapshot, projectChanges);
 const project = computed(() => {
   const current = route.value;
@@ -35,6 +40,9 @@ const administration = computed(
     route.value.name === PROJECT_ADMINISTRATION ||
     (resolved.value?.kind === "project" && resolved.value.route.name === PROJECT_ADMINISTRATION),
 );
+const description = computed(() =>
+  !resolved.value || administration.value ? project.value?.description : undefined,
+);
 </script>
 
 <template>
@@ -42,10 +50,21 @@ const administration = computed(
     <p v-if="!snapshot.ready" role="status">{{ text.loading }}</p>
     <p v-else-if="snapshot.failed" role="alert">{{ text.unavailable }}</p>
     <template v-else-if="project">
-      <h1 tabindex="-1" class="pe:text-2xl pe:font-semibold">
+      <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">
         {{ resolved?.title ?? project.name }}
       </h1>
-      <p v-if="!resolved || administration">{{ project.description }}</p>
+      <p v-if="description">{{ description }}</p>
+      <UButton
+        v-if="route.name === PROJECT_OVERVIEW"
+        type="button"
+        variant="soft"
+        icon="i-lucide-book-open"
+        class="pe:justify-self-start"
+        data-testid="project-knowledge-entry"
+        data-pe-focus-key="project-knowledge-entry"
+        @click="navigate(projectKnowledgeRoute(project.id))"
+        >{{ catalog.knowledge.title }}</UButton
+      >
       <ProjectAdministration v-if="administration" :key="project.id" :project="project" />
       <ProjectRecordActions
         v-if="record"

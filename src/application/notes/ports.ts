@@ -17,6 +17,8 @@ export type Note = {
   readonly frontmatter: Frontmatter;
 };
 
+type NoteContent = Note & { readonly body: string };
+
 export type CreateNoteInput = {
   readonly folder: string;
   readonly name: string;
@@ -40,6 +42,9 @@ export class NoteStore extends Context.Service<
     readonly readFresh: (
       path: string,
     ) => Effect.Effect<Note, VaultReadError | NoteNotFoundError | NoteUnreadableError>;
+    readonly readContent: (
+      path: string,
+    ) => Effect.Effect<NoteContent, VaultReadError | NoteNotFoundError | NoteUnreadableError>;
     readonly unreadable: (folder: string) => Effect.Effect<readonly string[], VaultReadError>;
     readonly create: (input: CreateNoteInput) => Effect.Effect<Note, CreateNoteError>;
     readonly update: <E>(

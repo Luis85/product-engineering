@@ -5,6 +5,18 @@ import { NoteEditConflictError, NoteWriteRefusedError } from "./errors";
 import { IdGenerator } from "./ports";
 import type { FrontmatterChange } from "./ports";
 
+export function recordFrontmatter(type: NoteType, id: string, values: Frontmatter): Frontmatter {
+  const fields = type.keys.flatMap((key) => {
+    const value = Object.hasOwn(values, key) ? values[key] : undefined;
+    return value === undefined || value === null ? [] : [[key, value] as const];
+  });
+  return {
+    schema: schemaMarker(type.type, type.version),
+    id,
+    ...Object.fromEntries(fields),
+  };
+}
+
 export function newRecordFrontmatter(
   type: NoteType,
   values: Frontmatter,
@@ -12,15 +24,7 @@ export function newRecordFrontmatter(
   return Effect.gen(function* () {
     const generator = yield* IdGenerator;
     const uuid = yield* generator.nextId;
-    const fields = type.keys.flatMap((key) => {
-      const value = Object.hasOwn(values, key) ? values[key] : undefined;
-      return value === undefined || value === null ? [] : [[key, value] as const];
-    });
-    return {
-      schema: schemaMarker(type.type, type.version),
-      id: recordId(type.type, uuid),
-      ...Object.fromEntries(fields),
-    };
+    return recordFrontmatter(type, recordId(type.type, uuid), values);
   });
 }
 

@@ -239,7 +239,7 @@ it("keeps empty gate phases usable and versions only meaningful criterion edits"
   await expect(done.$$("li")).toBeElementsArrayOfSize(2);
 });
 
-it("shows the template groups with no creation controls before their owning views register", async () => {
+it("lists the registered Knowledge templates in both administration groups", async () => {
   const workspace = browser.$(`${ROOT} [data-testid=project-workspace]`);
   await openAdministration(first);
   const tab = workspace.$("[role=tab][data-section=templates]");
@@ -248,7 +248,10 @@ it("shows the template groups with no creation controls before their owning view
   const panel = workspace.$(`[id=${JSON.stringify(await tab.getAttribute("aria-controls"))}]`);
   await expect(panel).toHaveText(expect.stringContaining("Produktartefakte"));
   await expect(panel).toHaveText(expect.stringContaining("Konzepte"));
-  await expect(panel.$$("button")).toBeElementsArrayOfSize(0);
+  await expect(panel.$$("button[data-template]")).toBeElementsArrayOfSize(15);
+  await expect(panel.$("button[data-template=actor]")).toBeDisplayed();
+  await expect(panel.$("button[data-template=test-concept]")).toBeDisplayed();
+  await expect(panel.$("button[data-template=pbi]")).not.toExist();
 });
 
 it("keeps a dirty draft through a second leaf's save and focuses the conflicting field", async () => {

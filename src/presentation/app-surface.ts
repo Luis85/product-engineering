@@ -5,6 +5,7 @@ import type { Route } from "../application/routes";
 import { SETTINGS } from "../application/shell";
 import { integrationsScreens } from "./integrations/screens";
 import { itemsScreens } from "./items/screens";
+import { knowledgeScreens } from "./knowledge/screens";
 import { notesScreens } from "./notes/screens";
 import { projectFrame, projectsScreens } from "./projects/screens";
 import type { ProjectSearchPart, ProjectTemplatePart } from "./projects";
@@ -20,6 +21,7 @@ const MODULE_SCREENS: {
   items: itemsScreens,
   integrations: integrationsScreens,
   projects: projectsScreens,
+  knowledge: knowledgeScreens,
 };
 
 const modules = APP_MODULES.map(({ name }) => MODULE_SCREENS[name]);
