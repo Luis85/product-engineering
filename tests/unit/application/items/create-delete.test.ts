@@ -88,3 +88,56 @@ it.effect("serializes concurrent creates so the same title cannot be saved twice
     expect((yield* fixture.indexed).rows).toHaveLength(1);
   }).pipe(Effect.provide(fixture.layer));
 });
+
+it.effect(
+  "uses the Item filename for a title made entirely of forbidden filename characters",
+  () => {
+    const fixture = itemFixture();
+    return Effect.gen(function* () {
+      yield* fixture.ready;
+      const title = "?:#[]";
+      const saved = yield* createItem({ title, status: "open" });
+
+      expect(saved.path).toBe("Project/Items/Item.md");
+      expect(saved.frontmatter).toEqual(itemRecord(title, 1));
+    }).pipe(Effect.provide(fixture.layer));
+  },
+);
+
+it.effect("reserves a valid title on a read-only item without an ID", () => {
+  const fixture = itemFixture();
+  return Effect.gen(function* () {
+    yield* fixture.notes.seed("Project/Items/Existing.md", {
+      schema: "product-engineering.item/v1",
+      title: "Existing item",
+      status: "open",
+    });
+    yield* fixture.ready;
+
+    const failure = yield* Effect.flip(createItem({ title: "EXISTING ITEM", status: "open" }));
+    expect(failure).toMatchObject({
+      _tag: "InvalidItemError",
+      issues: [{ key: "title", code: "title.taken" }],
+    });
+    expect((yield* fixture.indexed).rows.map(({ path }) => path)).toEqual([
+      "Project/Items/Existing.md",
+    ]);
+  }).pipe(Effect.provide(fixture.layer));
+});
+
+it.effect("allows a title that is used only by a different record type", () => {
+  const fixture = itemFixture();
+  return Effect.gen(function* () {
+    const title = "Shared title";
+    yield* fixture.notes.seed("Outside/Other entry.md", {
+      schema: "product-engineering.entry/v1",
+      id: "entry-00000000-0000-0000-0000-000000000001",
+      title,
+    });
+    yield* fixture.ready;
+
+    const saved = yield* createItem({ title, status: "open" });
+    expect(saved.path).toBe("Project/Items/Shared title.md");
+    expect(saved.frontmatter).toEqual(itemRecord(title, 1));
+  }).pipe(Effect.provide(fixture.layer));
+});

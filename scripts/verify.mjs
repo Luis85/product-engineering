@@ -11,7 +11,7 @@ export const STEPS = [
   "build",
   "check:dist",
 ];
-export const FULL_STEPS = [...STEPS];
+export const FULL_STEPS = [...STEPS, "test:mutation"];
 
 /**
  * @typedef {{step: string, status: "ok" | "FAIL", seconds: number}

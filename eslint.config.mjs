@@ -196,6 +196,11 @@ export default [
     languageOptions: { globals: globals.node },
   },
   {
+    // Stryker excludes the checkout's own host data directory.
+    files: ["configs/stryker.config.mjs"],
+    rules: { "obsidianmd/hardcoded-config-path": "off" },
+  },
+  {
     files: ["harness/**"],
     rules: { "obsidianmd/prefer-active-doc": "off", "obsidianmd/prefer-create-el": "off" },
   },

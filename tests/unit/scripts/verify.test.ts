@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { runSteps, STEPS, summary } from "../../../scripts/verify.mjs";
+import { FULL_STEPS, runSteps, STEPS, summary } from "../../../scripts/verify.mjs";
 
 type Spawn = NonNullable<Parameters<typeof runSteps>[1]>;
 
 describe("verification gate", () => {
+  it("adds the gated mutation run to full verification", () => {
+    expect(FULL_STEPS).toEqual([...STEPS, "test:mutation"]);
+  });
+
   it("runs every step in order when they pass", () => {
     const spawn = vi.fn<Spawn>(() => ({ status: 0 }));
     const result = runSteps(STEPS, spawn);

@@ -97,3 +97,27 @@ it.effect(
     }).pipe(Effect.provide(fixture.layer));
   },
 );
+
+it.effect(
+  "allows changing the case of an item's own title and rejects a title held by another item",
+  () => {
+    const fixture = itemFixture();
+    return Effect.gen(function* () {
+      const original = itemRecord("Old title", 10);
+      yield* fixture.notes.seed(path, original);
+      yield* fixture.notes.seed("Outside/Other item.md", itemRecord("Taken title", 11));
+      yield* fixture.ready;
+      const row = yield* indexedItem;
+
+      const failure = yield* Effect.flip(updateItem(row, { title: "TAKEN TITLE", status: "open" }));
+      expect(failure).toMatchObject({
+        _tag: "InvalidItemError",
+        issues: [{ key: "title", code: "title.taken" }],
+      });
+      expect((yield* fixture.stored(path)).frontmatter).toEqual(original);
+
+      const saved = yield* updateItem(row, { title: "OLD TITLE", status: "open" });
+      expect(saved.frontmatter).toEqual(itemRecord("OLD TITLE", 10));
+    }).pipe(Effect.provide(fixture.layer));
+  },
+);

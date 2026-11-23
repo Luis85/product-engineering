@@ -37,3 +37,28 @@ it.each(LANGUAGES)("words each item issue and validation error in %s", (language
     ...messages.items.form.summary,
   });
 });
+
+it.each(LANGUAGES)("supplies visible labels for the Items view and form in %s", (language) => {
+  const { settings, fields, status, form, actions } = catalogFor(language).items;
+  const display = {
+    "loading message": settings.loading,
+    "title field": fields.title,
+    "status field": fields.status,
+    "due date field": fields.due,
+    "open status": status.open,
+    "done status": status.done,
+    "create form heading": form.createTitle,
+    "edit form heading": form.editTitle,
+    "validation heading": form.summary.title,
+    "validation detail": form.summary.detail,
+    "add action": actions.add,
+    "edit action": actions.edit,
+    "delete action": actions.remove,
+    "cancel action": actions.cancel,
+    "save action": actions.save,
+  };
+  const missing = Object.entries(display)
+    .filter(([, label]) => label.trim() === "")
+    .map(([name]) => name);
+  expect(missing).toEqual([]);
+});

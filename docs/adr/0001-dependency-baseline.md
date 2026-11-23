@@ -121,6 +121,23 @@ The chat composer is the first consumer of `@tanstack/vue-form`. The native sett
 
 The desktop-only manifest stays in place until mobile behavior can be verified. Prettier supplies the formatter while Oxfmt is in its 0.x series. Add packages when they are first used so the static analyzer can flag real unused dependencies.
 
+### Mutation testing dependency override
+
+Stryker 10.1.1 introduces `typed-rest-client` in the development toolchain. It requests an older `qs`, so the lockfile applies the blueprint's override to use `qs@6.17.1` for requests below 6.17.0. [qs advisory](https://github.com/advisories/GHSA-6pq8-jhm2-2vcw)
+
+The grouped TypeScript checker reported zero mutants after three minutes on the Windows checkout, following a passing dry run. Individual checking began reporting results on the same source and tests, so the gated configuration uses that strategy. It retains per-test coverage and the 75% break threshold. The worker cap is twelve or the number of available CPUs, whichever is smaller. [Stryker TypeScript checker](https://stryker-mutator.io/docs/stryker-js/typescript-checker/)
+
+The informational edge configuration keeps the harness sources for the harness-layer tests. Its one-worker baseline took about seven minutes on the Windows host, so the edge dry run has a fifteen-minute limit. Its Vitest timeout is fifteen seconds to accommodate the first instrumented DOM mount. Edge mutation results measure runtime behavior. The regular gate typechecks the edge source, and the inner mutation configuration uses Stryker's TypeScript checker. [Stryker configuration](https://stryker-mutator.io/docs/stryker-js/configuration/)
+
+| Windows run | Exit | Score | Killed | Timed out | Survived | No coverage | Compile errors | Runtime errors |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Forced domain and application | 0 | 76.05% | 1,257 | 143 | 364 | 77 | 1,683 | 2 |
+| Items after strengthening its tests | 0 | 93.68% | 87 | 2 | 6 | 0 | 118 | 0 |
+| Notes scope | 0 | 80.39% | 877 | 82 | 190 | 44 | 997 | 0 |
+| Informational edge | 0 | 74.56% | 1,453 | 1 | 371 | 125 | 0 | 1 |
+
+Stryker counts timeouts in its mutation scores. The Items run evaluates the test additions made after the original forced run. The Notes run reuses the original incremental data and records the Notes-only score. The edge run used eight workers in an isolated project copy.
+
 ## Consequences
 
 Update repository dependencies with exact version pins and commit the lockfile. Inspect `npm outdated` monthly and after Obsidian minor releases, then rerun the probes for each changed combination. Retire an override once all applicable parents require a patched dependency.

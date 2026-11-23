@@ -17,6 +17,9 @@
     "format:check": "prettier --check .",
     "test": "vitest run --config configs/vitest.config.ts",
     "test:coverage": "vitest run --config configs/vitest.config.ts --coverage",
+    "test:mutation": "stryker run configs/stryker.config.mjs",
+    "test:mutation:full": "stryker run configs/stryker.config.mjs --force",
+    "test:mutation:edge": "stryker run configs/stryker.edge.config.mjs",
     "test:e2e": "npm run build && npm run build:probe && npm run vault:reference && wdio run tests/e2e/wdio.conf.mts",
     "fallow:config": "node scripts/fallow-config.mjs",
     "analyze": "node scripts/fallow-config.mjs --check && fallow -c configs/fallow.json && fallow architecture -c configs/fallow.json",
@@ -36,6 +39,9 @@
     "@eslint/js": "9.39.5",
     "@iconify-json/lucide": "1.2.158",
     "@modelcontextprotocol/client": "2.4.0",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/typescript-checker": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
     "@types/mocha": "10.0.10",
     "@types/node": "26.6.6",
     "@vitejs/plugin-vue": "6.0.11",
@@ -70,6 +76,7 @@
     "yaml": "2.9.1"
   },
   "overrides": {
+    "qs@<6.17.0": "6.17.1",
     "minimatch@>=7.0.0 <11.0.1": "11.0.9",
     "glob@>=9.0.0 <14.0.2": "14.0.6"
   },
