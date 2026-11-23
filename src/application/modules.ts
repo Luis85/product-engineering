@@ -1,3 +1,4 @@
+import { artifactGitModule } from "./git";
 import { integrationsModule } from "./integrations";
 import { itemsModule } from "./items";
 import { knowledgeModule } from "./knowledge";
@@ -12,6 +13,7 @@ export const APP_MODULES = [
   integrationsModule,
   projectsModule,
   knowledgeModule,
+  artifactGitModule,
 ] as const;
 
 export type AppModule = (typeof APP_MODULES)[number];

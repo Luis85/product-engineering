@@ -116,6 +116,7 @@
           "application/integrations",
           "application/projects",
           "application/knowledge",
+          "application/git",
           "application-module",
           "application-composition"
         ]
@@ -144,6 +145,7 @@
           "adapters/notes",
           "adapters/integrations",
           "adapters/projects",
+          "adapters/git",
           "infrastructure",
           "application",
           "application/notes-adapter",
@@ -205,6 +207,7 @@
           "presentation/integrations",
           "presentation/projects",
           "presentation/knowledge",
+          "presentation/git",
           "presentation/shell",
           "application",
           "application-composition",
@@ -238,6 +241,7 @@
           "presentation/integrations",
           "presentation/projects",
           "presentation/knowledge",
+          "presentation/git",
           "application",
           "application-composition",
           "domain"

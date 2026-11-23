@@ -78,6 +78,14 @@ describe("distribution checks", () => {
     expect(checkDist(dist, manifest, identity)).toEqual([]);
   });
 
+  it("accepts a valid product bundle above the original shell budget", () => {
+    const targetBytes = 1_550_000;
+    const script = bundle + "//" + "x".repeat(targetBytes - Buffer.byteLength(bundle) - 2);
+    const dist = distribution({ "main.js": script });
+    expect(Buffer.byteLength(script)).toBe(targetBytes);
+    expect(checkDist(dist, manifest, identity)).toEqual([]);
+  });
+
   it("reports both missing and extra files", () => {
     const dist = distribution({ "extra.js": "void 0" });
     unlinkSync(join(dist, "styles.css"));

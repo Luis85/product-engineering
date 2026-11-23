@@ -1,4 +1,5 @@
 import { expect } from "vitest";
+import type { AppAdapters } from "../../../../src/application/app-services-layer";
 import { createProject, projectOverviewRoute } from "../../../../src/application/projects";
 import type { Route } from "../../../../src/application/routes";
 import { appSurface } from "../../../../src/presentation/app-surface";
@@ -54,8 +55,9 @@ export async function withProject(
     navigation: ReturnType<typeof memoryNavigation<Route>>;
   }) => Promise<void>,
   markdownHost?: MarkdownHost,
+  artifactGit?: AppAdapters["artifactGit"],
 ) {
-  const host = testRuntime({ language: "en" });
+  const host = testRuntime({ language: "en", ...(artifactGit ? { artifactGit } : {}) });
   const root = document.body.appendChild(document.createElement("div"));
   const navigation = memoryNavigation(appSurface, projectOverviewRoute(first));
   let close: (() => void) | undefined;

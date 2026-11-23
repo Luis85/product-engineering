@@ -1,6 +1,7 @@
 import type { Plugin } from "obsidian";
 import { appServicesLayer } from "../../application/app-services-layer";
 import type { AppAdapters, AppServiceOptions } from "../../application/app-services-layer";
+import { artifactGitLayer } from "./git";
 import { projectFilesLayer } from "./projects";
 import { notesAdapters } from "./notes";
 import { shellAdapters } from "./shell";
@@ -15,6 +16,7 @@ export function appLayer(
     {
       ...shellAdapters(plugin),
       ...notesAdapters(plugin),
+      artifactGit: artifactGitLayer(plugin.app.vault),
       projectFiles: projectFilesLayer(plugin.app.vault),
       ...(agentChat ? { agentChat } : {}),
       ...(projectIntegrationHost ? { projectIntegrationHost } : {}),

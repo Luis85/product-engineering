@@ -6,7 +6,8 @@ import { projectChanges, projectMembers, projectSnapshot } from "../../applicati
 import { useMessages, useStream } from "../shell";
 import KnowledgeNoteActions from "./KnowledgeNoteActions.vue";
 
-const { title, note } = defineProps<{
+const { title, note, gitStatus } = defineProps<{
+  readonly gitStatus: string;
   readonly title: string;
   readonly note: KnowledgeNote | undefined;
 }>();
@@ -53,7 +54,7 @@ const assignment = computed(() => {
         :aria-label="text.note.history"
         class="pe:min-w-0 pe:p-0"
         @click="emit('history')"
-        :label="text.note.unverified"
+        :label="gitStatus"
       />
     </div>
   </header>

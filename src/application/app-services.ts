@@ -1,4 +1,5 @@
 import type { ManagedRuntime } from "effect";
+import type { ArtifactGit } from "./git";
 import type { AgentChat } from "./integrations";
 import type { ServicesOf } from "./module";
 import type { AppModule } from "./modules";
@@ -10,6 +11,7 @@ export type AppServices = [
   ShellServices,
   NotesServices,
   AgentChat,
+  ArtifactGit,
   ProjectFiles,
   ProjectIntegrationHost,
   ServicesOf<AppModule>,

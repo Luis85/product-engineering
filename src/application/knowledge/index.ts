@@ -25,3 +25,4 @@ export {
   resolveKnowledgeNote,
 } from "./selection";
 export type { KnowledgeNote } from "./selection";
+export { knowledgeGitSource } from "./git";

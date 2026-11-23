@@ -3,6 +3,7 @@ import type { AppModuleName } from "../application/modules";
 import { appRoutes, SETTINGS_SECTIONS } from "../application/routes";
 import type { Route } from "../application/routes";
 import { SETTINGS } from "../application/shell";
+import { gitScreens } from "./git/screens";
 import { integrationsScreens } from "./integrations/screens";
 import { itemsScreens } from "./items/screens";
 import { knowledgeScreens } from "./knowledge/screens";
@@ -25,6 +26,7 @@ const MODULE_SCREENS: {
   integrations: integrationsScreens,
   projects: projectsScreens,
   knowledge: knowledgeScreens,
+  git: gitScreens,
 };
 
 const modules = APP_MODULES.map(({ name }) => MODULE_SCREENS[name]);

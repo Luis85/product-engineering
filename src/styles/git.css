@@ -1,0 +1,32 @@
+.pe-git-history {
+  @apply pe:grid pe:min-w-0 pe:gap-3 pe:@min-[650px]:grid-cols-[minmax(0,14rem)_minmax(0,1fr)];
+}
+.pe-git-versions,
+.pe-git-diff {
+  @apply pe:max-h-96 pe:overflow-auto;
+}
+.pe-git-versions {
+  @apply pe:grid pe:grid-cols-1 pe:gap-1;
+}
+.pe-git-version {
+  @apply pe:grid pe:h-auto pe:w-full pe:min-w-0 pe:grid-cols-1 pe:gap-1 pe:rounded-md pe:p-2 pe:text-start pe:wrap-anywhere pe:whitespace-normal;
+}
+.pe-git-version[aria-pressed="true"] {
+  @apply pe:bg-accented;
+}
+.pe-git-version:focus-visible {
+  outline: 2px solid var(--pe-ui-primary);
+  outline-offset: -2px;
+}
+.pe-git-diff {
+  @apply pe:my-2 pe:rounded-md pe:border pe:border-default pe:bg-muted pe:p-2 pe:text-xs pe:wrap-anywhere pe:whitespace-pre-wrap;
+}
+.pe-git-diff span {
+  @apply pe:block;
+}
+.pe-git-add {
+  @apply pe:text-success;
+}
+.pe-git-remove {
+  @apply pe:text-error;
+}

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onScopeDispose, ref, watch } from "vue";
+import { knowledgeGitSource } from "../../application/knowledge";
+import { ArtifactGitActions, ArtifactGitCommit, ArtifactGitHistory, useArtifactGit } from "../git";
 import type {
   ProjectId,
   ProjectRecordRoute,
@@ -63,12 +65,46 @@ const references = computed(() => fields.value.references ?? note.value?.values.
 const canEditReferences = computed(() => Boolean(note.value?.editable) && !saving.value);
 const canDerive = computed(() => !dirty.value && !saving.value);
 const showSave = computed(() => pane.value === "editing" || dirty.value);
-const historyStatus = computed(() => (saved.value ? text.note.savedStatus : text.note.unverified));
+const git = useArtifactGit(() => knowledgeGitSource(record));
+let gitTrigger: HTMLElement | undefined;
+
+function showWorkingChanges() {
+  pane.value = "history";
+  void git.select();
+}
+
+function openGitCommit(event: Event) {
+  if (git.beginCommit()) gitTrigger = event.currentTarget as HTMLElement;
+}
+
+async function saveThenCommit(event: Event) {
+  const trigger = event.currentTarget as HTMLElement;
+  if (!(await save())) return;
+  const result = await git.refresh();
+  if (result._tag === "success" && git.beginCommit()) gitTrigger = trigger;
+}
+
+function restoreGitFocus() {
+  const oid = git.announced.value;
+  const next = oid && surface.value?.querySelector<HTMLElement>(`[data-git-oid="${oid}"]`);
+  const target = next || (gitTrigger?.isConnected && gitTrigger);
+  if (target) target.focus({ preventScroll: true });
+  else if (editor.value) void editor.value.focus();
+  else surface.value?.querySelector<HTMLElement>('[data-testid="knowledge-history-tab"]')?.focus();
+}
+
+watch(
+  [() => note.value?.path, () => note.value?.text],
+  ([savedPath]) => {
+    if (savedPath) void git.refresh();
+  },
+  { immediate: true },
+);
 let answer: ((leave: boolean) => void) | undefined;
 let refocus = false;
 
 useNavigationGuard(() => {
-  if (saving.value) return false;
+  if (saving.value || git.committing.value) return false;
   if (!dirty.value) return true;
   leaving.value = true;
   return new Promise<boolean>((resolve) => {
@@ -106,8 +142,12 @@ async function edit() {
 }
 
 function selectPane(next: typeof pane.value) {
-  if (next === "editing") void edit();
-  else pane.value = next;
+  if (next === "editing") {
+    void edit();
+    return;
+  }
+  pane.value = next;
+  if (next === "history") void git.refresh();
 }
 
 if (autofocusDraft) {
@@ -123,7 +163,13 @@ if (autofocusDraft) {
 
 <template>
   <article ref="surface" class="pe:grid pe:min-w-0 pe:gap-4" data-testid="knowledge-note">
-    <KnowledgeNoteHeader :title="title" :note="note" @edit="edit" @history="pane = 'history'" />
+    <KnowledgeNoteHeader
+      :title="title"
+      :note="note"
+      :git-status="git.status.value"
+      @edit="edit"
+      @history="showWorkingChanges"
+    />
     <template v-if="note">
       <KnowledgeNoteTabs :pane="pane" :editable="note.editable" @select="selectPane" />
       <template v-if="pane === 'editing'">
@@ -145,7 +191,7 @@ if (autofocusDraft) {
         :editable="canEditReferences"
         @change="(values) => (fields = { ...fields, references: values })"
       />
-      <p v-else class="pe:text-sm pe:text-muted">{{ historyStatus }}</p>
+      <ArtifactGitHistory v-else :git="git" />
       <KnowledgeDraftStatus
         :dirty="dirty"
         :saved="saved"
@@ -158,10 +204,26 @@ if (autofocusDraft) {
         @save="save"
         @reload="reload"
       />
+      <ArtifactGitActions
+        :dirty="dirty"
+        :editable="note.editable"
+        :history="pane === 'history'"
+        :saving="saving"
+        :git="git"
+        @compare="showWorkingChanges"
+        @commit="openGitCommit"
+        @save-and-commit="saveThenCommit"
+      />
       <KnowledgeRelatedNotes :note="note" :can-create="canDerive" />
     </template>
     <p v-else-if="loading" role="status">{{ text.loading }}</p>
     <p v-else-if="loadingError" role="alert">{{ loadingError.title }}</p>
+    <ArtifactGitCommit
+      :git="git"
+      :restore-focus="restoreGitFocus"
+      @committed="pane = 'history'"
+      @review="showWorkingChanges"
+    />
     <KnowledgeLeaveDialog
       v-model:open="leaving"
       :saving="saving"

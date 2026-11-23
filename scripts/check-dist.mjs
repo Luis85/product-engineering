@@ -10,7 +10,7 @@ import ts from "typescript";
 import manifest from "../manifest.json" with { type: "json" };
 
 export const EXPECTED_FILES = ["manifest.json", "styles.css", "main.js"];
-export const BUDGETS = { "main.js": 1_500_000, "styles.css": 250_000 };
+export const BUDGETS = { "main.js": 1_600_000, "styles.css": 250_000 };
 export const CSS_PREFIX = "pe";
 
 /** @typedef {{ id: string; prefix: string }} Identity */

@@ -303,7 +303,7 @@ it("uses one dirty confirmation when switching projects and returns to the draft
   });
 }, 15_000);
 
-it("keeps invalid metadata and Markdown editable until the title is corrected, then shows the saved Git state", async () => {
+it("keeps invalid metadata and Markdown editable until the title is corrected, then reports the Vault save separately from unavailable Git", async () => {
   await withProject(async ({ root, host, navigation }) => {
     await openJob(host, navigation);
     const editor = await enterEditor(root);
@@ -324,11 +324,16 @@ it("keeps invalid metadata and Markdown editable until the title is corrected, t
     const history = find<HTMLButtonElement>(root, "[data-testid=knowledge-history-tab]");
     history.click();
     await eventually(() => expect(history.getAttribute("aria-pressed")).toBe("true"));
-    expect(root.textContent).toContain("Saved to Vault · Git status unverified");
+    expect(root.textContent).toContain("Saved to Vault");
+    await eventually(() =>
+      expect(find(root, '[data-testid="git-comparison"] [role="alert"]').textContent).toContain(
+        "Install Git",
+      ),
+    );
   });
 }, 15_000);
 
-it("shows an absent approval separately from unverified Git history", async () => {
+it("shows an absent approval separately from unavailable Git history", async () => {
   await withProject(async ({ root, host, navigation }) => {
     await host.runtime.runPromise(
       host.notes.seed(
@@ -352,7 +357,12 @@ it("shows an absent approval separately from unverified Git history", async () =
         root.querySelector("[data-testid=knowledge-history-tab]")?.getAttribute("aria-pressed"),
       ).toBe("true"),
     );
-    expect(root.textContent).toContain("Git status unverified");
+    expect(root.textContent).toContain("Git status unavailable");
+    await eventually(() =>
+      expect(find(root, '[data-testid="git-comparison"] [role="alert"]').textContent).toContain(
+        "Install Git",
+      ),
+    );
   });
 }, 15_000);
 

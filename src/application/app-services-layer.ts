@@ -1,5 +1,7 @@
 import { Layer } from "effect";
 import type { NoteType } from "../domain/notes";
+import { unavailableArtifactGit } from "./git";
+import type { ArtifactGit } from "./git";
 import { unavailableAgentChat } from "./integrations";
 import type { AgentChat } from "./integrations";
 import { messagesLayer } from "./messages";
@@ -25,6 +27,7 @@ import type {
 } from "./shell";
 
 export type AppAdapters = {
+  readonly artifactGit?: Layer.Layer<ArtifactGit>;
   readonly settingsStore: Layer.Layer<SettingsStore>;
   readonly notifier: Layer.Layer<Notifier>;
   readonly clipboard: Layer.Layer<Clipboard>;
@@ -51,6 +54,7 @@ export function appServicesLayer(
   options: AppServiceOptions,
 ): Layer.Layer<AppServices> {
   const ports = Layer.mergeAll(
+    adapters.artifactGit ?? unavailableArtifactGit,
     adapters.settingsStore,
     adapters.notifier,
     adapters.clipboard,
