@@ -2,7 +2,7 @@
 import UButton from "@nuxt/ui/components/Button.vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed } from "vue";
-import { backlogDomainContribution, backlogRoute } from "../../application/backlog";
+import { backlogDomainContribution, backlogRoute, pbiDetailRoute } from "../../application/backlog";
 import { entityAssigned, setEntityScope } from "../../application/domain-model";
 import {
   knowledgeChanges,
@@ -27,10 +27,12 @@ const {
   note = undefined,
   item = undefined,
   fromModel = false,
+  fromPbi = false,
 } = defineProps<{
   readonly note?: KnowledgeRecord;
   readonly item?: { readonly projectId: ProjectId; readonly id: string };
   readonly fromModel?: boolean;
+  readonly fromPbi?: boolean;
 }>();
 const text = useMessages()["domain-model"];
 const index = useStream(knowledgeSnapshot, knowledgeChanges);
@@ -145,16 +147,29 @@ function open(peer: KnowledgeRecord | ScopePeer, event: MouseEvent) {
   if (!projectId) return;
   rememberOrigin(event.currentTarget as HTMLElement);
   if ("target" in peer && peer.target.kind === "item")
-    return navigate(backlogRoute(projectId, peer.id));
+    return navigate(
+      peer.id.startsWith("UC-")
+        ? pbiDetailRoute(projectId, peer.id)
+        : backlogRoute(projectId, peer.id),
+    );
   const knowledge = project.value.find(({ id }) => id === peer.id);
   if (!knowledge) return;
-  const origin = item
-    ? { section: "backlog", reference: { kind: "item", recordId: item.id } }
-    : note && {
-        section: fromModel ? "domainmodel" : "knowledge-note",
-        reference: { kind: fromModel ? "entity" : "knowledge", recordId: note.id },
-      };
-  return navigate(knowledgeDetailRoute(projectId, knowledge.id, origin));
+  return navigate(knowledgeDetailRoute(projectId, knowledge.id, scopeOrigin()));
+}
+
+function scopeOrigin() {
+  if (item) {
+    return {
+      section: fromPbi ? "usecase" : "backlog",
+      reference: { kind: "item", recordId: item.id },
+    };
+  }
+  if (note) {
+    return {
+      section: fromModel ? "domainmodel" : "knowledge-note",
+      reference: { kind: fromModel ? "entity" : "knowledge", recordId: note.id },
+    };
+  }
 }
 
 const form = useForm({

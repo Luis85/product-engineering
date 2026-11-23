@@ -1,5 +1,10 @@
 import { shallowRef, watch } from "vue";
-import { backlogInputs, backlogRoute, backlogSnapshot } from "../../application/backlog";
+import {
+  backlogInputs,
+  backlogRoute,
+  backlogSnapshot,
+  pbiDetailRoute,
+} from "../../application/backlog";
 import type { BacklogSnapshot } from "../../application/backlog";
 import type { ProjectId } from "../../application/projects";
 import { useAsyncStream, useQuery, useRoute } from "../shell";
@@ -22,7 +27,7 @@ export function backlogSearchSource() {
   );
   return (projectId: ProjectId) => {
     return projectId === loaded.value?.project
-      ? loaded.value.snapshot.items.flatMap(({ adopted, conflict, id, title, path }) =>
+      ? loaded.value.snapshot.items.flatMap(({ adopted, conflict, id, title, path, kind }) =>
           adopted && !conflict && id
             ? [
                 {
@@ -32,7 +37,8 @@ export function backlogSearchSource() {
                   title,
                   displayId: id,
                   notePath: path,
-                  route: backlogRoute(projectId, id),
+                  route:
+                    kind === "UC" ? pbiDetailRoute(projectId, id) : backlogRoute(projectId, id),
                 },
               ]
             : [],

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
-import { backlogRoute } from "../../../application/backlog";
+import { PROJECT_USE_CASE, backlogRoute, pbiDetailRoute } from "../../../application/backlog";
 import { domainModelRoute } from "../../../application/domain-model";
 import { openKnowledgeNote, projectKnowledgeRoute } from "../../../application/knowledge";
 import {
@@ -35,7 +35,7 @@ const {
 const texts = useMessages();
 const text = texts.projects;
 const navigate = useNavigate();
-const { history } = useRouting();
+const { definition, history } = useRouting();
 const { back } = useHistory();
 const { pending: filePending, message: fileMessage, run: openFile } = useCommand(openKnowledgeNote);
 const destination = computed(() => {
@@ -51,23 +51,35 @@ function sectionOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"
       return projectKnowledgeRoute(projectId);
     case "backlog":
       return backlogRoute(projectId, id);
+    case "usecase":
+      return id?.startsWith("UC-") ? pbiDetailRoute(projectId, id) : backlogRoute(projectId);
     case "domainmodel":
       return domainModelRoute(projectId, id);
     case "templates": {
-      const template = projectTemplateIds.find((candidate) => candidate === id);
-      return template
-        ? projectTemplateReturnRoute(projectId, template)
-        : projectAdministrationRoute(projectId, "templates");
+      return templateOrigin(projectId, id);
     }
     default:
       return;
   }
 }
 
+function templateOrigin(projectId: ProjectId, id: string | undefined) {
+  const template = projectTemplateIds.find((candidate) => candidate === id);
+  return template
+    ? projectTemplateReturnRoute(projectId, template)
+    : projectAdministrationRoute(projectId, "templates");
+}
+
+function returnToSection(section: Route) {
+  const last = history.value.back.at(-1);
+  if (section.name === PROJECT_USE_CASE && last && definition.equals(last, section)) return back();
+  return navigate(section);
+}
+
 function leave() {
   const { projectId, reference } = record;
   const section = sectionOrigin(projectId, record.origin);
-  if (section) return navigate(section);
+  if (section) return returnToSection(section);
   const { section: previousSection, reference: previous } = record.origin ?? {};
   if (previous && !sameReference(reference, previous)) {
     const last = history.value.back.at(-1);

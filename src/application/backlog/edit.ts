@@ -6,6 +6,7 @@ import { draftProperties, ownerValue, validSelections } from "./draft";
 import type { BacklogDraft } from "./draft";
 import { BacklogError, backlogItems } from "./model";
 import type { BacklogItem } from "./model";
+import { revisePbi } from "./pbi-storage";
 import { planningPlacement, planningReparent, verifyPeers } from "./placement";
 import type { BacklogPlacement } from "./placement";
 import {
@@ -114,6 +115,17 @@ function destinationOrder(
   );
 }
 
+function revisionChanges(
+  row: BacklogItem,
+  fields: Frontmatter,
+  current: Frontmatter,
+  bodyChanged: boolean,
+) {
+  if (row.kind !== "UC" || !row.adopted) return;
+  const title = Object.hasOwn(fields, "title") ? { title: fields.title } : {};
+  return revisePbi(current, title, bodyChanged);
+}
+
 function writeDraft(
   context: BacklogContext,
   row: BacklogItem,
@@ -130,8 +142,9 @@ function writeDraft(
         (updateBody && body !== before.draft.body && body !== draft.body)
       )
         return Result.fail(new BacklogError({ reason: "conflict" }));
+      const revision = revisionChanges(row, fields, frontmatter, updateBody && body !== draft.body);
       return Result.succeed({
-        patch: frontmatterPatch(fields),
+        patch: frontmatterPatch({ ...fields, ...revision }),
         ...(updateBody && { body: draft.body }),
       });
     }),

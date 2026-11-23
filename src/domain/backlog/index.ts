@@ -1,5 +1,7 @@
 import { Schema } from "effect";
 import { defineNoteType, lineOfText, required, text } from "../notes";
+export { completePbiCriterion, pbiCriteria, pbiCriterionDraft, pbiFeature } from "./criteria";
+export type { PbiCriterion, PbiCriterionDraft } from "./criteria";
 
 export const backlogKinds = ["EP", "FE", "UC", "TASK", "ISS", "Q", "BUG"] as const;
 export type BacklogKind = (typeof backlogKinds)[number];

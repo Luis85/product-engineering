@@ -10,21 +10,35 @@ import BacklogFields from "./BacklogFields.vue";
 import BacklogPosition from "./BacklogPosition.vue";
 
 type EditorDraft = BacklogDraft & { epic: string; epicTitle: string; featureTitle: string };
-const { id, kind, items, base, members, creating, busy, draft, invalidTitle, item, level, path } =
-  defineProps<{
-    readonly id: string;
-    readonly kind: BacklogKind;
-    readonly items: readonly BacklogItem[];
-    readonly base: BacklogBase;
-    readonly members: readonly ProjectMember[];
-    readonly creating: boolean;
-    readonly busy: boolean;
-    readonly draft: EditorDraft;
-    readonly invalidTitle: boolean;
-    readonly item: BacklogItem | undefined;
-    readonly level: BacklogKind | "";
-    readonly path: string;
-  }>();
+const {
+  id,
+  kind,
+  items,
+  base,
+  members,
+  creating,
+  busy,
+  draft,
+  invalidTitle,
+  item,
+  level,
+  path,
+  fixedParent,
+} = defineProps<{
+  readonly id: string;
+  readonly kind: BacklogKind;
+  readonly items: readonly BacklogItem[];
+  readonly base: BacklogBase;
+  readonly members: readonly ProjectMember[];
+  readonly creating: boolean;
+  readonly busy: boolean;
+  readonly draft: EditorDraft;
+  readonly invalidTitle: boolean;
+  readonly item: BacklogItem | undefined;
+  readonly level: BacklogKind | "";
+  readonly path: string;
+  readonly fixedParent: boolean;
+}>();
 const emit = defineEmits<{ field: [keyof EditorDraft, string]; submit: [] }>();
 const editing = defineModel<boolean>("editing", { required: true });
 const placement = defineModel<BacklogPlacement | undefined>("placement", { required: true });
@@ -52,6 +66,7 @@ async function showDescriptionEditor() {
       :members="members"
       :creating="creating"
       :disabled="busy"
+      :fixed-parent="fixedParent"
       :title="draft.title"
       :parent="draft.parent"
       :state="draft.state"
@@ -73,7 +88,7 @@ async function showDescriptionEditor() {
       {{ text.errors.title }}
     </p>
     <BacklogPosition
-      v-if="item"
+      v-if="item && !fixedParent"
       v-model="placement"
       :item="item"
       :items="items"

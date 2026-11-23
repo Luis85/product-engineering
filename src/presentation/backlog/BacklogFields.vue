@@ -7,13 +7,14 @@ import type { BacklogKind } from "../../domain/backlog";
 import { useMessages } from "../shell";
 import BacklogParentFields from "./BacklogParentFields.vue";
 
-const { kind, items, base, members, disabled, creating } = defineProps<{
+const { kind, items, base, members, disabled, creating, fixedParent } = defineProps<{
   readonly kind: BacklogKind;
   readonly items: readonly BacklogItem[];
   readonly base: BacklogBase;
   readonly members: readonly ProjectMember[];
   readonly disabled: boolean;
   readonly creating: boolean;
+  readonly fixedParent: boolean;
 }>();
 const title = defineModel<string>("title", { required: true });
 const parent = defineModel<string>("parent", { required: true });
@@ -38,6 +39,7 @@ const externalOwner = computed(() =>
       <input v-model="title" name="title" type="text" data-autofocus required maxlength="160" />
     </label>
     <BacklogParentFields
+      v-if="!fixedParent"
       :kind="kind"
       :items="items"
       :creating="creating"

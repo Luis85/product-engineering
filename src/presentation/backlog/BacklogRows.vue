@@ -14,7 +14,7 @@ const { rows, level } = defineProps<{
 }>();
 const emit = defineEmits<{
   toggle: [string];
-  open: [BacklogItem, HTMLElement];
+  open: [BacklogItem, HTMLElement, boolean?];
   move: [string, BacklogPlacement];
 }>();
 const text = useMessages().backlog;
@@ -101,7 +101,7 @@ function metadata(item: BacklogItem) {
     >
       <BacklogRowName
         :row="row"
-        @open="emit('open', row.item, $event)"
+        @open="(control, edit) => emit('open', row.item, control, edit)"
         @toggle="emit('toggle', row.item.key)"
       />
       <div

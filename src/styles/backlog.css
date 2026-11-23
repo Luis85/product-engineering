@@ -163,6 +163,47 @@
   padding-block-start: 0.8rem;
 }
 
+.pe-pbi [role="tablist"] {
+  border-block: 1px solid var(--background-modifier-border);
+  padding-block: 0.45rem;
+}
+
+.pe-pbi-context {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  gap: 0.5rem;
+}
+
+.pe-pbi-context section {
+  display: grid;
+  align-content: start;
+  gap: 0.2rem;
+  min-width: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.65rem;
+  overflow-wrap: anywhere;
+}
+
+.pe-pbi-context h2 {
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+}
+
+.pe-pbi-context p {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.pe-pbi .pe-backlog-fields input[type="checkbox"] {
+  width: auto;
+}
+
+button.pe-pbi-companion-choice {
+  height: auto;
+  min-height: 44px;
+}
+
 @container (max-width: 34rem) {
   .pe-backlog-head {
     position: absolute;

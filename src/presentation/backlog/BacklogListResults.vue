@@ -13,7 +13,7 @@ const { snapshot, rows, level } = defineProps<{
 }>();
 const emit = defineEmits<{
   configure: [];
-  open: [BacklogItem, HTMLElement];
+  open: [BacklogItem, HTMLElement, boolean?];
   move: [string, BacklogPlacement];
   toggle: [string];
 }>();
@@ -46,7 +46,7 @@ const text = useMessages().backlog;
       v-if="rows.length"
       :rows="rows"
       :level="level"
-      @open="(item, control) => emit('open', item, control)"
+      @open="(item, control, edit) => emit('open', item, control, edit)"
       @toggle="emit('toggle', $event)"
       @move="(key, placement) => emit('move', key, placement)"
     />

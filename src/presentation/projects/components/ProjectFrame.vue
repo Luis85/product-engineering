@@ -2,6 +2,7 @@
 import UButton from "@nuxt/ui/components/Button.vue";
 import USlideover from "@nuxt/ui/components/Slideover.vue";
 import { computed, nextTick, onScopeDispose, ref, watch } from "vue";
+import { PROJECT_BACKLOG, PROJECT_USE_CASE } from "../../../application/backlog";
 import {
   PROJECT_RECORD,
   projectAdministrationRoute,
@@ -76,6 +77,7 @@ const groups = computed(() => projectGroups(catalog, activeProject.value?.id, ex
 const recordScreen = useProjectRecordScreens();
 const section = computed(() => {
   const current = route.value;
+  if (current.name === PROJECT_USE_CASE) return PROJECT_BACKLOG;
   return current.name === PROJECT_RECORD
     ? (recordScreen(current.reference.kind)?.section ?? current.name)
     : current.name;

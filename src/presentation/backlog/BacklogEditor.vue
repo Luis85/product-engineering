@@ -7,6 +7,7 @@ import {
   adoptBacklogItem,
   backlogGitSource,
   backlogTitleIssue,
+  companionKinds,
   createBacklogItem,
   initialBacklogDraft,
   newBacklogCreation,
@@ -43,6 +44,7 @@ const {
   kind,
   edit: initialEdit = undefined,
   level = "",
+  fixedParent = "",
 } = defineProps<{
   readonly project: ProjectId;
   readonly base: BacklogBase;
@@ -50,6 +52,7 @@ const {
   readonly kind: BacklogKind;
   readonly edit?: BacklogEdit | undefined;
   readonly level?: BacklogKind | "";
+  readonly fixedParent?: string;
 }>();
 const emit = defineEmits<{
   dismiss: [reason?: "native-note"];
@@ -85,13 +88,19 @@ const busy = computed(
     nextCreation.pending.value ||
     native.pending.value,
 );
-const title = computed(() => edit.value?.item.title ?? text.createType(text.types[kind]));
+const companion = companionKinds.find((candidate) => candidate === kind);
+const createLabel =
+  fixedParent && companion ? text.companions.labels[companion] : text.createType(text.types[kind]);
+const creationTitle = fixedParent
+  ? text.companions.creationTitle(createLabel, fixedParent)
+  : createLabel;
+const title = computed(() => edit.value?.item.title ?? creationTitle);
 const submitted = ref(false);
 let operation: BacklogCreation | undefined;
 
 const form = useForm({
   defaultValues: {
-    ...(initialEdit?.draft ?? initialBacklogDraft(kind, base)),
+    ...(initialEdit?.draft ?? initialDraft()),
     epic: "",
     epicTitle: "",
     featureTitle: "",
@@ -100,6 +109,17 @@ const form = useForm({
     if (await persist(value)) close();
   },
 });
+
+function initialDraft() {
+  const draft = initialBacklogDraft(kind, base);
+  if (!fixedParent) return kind === "UC" ? { ...draft, body: text.pbiTemplate } : draft;
+  return {
+    ...draft,
+    parent: fixedParent,
+    state: base.states.find((state) => /^(open|offen)$/i.test(state)) ?? "",
+    priority: base.priorities.includes("P2") ? "P2" : "",
+  };
+}
 const draft = form.useStore((state) => state.values);
 const isDirty = form.useStore((state) => state.isDirty);
 const memberChoices = computed(() => members.value.value ?? []);
@@ -109,7 +129,7 @@ const invalidTitle = computed(
 const editPath = computed(() => edit.value?.item.path ?? base.folder);
 const dialogDescription = computed(() => edit.value?.item.id ?? text.types[kind]);
 const cancelLabel = computed(() => (history.value ? text.close : text.cancel));
-const submitLabel = computed(() => (edit.value ? text.save : text.createType(text.types[kind])));
+const submitLabel = computed(() => (edit.value ? text.save : createLabel));
 const dirty = computed(() => isDirty.value || placement.value !== undefined);
 watch(
   () => draft.value.parent,
@@ -241,6 +261,7 @@ async function adoptItem(event: MouseEvent) {
             :item="edit?.item"
             :level="level"
             :path="editPath"
+            :fixed-parent="Boolean(fixedParent)"
             v-model:editing="editBody"
             v-model:placement="placement"
             @field="form.setFieldValue"

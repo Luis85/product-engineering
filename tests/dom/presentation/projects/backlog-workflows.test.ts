@@ -70,7 +70,7 @@ it("creates a first PBI from a filtered list, focuses it, and persists scoped ow
     if (!pbi?.id) throw new Error("Missing created PBI");
     const id = pbi.id;
     const control = row(id) + " " + button("backlog-row-open");
-    find(root, control).click();
+    find(root, row(id) + " " + button("backlog-row-edit")).click();
     await visible(root, button("backlog-form"));
     fill(root, "state", "Review");
     fill(root, "priority", "P2");

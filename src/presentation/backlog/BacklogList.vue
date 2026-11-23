@@ -7,6 +7,7 @@ import {
   backlogRoute,
   moveBacklogItem,
   openBacklogBase,
+  pbiDetailRoute,
   readBacklogItem,
   undoBacklogMove,
 } from "../../application/backlog";
@@ -21,7 +22,7 @@ import { projectAdministrationRoute } from "../../application/projects";
 import { backlogKinds, parentKind } from "../../domain/backlog";
 import type { BacklogKind } from "../../domain/backlog";
 import { DomainScopeLinks } from "../domain-model";
-import { leafModalUi, useRestoreWorkspacePosition } from "../projects";
+import { leafModalUi, useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../projects";
 import {
   ErrorNotice,
   useAsyncStream,
@@ -41,6 +42,7 @@ const project = route.projectId;
 const text = useMessages().backlog;
 const navigate = useNavigate();
 const restorePosition = useRestoreWorkspacePosition();
+const rememberOrigin = useRememberWorkspaceOrigin();
 const snapshot = useAsyncStream<BacklogSnapshot, never>(
   { ready: false, items: [], duplicates: [] },
   backlogChanges(project),
@@ -119,7 +121,12 @@ function configureBase() {
   return navigate(projectAdministrationRoute(project, "project"));
 }
 
-async function open(item: BacklogItem, control?: HTMLElement) {
+async function open(item: BacklogItem, control?: HTMLElement, edit = false) {
+  if (!edit && item.kind === "UC" && item.adopted && !item.conflict && item.id) {
+    rememberOrigin(control);
+    await navigate(pbiDetailRoute(project, item.id));
+    return;
+  }
   trigger = control;
   if (item.conflict) {
     await file.run(item.path);
@@ -139,7 +146,7 @@ watch(
     sawRouteItem = item;
     if (item) {
       const source = snapshot.value.items.find(({ id }) => id === item);
-      if (source) void open(source, rowControl(source.key));
+      if (source) void open(source, rowControl(source.key), true);
       else void read.run(project, item);
     }
   },

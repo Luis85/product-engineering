@@ -5,7 +5,7 @@ import { useMessages } from "../shell";
 import type { BacklogRow } from "./preferences";
 
 const { row } = defineProps<{ readonly row: BacklogRow }>();
-const emit = defineEmits<{ open: [HTMLElement]; toggle: [] }>();
+const emit = defineEmits<{ open: [HTMLElement, boolean?]; toggle: [] }>();
 const text = useMessages().backlog;
 const label = computed(() => (row.expanded ? text.collapse : text.expand) + " " + row.item.title);
 const issue = computed(() =>
@@ -48,6 +48,18 @@ function disclose(expanded: boolean) {
         ><span class="pe:wrap-anywhere pe:whitespace-normal">{{ row.item.title }}</span></UButton
       >
       <span v-if="row.item.id" class="pe:ms-2 pe:text-xs pe:text-muted">{{ row.item.id }}</span>
+      <UButton
+        v-if="row.item.kind === 'UC' && row.item.adopted && !row.item.conflict"
+        type="button"
+        variant="ghost"
+        color="neutral"
+        size="xs"
+        :label="text.edit"
+        :aria-label="text.edit + ' · ' + row.item.title"
+        :data-pe-focus-key="'backlog-edit-' + row.item.key"
+        data-testid="backlog-row-edit"
+        @click="emit('open', $event.currentTarget as HTMLElement, true)"
+      />
       <span v-if="row.lineage" class="pe:block pe:wrap-anywhere pe:text-xs pe:text-muted">{{
         row.lineage
       }}</span>

@@ -7,3 +7,4 @@ export { createFromProjectTemplate } from "./template-factory";
 export { default as KnowledgeLeaveDialog } from "./KnowledgeLeaveDialog.vue";
 export { default as KnowledgeMarkdown } from "./KnowledgeMarkdown.vue";
 export { default as KnowledgeNoteEditor } from "./KnowledgeNoteEditor.vue";
+export { default as KnowledgeReferences } from "./KnowledgeReferences.vue";

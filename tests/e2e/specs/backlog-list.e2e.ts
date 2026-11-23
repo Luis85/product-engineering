@@ -66,7 +66,7 @@ it("adopts one note, edits through native Bases and the plugin, and resolves the
   await expect(row(id).$("[data-testid=backlog-row-state]")).toHaveText(
     expect.stringContaining("Review"),
   );
-  await row(id).$("[data-testid=backlog-row-open]").click();
+  await row(id).$("[data-testid=backlog-row-edit]").click();
   await el("backlog-form").$("select[name=state]").selectByVisibleText("Done");
   await el("backlog-save").click();
   await expect(row(id).$("[data-testid=backlog-row-state]")).toHaveText(

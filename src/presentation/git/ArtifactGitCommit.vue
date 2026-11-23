@@ -9,14 +9,19 @@ import { leafModalUi } from "../projects";
 import { useMessages, useModal } from "../shell";
 import type { ArtifactGitWorkflow } from "./workflow";
 
-const { git, restoreFocus } = defineProps<{
+const {
+  git,
+  restoreFocus,
+  localEscape = false,
+} = defineProps<{
   readonly git: ArtifactGitWorkflow;
   readonly restoreFocus: () => void;
+  readonly localEscape?: boolean;
 }>();
 const emit = defineEmits<{ committed: []; review: [] }>();
 const { review, committing, commitError } = git;
 const open = computed(() => review.value !== undefined);
-const modal = useModal(open, restoreFocus);
+const modal = useModal(open, restoreFocus, localEscape ? cancel : undefined);
 const text = useMessages().git;
 const invalid = ref(false);
 const errorId = useId();

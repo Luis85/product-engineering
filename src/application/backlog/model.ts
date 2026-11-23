@@ -21,6 +21,9 @@ export class BacklogError extends Schema.TaggedError<BacklogError>()("BacklogErr
     "owner",
     "rank",
     "conflict",
+    "criteria",
+    "sources",
+    "approval",
   ]),
 }) {}
 

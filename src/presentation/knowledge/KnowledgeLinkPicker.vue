@@ -22,7 +22,9 @@ const text = catalog.note;
 const web = mode === "web";
 const host = useMarkdownHost();
 const open = ref(true);
-const modal = useModal(open, afterClose);
+const modal = useModal(open, afterClose, () => {
+  open.value = false;
+});
 const invalid = ref(false);
 const errorId = useId();
 const errorDescription = computed(() => (invalid.value ? errorId : undefined));

@@ -4,6 +4,7 @@ import type { GitArtifactSource } from "../git";
 import type { ProjectId } from "../projects";
 import type { BacklogItem } from "./model";
 import { backlogSnapshot } from "./service";
+import { pbiSourceDraft, resolvePbiSource } from "./pbi-sources";
 
 export function resolveBacklogItem(project: ProjectId, id: string) {
   return Effect.map(backlogSnapshot(project), ({ items }) =>
@@ -50,20 +51,50 @@ function descendants(items: readonly BacklogItem[], source: BacklogItem) {
   return result;
 }
 
+function prdOrigins(project: ProjectId, items: readonly BacklogItem[]) {
+  return Effect.forEach(
+    items,
+    (item) => {
+      const { pbi_prd_id, pbi_requirement_id } = pbiSourceDraft(item.fields);
+      if (item.kind !== "UC" || !item.adopted || item.conflict || !pbi_requirement_id)
+        return Effect.succeed(undefined);
+      return resolvePbiSource(project, "prd", pbi_prd_id).pipe(
+        Effect.map((record) =>
+          record?.values.requirement_id === pbi_requirement_id
+            ? { kind: "prd" as const, id: record.id, title: record.title, projectId: project }
+            : undefined,
+        ),
+        Effect.catch(() => Effect.succeed(undefined)),
+      );
+    },
+    { concurrency: 4 },
+  );
+}
+
 export const backlogDomainContribution: DomainScopeContributor<
-  Effect.Services<ReturnType<typeof backlogSnapshot>>
+  | Effect.Services<ReturnType<typeof backlogSnapshot>>
+  | Effect.Services<ReturnType<typeof prdOrigins>>
 > = (project, target) =>
-  Effect.map(backlogSnapshot(project), ({ items }) => {
+  Effect.gen(function* () {
     if (target.kind !== "item") return;
+    const { items } = yield* backlogSnapshot(project);
     const source = items.find(
       ({ adopted, conflict, id }) => adopted && !conflict && id === target.id,
     );
     if (!source) return;
     const relatives = [...ancestors(items, source), ...descendants(items, source)];
+    const prds = (yield* prdOrigins(project, [source, ...relatives])).filter(
+      (origin) => origin !== undefined,
+    );
     return {
       source: { ...target, projectId: project, title: source.title },
-      origins: relatives.flatMap(({ id, title, adopted, conflict }) =>
-        id && adopted && !conflict ? [{ kind: "item", id, title, projectId: project }] : [],
-      ),
+      origins: [
+        ...relatives.flatMap(({ id, title, adopted, conflict }) =>
+          id && adopted && !conflict
+            ? [{ kind: "item" as const, id, title, projectId: project }]
+            : [],
+        ),
+        ...prds,
+      ],
     };
   });
