@@ -32,6 +32,10 @@ function readFrontmatter(
   }
 }
 
+export function readNoteFrontmatter(text: string, parseYaml: ParseYaml) {
+  return readFrontmatter(splitNoteText(text), parseYaml);
+}
+
 export function updateNoteText<E>(
   text: string,
   change: FrontmatterChange<E>,

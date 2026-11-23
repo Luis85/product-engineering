@@ -19,6 +19,7 @@ export class ProjectFiles extends Context.Service<
       path: string,
       projectId: ProjectId,
     ) => Effect.Effect<boolean, ProjectStorageError>;
+    readonly hasFolder: (path: string) => Effect.Effect<boolean>;
   }
 >()("product-engineering/application/ProjectFiles") {}
 

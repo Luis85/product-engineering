@@ -25,6 +25,8 @@ import {
 } from "../../shell";
 import { provideProjectSearchSources } from "../search-sources";
 import type { ProjectSearchSource } from "../search-sources";
+import { provideProjectTemplateFactories } from "../template-factories";
+import type { ProjectTemplateFactory } from "../template-factories";
 import { projectGroups } from "../sections";
 import { useWorkspacePosition } from "../workspace-position";
 import ProjectCreateDialog from "./ProjectCreateDialog.vue";
@@ -33,7 +35,11 @@ import ProjectNavigation from "./ProjectNavigation.vue";
 import ProjectPickerDialog from "./ProjectPickerDialog.vue";
 import ProjectSearchDialog from "./ProjectSearchDialog.vue";
 
-const { sources } = defineProps<{ readonly sources: readonly ProjectSearchSource[] }>();
+const { sources, templates } = defineProps<{
+  readonly sources: readonly ProjectSearchSource[];
+  readonly templates: readonly ProjectTemplateFactory[];
+}>();
+provideProjectTemplateFactories(templates);
 const catalog = useMessages();
 const text = catalog.projects;
 const route = useRoute();

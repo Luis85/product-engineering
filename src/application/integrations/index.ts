@@ -14,5 +14,7 @@ export type {
 export { McpSettingsError } from "./mcp/settings-error";
 export { sharedItemTools } from "./mcp/shared-item-tools";
 export type { SharedItem } from "./mcp/shared-item-tools";
+export { projectMcpToolName, projectReadTool } from "./mcp/project-tool";
+export type { ProjectMcpCandidate, ProjectMcpProbe, ReadMcpProject } from "./mcp/project-tool";
 export { integrationsModule } from "./module";
 export { AGENT_CHAT } from "./routes";

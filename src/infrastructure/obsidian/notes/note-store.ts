@@ -15,6 +15,7 @@ import {
   createNote,
   pathsInFolder,
   planRename,
+  readNoteFrontmatter,
   recordNotes,
   resolveFolderPath,
   trashCommand,
@@ -229,6 +230,17 @@ export function noteStoreLayer(app: App) {
         const file = yield* readVault(() => noteFile(vault, path));
         if (!file) return yield* new NoteNotFoundError();
         return yield* readVault(() => cachedNote(app, file));
+      }),
+    readFresh: (path) =>
+      Effect.gen(function* () {
+        const file = yield* readVault(() => noteFile(vault, path));
+        if (!file) return yield* new NoteNotFoundError();
+        const text = yield* Effect.tryPromise({
+          try: () => vault.read(file),
+          catch: () => new VaultReadError(),
+        });
+        const frontmatter = yield* Effect.fromResult(readNoteFrontmatter(text, parseYaml));
+        return { path: normalizePath(file.path), frontmatter };
       }),
     unreadable: (folder) =>
       readVault(() =>

@@ -1,14 +1,19 @@
-import { sharedItemTools } from "../../application/integrations";
-import type { LocalMcpServer, McpController } from "../../application/integrations";
+import { projectReadTool, sharedItemTools } from "../../application/integrations";
+import type { LocalMcpServer, McpController, ReadMcpProject } from "../../application/integrations";
 import { createLocalMcpServer } from "./local-server";
 import { serializeLifecycle } from "./lifecycle-queue";
 
 type McpControllerOptions = {
   readonly version: string;
   readonly readItem: Parameters<typeof sharedItemTools>[0]["readItem"];
+  readonly readProject?: ReadMcpProject;
 };
 
-export function createMcpController({ version, readItem }: McpControllerOptions): McpController {
+export function createMcpController({
+  version,
+  readItem,
+  readProject,
+}: McpControllerOptions): McpController {
   let active: LocalMcpServer | undefined;
   let disposed = false;
   const serialize = serializeLifecycle();
@@ -27,7 +32,11 @@ export function createMcpController({ version, readItem }: McpControllerOptions)
         if (active) return active.start();
 
         const tools = sharedItemTools({ selectedItemIds: selection, readItem });
-        const server = createLocalMcpServer({ version, tools, port });
+        const server = createLocalMcpServer({
+          version,
+          tools: readProject ? [...tools, projectReadTool(readProject)] : tools,
+          port,
+        });
         const connection = await server.start();
         active = server;
         return connection;

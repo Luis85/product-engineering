@@ -22,6 +22,14 @@
 | Git repository | `repository` |
 | Branch | `branch` |
 | Backlog Base | `backlog_base` |
+| Project Vault folder | `vault_folder` |
+| Project team | `team` |
+| Team member | `projectMember` |
+| Required artifact | `artifactRule` |
+| Ready and Done rules | `release_rules` |
+| Release criterion | `projectCriterion` |
+| Project data class | `data_class` |
+| Project MCP read access | `mcp_read` |
 | Record | `record` |
 | Schema marker | `schema` |
 | Frontmatter patch | `patch` |

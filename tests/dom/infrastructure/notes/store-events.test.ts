@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 import { Plugin } from "obsidian";
 import { expect, it, vi } from "vitest";
 import { createTestPlugin } from "@test/obsidian";
@@ -34,4 +34,28 @@ it("publishes the store's common file events through the host", async () => {
   } finally {
     await runtime.dispose();
   }
+});
+
+it("reads revoked permission from disk while the metadata cache still reports access", async () => {
+  const { plugin, registry } = createTestPlugin(class extends Plugin {});
+  const { vault, metadataCache } = registry.plugin.app;
+  const path = "Projects/Kundenportal/Project.md";
+  const file = await vault.seedFile(
+    path,
+    newNoteText({ schema: "product-engineering.project/v1", mcp_read: true }),
+  );
+  await metadataCache.whenIndexed();
+  const cached = metadataCache.getFileCache(file);
+  vi.spyOn(metadataCache, "getFileCache").mockReturnValue(cached);
+  const store = await Effect.runPromise(Effect.provide(NoteStore, noteStoreLayer(plugin.app)));
+  await Effect.runPromise(store.update(path, () => Result.succeed({ set: { mcp_read: false } })));
+  expect((await Effect.runPromise(store.read(path))).frontmatter.mcp_read).toBe(true);
+  expect((await Effect.runPromise(store.readFresh(path))).frontmatter.mcp_read).toBe(false);
+  await expect(Effect.runPromise(store.readFresh("missing.md"))).rejects.toMatchObject({
+    _tag: "NoteNotFoundError",
+  });
+  await vault.process(file, () => "---\nmcp_read: [\n---\n");
+  await expect(Effect.runPromise(store.readFresh(path))).rejects.toMatchObject({
+    _tag: "NoteUnreadableError",
+  });
 });

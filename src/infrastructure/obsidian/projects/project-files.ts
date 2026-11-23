@@ -17,7 +17,15 @@ function folderAt(vault: Vault, path: string) {
 }
 
 async function ownsBacklog(vault: Vault, path: string, projectId: ProjectId) {
-  if (!vault.getAbstractFileByPath(path)) return false;
+  if (!vault.getAbstractFileByPath(path)) {
+    const separator = path.lastIndexOf("/");
+    const folder = path.slice(0, Math.max(0, separator)) || "/";
+    const name = clashKey(path.slice(separator + 1));
+    if (folderAt(vault, folder)?.children.some((entry) => clashKey(entry.name) === name)) {
+      throw new Error("Backlog path is occupied");
+    }
+    return false;
+  }
   const file = vault.getFileByPath(path);
   if (!file) throw new Error("Backlog path is occupied");
   const contents: unknown = parseYaml(await vault.read(file));
@@ -34,6 +42,7 @@ async function ownsBacklog(vault: Vault, path: string, projectId: ProjectId) {
 
 export function projectFilesLayer(vault: Vault) {
   return Layer.succeed(ProjectFiles, {
+    hasFolder: (path) => Effect.sync(() => folderAt(vault, path || "/") !== null),
     reserveFolder: (parent, name) =>
       Effect.tryPromise({
         try: async () => {

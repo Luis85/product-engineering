@@ -3,13 +3,22 @@ import type { Component } from "vue";
 import ProjectFrame from "./components/ProjectFrame.vue";
 import ProjectWorkspace from "./components/ProjectWorkspace.vue";
 import type { ProjectSearchSource } from "./search-sources";
+import type { ProjectTemplateFactory } from "./template-factories";
 
 export type { ProjectSearchPart } from "./search-sources";
+export type {
+  ProjectTemplateFactory,
+  ProjectTemplatePart,
+  ProjectTemplateRequest,
+} from "./template-factories";
 export const workspaceScreen: Component = ProjectWorkspace;
 
-export function workspaceFrame(sources: readonly ProjectSearchSource[]): Component {
+export function workspaceFrame(
+  sources: readonly ProjectSearchSource[],
+  templates: readonly ProjectTemplateFactory[],
+): Component {
   return defineComponent({
     name: "WorkspaceFrame",
-    setup: () => () => h(ProjectFrame, { sources }),
+    setup: () => () => h(ProjectFrame, { sources, templates }),
   });
 }

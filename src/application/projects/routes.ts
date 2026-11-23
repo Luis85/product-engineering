@@ -2,6 +2,8 @@ import { Schema } from "effect";
 import { lineOfText } from "../../domain/notes";
 import { projectIdSchema } from "../../domain/projects";
 import type { ProjectId } from "../../domain/projects";
+import { projectTemplateIds } from "./templates";
+import type { ProjectTemplateId } from "./templates";
 
 export const PROJECTS = "projects";
 export const PROJECT_OVERVIEW = "project-overview";
@@ -30,7 +32,21 @@ function scoped<const Name extends string>(name: Name) {
 }
 
 export const projectOverviewSchema = Schema.Struct(scoped(PROJECT_OVERVIEW));
-export const projectAdministrationSchema = Schema.Struct(scoped(PROJECT_ADMINISTRATION));
+export const projectAdministrationSections = [
+  "project",
+  "team",
+  "requirements",
+  "definitions",
+  "templates",
+  "integrations",
+] as const;
+export type ProjectAdministrationSection = (typeof projectAdministrationSections)[number];
+export const projectAdministrationSchema = Schema.Struct({
+  ...scoped(PROJECT_ADMINISTRATION),
+  section: Schema.optionalKey(Schema.Literals(projectAdministrationSections)),
+  returnTemplate: Schema.optionalKey(Schema.Literals(projectTemplateIds)),
+});
+export type ProjectAdministrationRoute = typeof projectAdministrationSchema.Type;
 export const projectRecordSchema = Schema.Struct({
   ...scoped(PROJECT_RECORD),
   reference,
@@ -47,7 +63,19 @@ export const projectOverviewRoute = (projectId: ProjectId): typeof projectOvervi
 });
 export const projectAdministrationRoute = (
   projectId: ProjectId,
-): typeof projectAdministrationSchema.Type => ({ name: PROJECT_ADMINISTRATION, projectId });
+  section?: ProjectAdministrationSection,
+): ProjectAdministrationRoute => ({
+  name: PROJECT_ADMINISTRATION,
+  projectId,
+  ...(section && { section }),
+});
+export const projectTemplateReturnRoute = (
+  projectId: ProjectId,
+  returnTemplate: ProjectTemplateId,
+): ProjectAdministrationRoute => ({
+  ...projectAdministrationRoute(projectId, "templates"),
+  returnTemplate,
+});
 
 export function projectRecordRoute(
   { projectId, kind, recordId }: ProjectReference,

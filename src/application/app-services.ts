@@ -3,7 +3,7 @@ import type { AgentChat } from "./integrations";
 import type { ServicesOf } from "./module";
 import type { AppModule } from "./modules";
 import type { NotesServices } from "./notes";
-import type { ProjectFiles } from "./projects";
+import type { ProjectFiles, ProjectIntegrationHost } from "./projects";
 import type { ShellServices } from "./shell";
 
 export type AppServices = [
@@ -11,6 +11,7 @@ export type AppServices = [
   NotesServices,
   AgentChat,
   ProjectFiles,
+  ProjectIntegrationHost,
   ServicesOf<AppModule>,
 ][number];
 

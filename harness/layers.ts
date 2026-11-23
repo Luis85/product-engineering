@@ -130,7 +130,7 @@ export function harnessLayer(scenario: Scenario, { language, notify }: HarnessOp
       noteStore: scenario === "failure" ? failFirstIndexRead(notes.layer) : notes.layer,
       noteOpener: notes.opener,
       idGenerator: sequentialIdGenerator(),
-      projectFiles: memoryProjectFiles(notes.occupied).layer,
+      projectFiles: memoryProjectFiles(notes.occupied, notes.isFolder).layer,
       hostEvents: Layer.effectDiscard(
         Effect.gen(function* () {
           const events = yield* EventBus;

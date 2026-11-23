@@ -1,12 +1,13 @@
-import { Context, Effect, Layer, Semaphore } from "effect";
-import { recordFileName, recordId, schemaMarker } from "../../domain/notes";
-import { isProjectId, projectType } from "../../domain/projects";
+import { Context, Effect, Layer, Result, Semaphore } from "effect";
+import { clashKey, recordFileName, recordId, schemaMarker } from "../../domain/notes";
+import { isProjectId, projectType, validBacklogBaseName } from "../../domain/projects";
 import type { ProjectId } from "../../domain/projects";
-import { IdGenerator, NoteStore, recordFolder } from "../notes";
+import { editChange, IdGenerator, NoteEditConflictError, NoteStore, recordFolder } from "../notes";
+import type { FrontmatterChange, Note } from "../notes";
 import { SettingsService } from "../shell";
-import { projectById, registeredProject } from "./discovery";
-import type { Project } from "./discovery";
-import { InvalidProjectError, ProjectStorageError } from "./errors";
+import { projectById, registeredProject, registrationFolder } from "./discovery";
+import type { Project, ProjectSettings } from "./discovery";
+import { InvalidProjectError, projectDetailFields, ProjectStorageError } from "./errors";
 import { ProjectFiles } from "./ports";
 
 export type ProjectDraft = {
@@ -18,10 +19,12 @@ export type ProjectDraft = {
 const NEW_PROJECT_DEFAULTS = { branch: "main", backlog_base: "Backlog.base" } as const;
 
 export function projectDraftIssues(draft: ProjectDraft) {
-  const { issues } = projectType.check({ ...trimmed(draft), ...NEW_PROJECT_DEFAULTS });
-  return issues.flatMap(({ key }) =>
+  const values = trimmed(draft);
+  const { issues } = projectType.check({ ...values, ...NEW_PROJECT_DEFAULTS });
+  const fields = issues.flatMap(({ key }) =>
     key === "name" || key === "description" || key === "repository" ? [key] : [],
   );
+  return values.repository ? fields : [...fields, "repository" as const];
 }
 
 function trimmed({ name, description, repository }: ProjectDraft): ProjectDraft {
@@ -41,7 +44,7 @@ class ProjectWrites extends Context.Service<
   {
     readonly lock: Semaphore.Semaphore;
     readonly reservations: Map<ProjectId, string>;
-    readonly recent: Map<ProjectId, Project>;
+    readonly recent: Map<ProjectId, ProjectSettings>;
   }
 >()("product-engineering/application/ProjectWrites") {}
 
@@ -150,3 +153,176 @@ export const projectBacklogStatus = (projectId: ProjectId) =>
     const files = yield* ProjectFiles;
     return yield* files.hasBacklog(project.backlogBasePath, project.id);
   });
+
+export type ProjectDetails = ProjectDraft & {
+  readonly branch: string;
+  readonly vault_folder: string;
+  readonly backlog_base: string;
+};
+
+export function projectDetails(project: Project): ProjectDetails {
+  const { name, description, repository, branch, folder, backlogBasePath } = project;
+  return {
+    name,
+    description,
+    repository,
+    branch,
+    vault_folder: folder || "/",
+    backlog_base: backlogBasePath.slice(backlogBasePath.lastIndexOf("/") + 1),
+  };
+}
+
+function trimmedDetails(details: ProjectDetails, previous: ProjectDetails): ProjectDetails {
+  const trimChanges = (field: keyof ProjectDetails) =>
+    details[field] === previous[field] ? previous[field] : details[field].trim();
+  return {
+    name: trimChanges("name"),
+    description: trimChanges("description"),
+    repository: trimChanges("repository"),
+    branch: trimChanges("branch"),
+    vault_folder: trimChanges("vault_folder"),
+    backlog_base: trimChanges("backlog_base"),
+  };
+}
+
+export function projectDetailsIssues(details: ProjectDetails, base: ProjectSettings) {
+  const original = projectDetails(base);
+  const values = trimmedDetails(details, original);
+  const { issues } = projectType.check(values);
+  const fields = projectDetailFields.filter(
+    (key) => details[key] !== original[key] && issues.some((issue) => issue.key === key),
+  );
+  if (values.backlog_base !== original.backlog_base && !validBacklogBaseName(values.backlog_base)) {
+    if (!fields.includes("backlog_base")) fields.push("backlog_base");
+  }
+  return fields;
+}
+
+function validateLocation(candidate: ProjectSettings, notes: readonly Note[]) {
+  return Effect.gen(function* () {
+    const files = yield* ProjectFiles;
+    const available = yield* files.hasFolder(candidate.folder);
+    const assigned = notes.some((note) => {
+      const project = registeredProject(projectType.decode(note));
+      return (
+        project &&
+        project.id !== candidate.id &&
+        [project.folder, registrationFolder(project.notePath)].some(
+          (folder) => clashKey(folder) === clashKey(candidate.folder),
+        )
+      );
+    });
+    if (!available || assigned) return yield* new InvalidProjectError({ fields: ["vault_folder"] });
+    yield* files
+      .hasBacklog(candidate.backlogBasePath, candidate.id)
+      .pipe(Effect.mapError(() => new InvalidProjectError({ fields: ["backlog_base"] })));
+  });
+}
+
+export function saveProjectDetails(base: ProjectSettings, details: ProjectDetails) {
+  return ProjectWrites.use(({ lock }) =>
+    Semaphore.withPermit(lock)(
+      Effect.gen(function* () {
+        const fields = projectDetailsIssues(details, base);
+        if (fields.length) return yield* new InvalidProjectError({ fields });
+        const store = yield* NoteStore;
+        const current = yield* liveProject(store, base.id);
+        if (!current) return yield* new ProjectStorageError({ reason: "identity" });
+        const previous = projectDetails(base);
+        const values = trimmedDetails(details, previous);
+        const location =
+          values.vault_folder !== previous.vault_folder ||
+          values.backlog_base !== previous.backlog_base;
+        const apply = editChange(projectType, base.frontmatter, {
+          ...base.frontmatter,
+          ...values,
+          vault_folder:
+            values.vault_folder === previous.vault_folder
+              ? base.frontmatter.vault_folder
+              : values.vault_folder,
+          repository:
+            values.repository === previous.repository
+              ? base.frontmatter.repository
+              : values.repository || undefined,
+        });
+        if (location) {
+          const preview = yield* Effect.fromResult(apply(current.frontmatter));
+          const candidate = registeredProject(
+            projectType.decode({
+              path: current.notePath,
+              frontmatter: { ...current.frontmatter, ...preview.set },
+            }),
+          );
+          if (!candidate) return yield* new ProjectStorageError({ reason: "identity" });
+          yield* validateLocation(candidate, yield* store.list);
+        }
+        const note = yield* store.update(current.notePath, (frontmatter) => {
+          if (location) {
+            const conflicts = (["vault_folder", "backlog_base"] as const).flatMap((key) =>
+              frontmatter[key] === current.frontmatter[key]
+                ? []
+                : [
+                    {
+                      key,
+                      base: current.frontmatter[key],
+                      edited: values[key],
+                      current: frontmatter[key],
+                    },
+                  ],
+            );
+            if (conflicts.length) return Result.fail(new NoteEditConflictError({ conflicts }));
+          }
+          return apply(frontmatter);
+        });
+        return yield* savedProject(note);
+      }),
+    ),
+  );
+}
+
+function savedProject(note: Note) {
+  const project = registeredProject(projectType.decode(note));
+  return project
+    ? Effect.succeed(project)
+    : Effect.fail(new ProjectStorageError({ reason: "identity" }));
+}
+
+export function updateProjectFrontmatter<E>(projectId: ProjectId, update: FrontmatterChange<E>) {
+  return ProjectWrites.use(({ lock }) =>
+    Semaphore.withPermit(lock)(
+      Effect.gen(function* () {
+        const store = yield* NoteStore;
+        const project = yield* liveProject(store, projectId);
+        if (!project) return yield* new ProjectStorageError({ reason: "identity" });
+        const note = yield* store.update<E | ProjectStorageError>(
+          project.notePath,
+          (frontmatter) => {
+            if (
+              registeredProject(projectType.decode({ path: project.notePath, frontmatter }))?.id !==
+              projectId
+            ) {
+              return Result.fail(new ProjectStorageError({ reason: "identity" }));
+            }
+            return update(frontmatter);
+          },
+        );
+        return yield* savedProject(note);
+      }),
+    ),
+  );
+}
+
+export function readFreshProject(projectId: ProjectId) {
+  return ProjectWrites.use(({ lock }) =>
+    Semaphore.withPermit(lock)(
+      Effect.gen(function* () {
+        const store = yield* NoteStore;
+        const known = yield* liveProject(store, projectId);
+        if (!known) return;
+        const note = yield* store.readFresh(known.notePath);
+        const project = registeredProject(projectType.decode(note));
+        return project?.id === projectId ? project : undefined;
+      }),
+    ),
+  );
+}

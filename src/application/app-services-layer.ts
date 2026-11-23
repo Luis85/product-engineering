@@ -8,7 +8,8 @@ import { APP_MODULES } from "./modules";
 import { appNoteTypes } from "./note-types";
 import { noteIndexLayer } from "./notes";
 import type { IdGenerator, NoteOpener, NoteStore } from "./notes";
-import type { ProjectFiles } from "./projects";
+import { unavailableProjectIntegrationHost } from "./projects";
+import type { ProjectFiles, ProjectIntegrationHost } from "./projects";
 import { EventBusLive, LoggerLive, SettingsServiceLive } from "./shell";
 import type { AppServices } from "./app-services";
 import type {
@@ -35,6 +36,7 @@ export type AppAdapters = {
   readonly noteOpener: Layer.Layer<NoteOpener>;
   readonly idGenerator: Layer.Layer<IdGenerator>;
   readonly projectFiles: Layer.Layer<ProjectFiles>;
+  readonly projectIntegrationHost?: Layer.Layer<ProjectIntegrationHost>;
   readonly agentChat?: Layer.Layer<AgentChat, never, SettingsService>;
 };
 
@@ -59,6 +61,7 @@ export function appServicesLayer(
     adapters.noteOpener,
     adapters.idGenerator,
     adapters.projectFiles,
+    adapters.projectIntegrationHost ?? unavailableProjectIntegrationHost,
     messagesLayer(options.language),
   );
   const settings = Layer.provideMerge(SettingsServiceLive, ports);

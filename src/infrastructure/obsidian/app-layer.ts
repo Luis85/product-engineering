@@ -9,6 +9,7 @@ export function appLayer(
   plugin: Plugin,
   options: AppServiceOptions,
   agentChat?: AppAdapters["agentChat"],
+  projectIntegrationHost?: AppAdapters["projectIntegrationHost"],
 ) {
   return appServicesLayer(
     {
@@ -16,6 +17,7 @@ export function appLayer(
       ...notesAdapters(plugin),
       projectFiles: projectFilesLayer(plugin.app.vault),
       ...(agentChat ? { agentChat } : {}),
+      ...(projectIntegrationHost ? { projectIntegrationHost } : {}),
     },
     options,
   );

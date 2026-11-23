@@ -37,6 +37,9 @@ export class NoteStore extends Context.Service<
   {
     readonly list: Effect.Effect<readonly Note[], VaultReadError>;
     readonly read: (path: string) => Effect.Effect<Note, VaultReadError | NoteNotFoundError>;
+    readonly readFresh: (
+      path: string,
+    ) => Effect.Effect<Note, VaultReadError | NoteNotFoundError | NoteUnreadableError>;
     readonly unreadable: (folder: string) => Effect.Effect<readonly string[], VaultReadError>;
     readonly create: (input: CreateNoteInput) => Effect.Effect<Note, CreateNoteError>;
     readonly update: <E>(

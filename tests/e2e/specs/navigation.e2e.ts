@@ -294,7 +294,7 @@ describe("project workspace", () => {
     expect(await readVaultText(sentinel)).toBe("Keep this existing note.\n");
     await menuButton(ROOT, project.administration).click();
     await expect(browser.$(content)).toHaveText(expect.stringContaining(`${folder}/Backlog.base`));
-    await expect(browser.$(content)).toHaveText(expect.stringContaining("main"));
+    await expect(browser.$(content).$("input[name=branch]")).toHaveValue("main");
 
     await named(ROOT, project.picker).click();
     await browser.$(dialog).$(`button=${project.create}`).click();

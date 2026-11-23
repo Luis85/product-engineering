@@ -261,6 +261,7 @@ export function memoryNoteStore() {
     layer: Layer.succeed(NoteStore, {
       list: readable(() => recordNotes([...files.values()].filter(markdown).map(noteOf))),
       read,
+      readFresh: read,
       unreadable: (folder) =>
         readable(() =>
           pathsInFolder(

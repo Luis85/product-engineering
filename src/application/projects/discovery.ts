@@ -1,7 +1,9 @@
 import { Effect, Stream } from "effect";
+import type { Frontmatter } from "../../domain/notes";
 import { isProjectId, projectType } from "../../domain/projects";
 import type { ProjectId } from "../../domain/projects";
 import { noteChanges, noteSnapshot } from "../notes";
+import { projectDetailFields } from "./errors";
 
 export type Project = {
   readonly id: ProjectId;
@@ -14,22 +16,40 @@ export type Project = {
   readonly backlogBasePath: string;
 };
 
-type DecodedProject = ReturnType<typeof projectType.decode>;
+type DecodedProject = ReturnType<typeof projectType.decode<Frontmatter>>;
 
-export function registeredProject(note: DecodedProject): Project | undefined {
-  if (note.kind !== "editable" || note.issues.length || !isProjectId(note.id)) return;
+export type ProjectSettings = Project & { readonly frontmatter: Frontmatter };
+
+export function registrationFolder(path: string) {
+  return path.slice(0, Math.max(0, path.lastIndexOf("/")));
+}
+
+function effectiveFolder(path: string, override?: string) {
+  return override === "/" ? "" : (override ?? registrationFolder(path));
+}
+
+function invalidProjectDetails(issues: readonly { readonly key: string }[]) {
+  return issues.some(
+    ({ key }) => key !== "repository" && projectDetailFields.some((field) => field === key),
+  );
+}
+
+export function registeredProject(note: DecodedProject): ProjectSettings | undefined {
+  if (note.kind !== "editable" || !isProjectId(note.id) || invalidProjectDetails(note.issues))
+    return;
   const { name, description, repository, branch, backlog_base: base } = note.values;
-  if (!name || !description || !repository || !branch || !base) return;
-  const folder = note.path.slice(0, Math.max(0, note.path.lastIndexOf("/")));
+  if (!name || !description || !branch || !base) return;
+  const folder = effectiveFolder(note.path, note.values.vault_folder);
   return {
     id: note.id,
     name,
     description,
-    repository,
+    repository: repository ?? "",
     branch,
     folder,
     notePath: note.path,
     backlogBasePath: folder ? `${folder}/${base}` : base,
+    frontmatter: note.frontmatter,
   };
 }
 

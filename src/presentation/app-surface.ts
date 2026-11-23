@@ -7,13 +7,13 @@ import { integrationsScreens } from "./integrations/screens";
 import { itemsScreens } from "./items/screens";
 import { notesScreens } from "./notes/screens";
 import { projectFrame, projectsScreens } from "./projects/screens";
-import type { ProjectSearchPart } from "./projects";
+import type { ProjectSearchPart, ProjectTemplatePart } from "./projects";
 import type { ModuleScreens, SurfaceDefinition, SurfaceSection } from "./shell/host";
 import type { ScreenLoader, SettingsSectionPart } from "./shell/host";
 import { shellScreens } from "./shell/screens";
 
 const MODULE_SCREENS: {
-  readonly [Name in AppModuleName]: ModuleScreens<Name> & ProjectSearchPart;
+  readonly [Name in AppModuleName]: ModuleScreens<Name> & ProjectSearchPart & ProjectTemplatePart;
 } = {
   shell: shellScreens,
   notes: notesScreens,
@@ -35,10 +35,11 @@ const sections = SETTINGS_SECTIONS.flatMap((id): SurfaceSection<Route>[] => {
 });
 const context = modules.find((module) => module.context)?.context;
 const projectSearch = modules.flatMap((module) => module.projectSearch ?? []);
+const projectTemplates = modules.flatMap((module) => module.projectTemplates ?? []);
 
 export const appSurface: SurfaceDefinition<Route> = {
   ...appRoutes,
-  frame: () => projectFrame(projectSearch),
+  frame: () => projectFrame(projectSearch, projectTemplates),
   screen: (route) => screens[route.name],
   sections,
   menu: modules.flatMap((module) => module.menu ?? []),

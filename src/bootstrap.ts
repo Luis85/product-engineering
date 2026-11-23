@@ -5,6 +5,7 @@ import { appCommands } from "./application/commands";
 import { configuredAgentChat } from "./application/integrations";
 import { catalogFor } from "./application/messages";
 import { noteChanges, noteSnapshot } from "./application/notes";
+import { currentProjectMcpCandidate } from "./application/projects";
 import type { Route } from "./application/routes";
 import {
   describeDefect,
@@ -19,12 +20,13 @@ import {
 import { itemType } from "./domain/items";
 import { consoleSinkLayer } from "./infrastructure/logging/console-sink";
 import { incidentsLayer } from "./infrastructure/logging/incidents";
-import { createMcpController } from "./infrastructure/mcp";
+import { createMcpController, probeProjectMcpRead } from "./infrastructure/mcp";
 import { appLayer } from "./infrastructure/obsidian/app-layer";
 import {
   createAgentSettingsPart,
   createMcpItemAccess,
 } from "./infrastructure/obsidian/integrations";
+import { projectIntegrationSettingsLayer } from "./infrastructure/obsidian/projects";
 import {
   addRibbonIcon,
   hostLanguage,
@@ -98,6 +100,7 @@ export async function bootstrap(
   plugin: Plugin,
   { signal }: { readonly signal: AbortSignal },
 ): Promise<BootstrapHandle> {
+  let mcp: ReturnType<typeof createMcpController> | undefined;
   const runtime = makeRuntime(
     appLayer(
       plugin,
@@ -106,6 +109,9 @@ export async function bootstrap(
         const { createProviderCliChat } = await import("./infrastructure/provider-cli");
         return createProviderCliChat({ executablePaths });
       }),
+      projectIntegrationSettingsLayer(plugin, (id, requestSignal) =>
+        probeProjectMcpRead(mcp?.connection(), id, requestSignal),
+      ),
     ),
   );
   const undo: Release[] = [() => runtime.dispose()];
@@ -155,13 +161,16 @@ export async function bootstrap(
       current: noteSnapshot(itemType),
       changes: noteChanges(itemType),
     });
-    const mcp = createMcpController({
+    const controller = createMcpController({
       version: plugin.manifest.version,
       readItem: mcpItems.readItem,
+      readProject: (id, requestSignal) =>
+        runtime.runPromise(currentProjectMcpCandidate(id), { signal: requestSignal }),
     });
-    undo.push(() => mcp.dispose());
+    mcp = controller;
+    undo.push(() => controller.dispose());
     const agentSettings = createAgentSettingsPart({
-      controller: mcp,
+      controller,
       runtime,
       mirror,
       messages,

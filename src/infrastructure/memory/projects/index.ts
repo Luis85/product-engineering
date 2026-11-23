@@ -7,11 +7,15 @@ import {
 } from "../../../application/projects";
 import { clashKey } from "../../../domain/notes";
 
-export function memoryProjectFiles(occupied: (path: string) => boolean) {
+export function memoryProjectFiles(
+  occupied: (path: string) => boolean,
+  isFolder: (path: string) => boolean,
+) {
   const reserved = new Set<string>();
   const bases = new Map<string, string>();
   let failBase = false;
   const layer = Layer.succeed(ProjectFiles, {
+    hasFolder: (path) => Effect.sync(() => isFolder(path) || reserved.has(clashKey(path))),
     reserveFolder: (parent, name) =>
       Effect.suspend(() => {
         const available = availableProjectFolder(name, (candidate) => {
