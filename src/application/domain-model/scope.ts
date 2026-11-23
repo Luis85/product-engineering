@@ -15,10 +15,10 @@ type ScopeContribution = {
   readonly foundationEntities?: readonly KnowledgeId[];
 };
 
-export type DomainScopeContributor = (
+export type DomainScopeContributor<R = never> = (
   project: ProjectId,
   target: EntityScopeTarget,
-) => Effect.Effect<ScopeContribution | undefined>;
+) => Effect.Effect<ScopeContribution | undefined, never, R>;
 
 function scopeKey(target: EntityScopeTarget) {
   return `${target.kind}:${target.id}`;
@@ -28,11 +28,15 @@ export function entityAssigned(entity: KnowledgeRecord, target: EntityScopeTarge
   return (entity.values.domain_scope ?? []).some((ref) => scopeKey(ref) === scopeKey(target));
 }
 
-function scopeContribution(
+function scopeContribution<R>(
   project: ProjectId,
   target: EntityScopeTarget,
-  contribute?: DomainScopeContributor,
-) {
+  contribute?: DomainScopeContributor<R>,
+): Effect.Effect<
+  ScopeContribution | undefined,
+  Effect.Error<ReturnType<typeof resolveKnowledgeNote>>,
+  Effect.Services<ReturnType<typeof resolveKnowledgeNote>> | R
+> {
   if (target.kind !== "prd") {
     return Effect.map(contribute?.(project, target) ?? Effect.succeed(undefined), (result) =>
       result?.source.projectId === project && scopeKey(result.source) === scopeKey(target)
@@ -62,12 +66,12 @@ function scopeEntity(project: ProjectId, entity: KnowledgeId, assigned: boolean)
   });
 }
 
-export function setEntityScope(
+export function setEntityScope<R = never>(
   project: ProjectId,
   entity: KnowledgeId,
   target: EntityScopeTarget,
   assigned: boolean,
-  contribute?: DomainScopeContributor,
+  contribute?: DomainScopeContributor<R>,
 ) {
   return DomainWrites.use((lock) =>
     lock.withPermit(
@@ -113,10 +117,10 @@ function endpoint({ id, title, displayId }: KnowledgeRecord) {
   return { id, title, displayId };
 }
 
-export function resolveDomainScope(
+export function resolveDomainScope<R = never>(
   project: ProjectId,
   targets: readonly EntityScopeTarget[],
-  contribute?: DomainScopeContributor,
+  contribute?: DomainScopeContributor<R>,
 ) {
   return Effect.gen(function* () {
     const contributions = yield* Effect.forEach(

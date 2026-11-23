@@ -3,6 +3,7 @@ import type { Effect } from "effect";
 import { clashName, MAX_NAME_ATTEMPTS } from "../../domain/notes";
 import type { ProjectId } from "../../domain/projects";
 import type { ProjectStorageError } from "./errors";
+import type { BacklogBase } from "./backlog-base";
 
 export class ProjectFiles extends Context.Service<
   ProjectFiles,
@@ -19,6 +20,11 @@ export class ProjectFiles extends Context.Service<
       path: string,
       projectId: ProjectId,
     ) => Effect.Effect<boolean, ProjectStorageError>;
+    readonly readBacklog: (
+      path: string,
+      projectId: ProjectId,
+    ) => Effect.Effect<BacklogBase | undefined, ProjectStorageError>;
+    readonly openBacklog: (path: string) => Effect.Effect<void, ProjectStorageError>;
     readonly hasFolder: (path: string) => Effect.Effect<boolean>;
   }
 >()("product-engineering/application/ProjectFiles") {}

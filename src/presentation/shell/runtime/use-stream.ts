@@ -31,6 +31,10 @@ export function useSettings() {
   );
 }
 
+export function useAsyncStream<A, E>(initial: A, changes: Stream.Stream<A, E, AppServices>) {
+  return useStream(Effect.succeed(initial), changes);
+}
+
 export function useSettingsStatus() {
   return useStream(
     SettingsService.use((settings) => settings.status),

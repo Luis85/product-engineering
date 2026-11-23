@@ -39,6 +39,7 @@ function makeSnapshots(initial: IndexState) {
       ),
     );
     const unindexed = yield* snapshotRef(initial.unindexed);
+    const sources = yield* snapshotRef(initial.sources);
 
     function registered<Fields extends NoteFields>(type: NoteType<Fields>) {
       const ref = byType.get(type);
@@ -51,6 +52,7 @@ function makeSnapshots(initial: IndexState) {
         Effect.gen(function* () {
           for (const [type, notes] of state.byType) yield* publish(registered(type), status, notes);
           yield* publish(unindexed, status, state.unindexed);
+          yield* publish(sources, status, state.sources);
         }),
       noteSnapshot: <Fields extends NoteFields>(type: NoteType<Fields>) =>
         Effect.suspend(() => SubscriptionRef.get(registered(type))),
@@ -58,6 +60,8 @@ function makeSnapshots(initial: IndexState) {
         Stream.suspend(() => SubscriptionRef.changes(registered(type))),
       unindexedSnapshot: SubscriptionRef.get(unindexed),
       unindexedChanges: SubscriptionRef.changes(unindexed),
+      sourceSnapshot: SubscriptionRef.get(sources),
+      sourceChanges: SubscriptionRef.changes(sources),
     };
   });
 }
@@ -109,14 +113,17 @@ function indexWorker(
 
     const build = Effect.gen(function* () {
       const { rootFolder } = yield* settings.current;
-      const notes = yield* store.list;
+      const notes = yield* store.sources;
       const unreadable = yield* store.unreadable(rootFolder);
       state = buildIndexState(state, notes, unreadable);
       status = { ready: true, failure: undefined };
       yield* logger.log({
         level: "info",
         event: "notes.index.built",
-        data: { notes: notes.length, unreadable: unreadable.length },
+        data: {
+          notes: notes.filter(({ frontmatter }) => isRecordFrontmatter(frontmatter)).length,
+          unreadable: unreadable.length,
+        },
       });
       yield* snapshots.publish(state, status);
     }).pipe(Effect.catch(() => recordFailure("notes.index.build.failed", 0)));

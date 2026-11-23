@@ -63,12 +63,12 @@ function failFirstIndexRead(source: Layer.Layer<NoteStore>) {
     NoteStore,
     Effect.map(NoteStore, (store) => {
       let first = true;
-      const list = Effect.suspend(() => {
-        if (!first) return store.list;
+      const sources = Effect.suspend(() => {
+        if (!first) return store.sources;
         first = false;
         return Effect.fail(new VaultReadError());
       });
-      return { ...store, list };
+      return { ...store, sources };
     }),
   ).pipe(Layer.provide(source));
 }

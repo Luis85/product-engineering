@@ -42,6 +42,7 @@ export class NoteStore extends Context.Service<
   NoteStore,
   {
     readonly list: Effect.Effect<readonly Note[], VaultReadError>;
+    readonly sources: Effect.Effect<readonly Note[], VaultReadError>;
     readonly read: (path: string) => Effect.Effect<Note, VaultReadError | NoteNotFoundError>;
     readonly readFresh: (
       path: string,

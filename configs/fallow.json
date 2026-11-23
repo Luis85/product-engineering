@@ -102,7 +102,8 @@
           "domain/notes",
           "domain/items",
           "domain/projects",
-          "domain/knowledge"
+          "domain/knowledge",
+          "domain/backlog"
         ]
       },
       { "from": "domain/shell", "allow": [] },
@@ -118,6 +119,7 @@
           "application/knowledge",
           "application/domain-model",
           "application/git",
+          "application/backlog",
           "application-module",
           "application-composition"
         ]
@@ -210,6 +212,7 @@
           "presentation/knowledge",
           "presentation/domain-model",
           "presentation/git",
+          "presentation/backlog",
           "presentation/shell",
           "application",
           "application-composition",
@@ -245,6 +248,7 @@
           "presentation/knowledge",
           "presentation/domain-model",
           "presentation/git",
+          "presentation/backlog",
           "application",
           "application-composition",
           "domain"

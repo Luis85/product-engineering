@@ -3,6 +3,7 @@ import type { ProjectId } from "../../domain/projects";
 import type { AppError } from "../errors";
 import type { NotesServices } from "../notes";
 import { projectDeliverySettings } from "../projects";
+import type { ProjectFiles } from "../projects";
 import { ArtifactGitError } from "./model";
 import type { GitJournal } from "./model";
 import { ArtifactGit } from "./port";
@@ -10,7 +11,7 @@ import type { GitArtifactTarget } from "./port";
 
 export type GitArtifactSource = {
   readonly projectId: ProjectId;
-  readonly resolvePath: Effect.Effect<string | undefined, AppError, NotesServices>;
+  readonly resolvePath: Effect.Effect<string | undefined, AppError, NotesServices | ProjectFiles>;
 };
 
 export type ArtifactJournal = GitJournal & { readonly target: GitArtifactTarget };

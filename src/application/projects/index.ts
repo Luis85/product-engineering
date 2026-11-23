@@ -16,6 +16,8 @@ export type { Project, ProjectSettings } from "./discovery";
 export { isProjectId, projectIdSchema } from "../../domain/projects";
 export type { ProjectId } from "../../domain/projects";
 export { ProjectFiles, availableProjectFolder, backlogBaseText, backlogFilter } from "./ports";
+export { backlogConfiguration } from "./backlog-base";
+export type { BacklogBase } from "./backlog-base";
 export { projectDetailFields, ProjectIntegrationError, ProjectStorageError } from "./errors";
 export {
   PROJECTS,

@@ -13,4 +13,4 @@ export type { BeforeNavigation } from "./routing";
 export type { ModuleScreens, ScreenLoader } from "./routing";
 export { useCommand, useMessages, useQuery, useService } from "./runtime/use-runtime";
 export type { UseCaseFn } from "./runtime/use-runtime";
-export { useSettings, useSettingsStatus, useStream } from "./runtime/use-stream";
+export { useAsyncStream, useSettings, useSettingsStatus, useStream } from "./runtime/use-stream";

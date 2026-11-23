@@ -2,6 +2,7 @@ import { Context } from "effect";
 import type { Effect, Stream } from "effect";
 import type { EditableNote, NoteFields, NoteType, ReadOnlyNote } from "../../domain/notes";
 import type { NoteIndexReadError } from "./errors";
+import type { Note } from "./ports";
 
 export type IndexedNote<Fields extends NoteFields = NoteFields> =
   EditableNote<Fields> | ReadOnlyNote<Fields>;
@@ -16,15 +17,17 @@ export interface UnindexedNote {
   readonly issue: UnindexedIssue;
 }
 
-export interface NoteIndexSnapshot<Note> {
+export interface NoteIndexSnapshot<Row> {
   readonly ready: boolean;
   readonly failure: NoteIndexReadError | undefined;
-  readonly notes: readonly Note[];
+  readonly notes: readonly Row[];
 }
 
 export class NoteIndex extends Context.Service<
   NoteIndex,
   {
+    readonly sourceSnapshot: Effect.Effect<NoteIndexSnapshot<Note>>;
+    readonly sourceChanges: Stream.Stream<NoteIndexSnapshot<Note>>;
     readonly noteSnapshot: <Fields extends NoteFields>(
       type: NoteType<Fields>,
     ) => Effect.Effect<NoteIndexSnapshot<IndexedNote<Fields>>>;

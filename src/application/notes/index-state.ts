@@ -23,6 +23,7 @@ export type IndexState = {
   readonly published: ReadonlyMap<string, IndexedNote>;
   readonly byType: ReadonlyMap<NoteType, readonly IndexedNote[]>;
   readonly unindexed: readonly UnindexedNote[];
+  readonly sources: readonly Note[];
 };
 
 export function createIndexState(types: readonly NoteType[]): IndexState {
@@ -35,6 +36,7 @@ export function createIndexState(types: readonly NoteType[]): IndexState {
     published: new Map(),
     byType: new Map(types.map((type) => [type, []])),
     unindexed: [],
+    sources: [],
   };
 }
 
@@ -131,14 +133,20 @@ function project(
   state: IndexState,
   entries: ReadonlyMap<string, Entry>,
   unreadable: ReadonlySet<string>,
+  sources: readonly Note[],
 ): IndexState {
   return {
     types: state.types,
     entries,
     unreadable,
+    sources,
     ...projectRecords(state, entries),
     unindexed: projectUnindexed(state, entries, unreadable),
   };
+}
+
+function sourceNote(note: Note | undefined): note is Note {
+  return !!note && typeof note.frontmatter.type === "string";
 }
 
 export function buildIndexState(
@@ -151,7 +159,12 @@ export function buildIndexState(
     const entry = readEntry(previous, note);
     if (entry) entries.set(note.path, entry);
   }
-  return project(previous, entries, new Set(unreadablePaths));
+  return project(
+    previous,
+    entries,
+    new Set(unreadablePaths),
+    notes.filter(sourceNote).toSorted(byPath),
+  );
 }
 
 export function updateIndexState(
@@ -161,11 +174,21 @@ export function updateIndexState(
 ): IndexState {
   const entries = new Map(previous.entries);
   const unreadable = new Set(unreadablePaths ?? previous.unreadable);
+  const sources = new Map(previous.sources.map((note) => [note.path, note]));
   for (const [path, note] of rereads) {
     const entry = note && readEntry(previous, note);
     if (entry) entries.set(path, entry);
     else entries.delete(path);
     if (!note || entry) unreadable.delete(path);
+    const source = sources.get(path);
+    if (!sourceNote(note)) sources.delete(path);
+    else if (!source || !sameFrontmatter(source.frontmatter, note.frontmatter))
+      sources.set(path, note);
   }
-  return project(previous, entries, unreadable);
+  return project(
+    previous,
+    entries,
+    unreadable,
+    retainList(previous.sources, [...sources.values()].toSorted(byPath)),
+  );
 }

@@ -1,4 +1,5 @@
 import { domainModelModule } from "./domain-model";
+import { backlogModule } from "./backlog";
 import { artifactGitModule } from "./git";
 import { integrationsModule } from "./integrations";
 import { itemsModule } from "./items";
@@ -16,6 +17,7 @@ export const APP_MODULES = [
   knowledgeModule,
   domainModelModule,
   artifactGitModule,
+  backlogModule,
 ] as const;
 
 export type AppModule = (typeof APP_MODULES)[number];

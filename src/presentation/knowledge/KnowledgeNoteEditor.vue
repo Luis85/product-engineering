@@ -6,7 +6,15 @@ import type { VaultLink } from "../shell";
 import KnowledgeLinkPicker from "./KnowledgeLinkPicker.vue";
 import KnowledgeMarkdown from "./KnowledgeMarkdown.vue";
 
-const { path, saving } = defineProps<{ readonly path: string; readonly saving: boolean }>();
+const {
+  path,
+  saving,
+  accessibleLabel = "",
+} = defineProps<{
+  readonly path: string;
+  readonly saving: boolean;
+  readonly accessibleLabel?: string;
+}>();
 const markdown = defineModel<string>({ required: true });
 const text = useMessages().knowledge.note;
 const host = useMarkdownHost();
@@ -93,8 +101,8 @@ function insert(link: VaultLink) {
 }
 
 function insertWebLink(target: string) {
-  const label = (selection.value || target).replace(/[\\[\]]/g, "\\$&").replaceAll("\n", " ");
-  insertion = "[" + label + "](" + target + ")";
+  const caption = (selection.value || target).replace(/[\\[\]]/g, "\\$&").replaceAll("\n", " ");
+  insertion = "[" + caption + "](" + target + ")";
 }
 
 function closePicker() {
@@ -148,7 +156,7 @@ function closePicker() {
     ref="editor"
     v-model="markdown"
     name="markdown"
-    :aria-label="text.markdown"
+    :aria-label="accessibleLabel || text.markdown"
     :readonly="saving"
     class="pe-note-editor"
   />

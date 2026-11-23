@@ -20,11 +20,11 @@ const id = "project-33333333-3333-4333-8333-000000000001";
 
 async function setup() {
   const { plugin, registry } = createTestPlugin(ProjectPlugin);
-  const vault = registry.plugin.app.vault;
+  const { vault, workspace } = registry.plugin.app;
   const files = await Effect.runPromise(
-    Effect.provide(ProjectFiles, projectFilesLayer(plugin.app.vault)),
+    Effect.provide(ProjectFiles, projectFilesLayer(plugin.app.vault, plugin.app.workspace)),
   );
-  return { vault, files };
+  return { vault, workspace, files };
 }
 
 it("reserves a fresh folder beside existing case-equivalent folders and files", async () => {
@@ -86,4 +86,69 @@ it("refuses a folder occupying the assigned Base path", async () => {
     reason: "base",
   });
   expect(vault.getFolderByPath(path)).not.toBeNull();
+});
+
+it("accepts an existing backlog Base scoped to its project without rewriting it", async () => {
+  const { vault, files } = await setup();
+  const folder = "Products/Projects/Kundenportal";
+  const contents = `# protected\nfilters:\n  and:\n    - 'file.inFolder("${folder}/Work")'\n    - 'file.ext == "md"'\n    - 'file.name != "README"'\nviews:\n  - type: product-backlog\n    name: Existing backlog\n    homeFolder: ${folder}/Work\n    stateProperty: note.DeliveryState\n    stateValues: Open, Active, Done\n`;
+  const path = `${folder}/Existing.base`;
+  const base = await vault.seedFile(path, contents);
+  await expect(Effect.runPromise(files.hasBacklog(path, id))).resolves.toBe(true);
+  await Effect.runPromise(files.ensureBacklog(path, id));
+  expect(await vault.read(base)).toBe(contents);
+  const foreign = `${folder}/Foreign.base`;
+  await vault.seedFile(
+    foreign,
+    contents.replaceAll(`${folder}/Work`, "Products/Projects/Admin Console"),
+  );
+  await expect(Effect.runPromise(files.hasBacklog(foreign, id))).rejects.toMatchObject({
+    reason: "base",
+  });
+});
+
+const backlogFolder = "Products/Projects/Kundenportal";
+const folderFilter = `'file.inFolder("${backlogFolder}")'`;
+
+it.each([
+  { filter: "and: []\n  or: []", option: "" },
+  { filter: `and: [${folderFilter}, 'file.inFolder("${backlogFolder}/Another")']`, option: "" },
+  { filter: folderFilter, option: "homeFolder: Products/Projects/Admin Console" },
+  { filter: folderFilter, option: "stateProperty: formula.activation" },
+  { filter: folderFilter, option: "assigneeProperty: note.order" },
+  { filter: folderFilter, option: "stateProperty: note.ASSIGNEE" },
+  { filter: `'file.name != "Archive"'`, option: "" },
+])(
+  "rejects an unverified Base scope or mapping $filter $option",
+  async ({ filter: scope, option }) => {
+    const { vault, files } = await setup();
+    const path = backlogFolder + "/Unsafe.base";
+    const bytes =
+      (scope.startsWith("and:") ? "filters:\n  " : "filters: ") +
+      scope +
+      "\nviews:\n  - type: product-backlog\n    name: Imported\n" +
+      (option ? "    " + option + "\n" : "");
+    const existing = await vault.seedFile(path, bytes);
+    await expect(Effect.runPromise(files.readBacklog(path, id))).rejects.toMatchObject({
+      reason: "base",
+    });
+    expect(await vault.read(existing)).toBe(bytes);
+  },
+);
+
+it("opens the registered Base in a native tab and refuses a Markdown or missing path", async () => {
+  const { vault, workspace, files } = await setup();
+  const requested = vi.spyOn(workspace, "getLeaf");
+  const base = backlogFolder + "/Backlog.base";
+  const note = backlogFolder + "/Backlog.md";
+  await vault.seedFile(base, "views: []\n");
+  await vault.seedFile(note, "# Notes");
+  await expect(Effect.runPromise(files.openBacklog(base))).resolves.toBeUndefined();
+  expect(requested).toHaveBeenCalledExactlyOnceWith("tab");
+  await expect(Effect.runPromise(files.openBacklog(note))).rejects.toMatchObject({
+    reason: "base",
+  });
+  await expect(
+    Effect.runPromise(files.openBacklog(backlogFolder + "/Missing.base")),
+  ).rejects.toMatchObject({ reason: "base" });
 });

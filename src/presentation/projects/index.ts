@@ -11,6 +11,7 @@ export { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "./works
 export { leafModalUi } from "./overlay-ui";
 export type { ProjectRecordPart } from "./record-screens";
 export type { ProjectSearchPart } from "./search-sources";
+export { useProjectSearchSources } from "./search-sources";
 export type {
   ProjectTemplateFactory,
   ProjectTemplatePart,

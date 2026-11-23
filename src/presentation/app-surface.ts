@@ -3,6 +3,7 @@ import type { AppModuleName } from "../application/modules";
 import { appRoutes, SETTINGS_SECTIONS } from "../application/routes";
 import type { Route } from "../application/routes";
 import { SETTINGS } from "../application/shell";
+import { backlogScreens } from "./backlog/screens";
 import { domainModelScreens } from "./domain-model/screens";
 import { gitScreens } from "./git/screens";
 import { integrationsScreens } from "./integrations/screens";
@@ -29,6 +30,7 @@ const MODULE_SCREENS: {
   knowledge: knowledgeScreens,
   "domain-model": domainModelScreens,
   git: gitScreens,
+  backlog: backlogScreens,
 };
 
 const modules = APP_MODULES.map(({ name }) => MODULE_SCREENS[name]);

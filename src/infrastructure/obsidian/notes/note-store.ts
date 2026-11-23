@@ -233,10 +233,10 @@ export function noteStoreLayer(app: App) {
       const frontmatter = yield* Effect.fromResult(readNoteFrontmatter(text, parseYaml));
       return { path: normalizePath(file.path), frontmatter, body: splitNoteText(text).body, text };
     });
+  const sources = readVault(() => vault.getMarkdownFiles().map((file) => cachedNote(app, file)));
   return Layer.succeed(NoteStore, {
-    list: readVault(() =>
-      recordNotes(vault.getMarkdownFiles().map((file) => cachedNote(app, file))),
-    ),
+    list: Effect.map(sources, recordNotes),
+    sources,
     read: (path) =>
       Effect.gen(function* () {
         const file = yield* readVault(() => noteFile(vault, path));

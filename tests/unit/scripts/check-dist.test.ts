@@ -78,8 +78,8 @@ describe("distribution checks", () => {
     expect(checkDist(dist, manifest, identity)).toEqual([]);
   });
 
-  it("accepts a valid product bundle above the original shell budget", () => {
-    const targetBytes = 1_550_000;
+  it("accepts a valid product bundle within the planned product budget", () => {
+    const targetBytes = 2_400_000;
     const script = bundle + "//" + "x".repeat(targetBytes - Buffer.byteLength(bundle) - 2);
     const dist = distribution({ "main.js": script });
     expect(Buffer.byteLength(script)).toBe(targetBytes);

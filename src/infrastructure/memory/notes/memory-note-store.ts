@@ -266,9 +266,11 @@ export function memoryNoteStore() {
     });
   }
 
+  const sources = readable(() => [...files.values()].filter(markdown).map(noteOf));
   return {
     layer: Layer.succeed(NoteStore, {
-      list: readable(() => recordNotes([...files.values()].filter(markdown).map(noteOf))),
+      list: Effect.map(sources, recordNotes),
+      sources,
       read,
       readFresh: read,
       readContent: (path) =>

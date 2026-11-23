@@ -239,7 +239,7 @@ it("keeps empty gate phases usable and versions only meaningful criterion edits"
   await expect(done.$$("li")).toBeElementsArrayOfSize(2);
 });
 
-it("lists the registered Knowledge templates in both administration groups", async () => {
+it("lists the Knowledge templates and restores focus after cancelling the scoped PBI template", async () => {
   const workspace = browser.$(`${ROOT} [data-testid=project-workspace]`);
   await openAdministration(first);
   const tab = workspace.$("[role=tab][data-section=templates]");
@@ -248,10 +248,31 @@ it("lists the registered Knowledge templates in both administration groups", asy
   const panel = workspace.$(`[id=${JSON.stringify(await tab.getAttribute("aria-controls"))}]`);
   await expect(panel).toHaveText(expect.stringContaining("Produktartefakte"));
   await expect(panel).toHaveText(expect.stringContaining("Konzepte"));
-  await expect(panel.$$("button[data-template]")).toBeElementsArrayOfSize(15);
+  await expect(panel.$$("button[data-template]:not([data-template=pbi])")).toBeElementsArrayOfSize(
+    15,
+  );
   await expect(panel.$("button[data-template=actor]")).toBeDisplayed();
   await expect(panel.$("button[data-template=test-concept]")).toBeDisplayed();
-  await expect(panel.$("button[data-template=pbi]")).not.toExist();
+  const pbi = panel.$("button[data-template=pbi]");
+  await expect(pbi).toBeDisplayed();
+  const markdownPaths = () =>
+    browser.executeObsidian(({ app }) =>
+      app.vault
+        .getMarkdownFiles()
+        .map(({ path }) => path)
+        .toSorted(),
+    );
+  const initialNotes = await markdownPaths();
+  await pbi.click();
+  const form = browser.$(`${ROOT} [data-testid=backlog-form]`);
+  await expect(form).toBeDisplayed();
+  await expect(form.$("select[name=state]")).toHaveValue("Backlog");
+  await expect(form.$("select[name=owner]")).toHaveValue("");
+  await form.$("input[name=title]").setValue("Nicht gespeicherter Vorlageneintrag");
+  await browser.$(`${ROOT} [data-testid=backlog-cancel]`).click();
+  await expect(form).not.toExist();
+  await expect(pbi).toBeFocused();
+  expect(await markdownPaths()).toEqual(initialNotes);
 });
 
 it("keeps a dirty draft through a second leaf's save and focuses the conflicting field", async () => {

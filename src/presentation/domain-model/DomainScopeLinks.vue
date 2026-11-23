@@ -2,6 +2,7 @@
 import UButton from "@nuxt/ui/components/Button.vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed } from "vue";
+import { backlogDomainContribution, backlogRoute } from "../../application/backlog";
 import { entityAssigned, setEntityScope } from "../../application/domain-model";
 import {
   knowledgeChanges,
@@ -10,6 +11,7 @@ import {
   projectKnowledge,
 } from "../../application/knowledge";
 import type { KnowledgeRecord } from "../../application/knowledge";
+import type { ProjectId } from "../../application/projects";
 import type { EntityScopeTarget } from "../../domain/knowledge";
 import {
   ErrorNotice,
@@ -19,56 +21,119 @@ import {
   useNavigationGuard,
   useStream,
 } from "../shell";
+import { useProjectSearchSources, useRememberWorkspaceOrigin } from "../projects";
 
-const { note, fromModel = false } = defineProps<{
-  readonly note: KnowledgeRecord;
+const {
+  note = undefined,
+  item = undefined,
+  fromModel = false,
+} = defineProps<{
+  readonly note?: KnowledgeRecord;
+  readonly item?: { readonly projectId: ProjectId; readonly id: string };
   readonly fromModel?: boolean;
 }>();
 const text = useMessages()["domain-model"];
 const index = useStream(knowledgeSnapshot, knowledgeChanges);
-const project = computed(() => projectKnowledge(note.projectId, index.value.records));
-const current = computed(() => project.value.find(({ id }) => id === note.id) ?? note);
-const isEntity = computed(() => note.kind === "entity");
+const contributors = useProjectSearchSources();
+const projectId = note?.projectId ?? item?.projectId;
+const project = computed(() => (projectId ? projectKnowledge(projectId, index.value.records) : []));
+const current = computed(() => project.value.find(({ id }) => id === note?.id) ?? note);
+const isEntity = computed(() => note?.kind === "entity");
 const heading = computed(() => (isEntity.value ? text.productScope : text.assignedEntities));
-const chooser = computed(() => (isEntity.value ? text.assignPrd : text.assignEntity));
-const prd = computed(() => ({ kind: "prd", id: note.id }) as const);
+const chooser = computed(() =>
+  isEntity.value
+    ? targets.value.some(({ target }) => target.kind === "item")
+      ? text.assignScope
+      : text.assignPrd
+    : text.assignEntity,
+);
+const source: EntityScopeTarget | undefined = item
+  ? { kind: "item", id: item.id }
+  : note && { kind: "prd", id: note.id };
+type ScopePeer = {
+  readonly id: string;
+  readonly title: string;
+  readonly displayId: string;
+  readonly target: EntityScopeTarget;
+};
+const targets = computed<readonly ScopePeer[]>(() => {
+  if (!projectId || !isEntity.value) return [];
+  const items = contributors
+    .flatMap((contribute) => contribute(projectId))
+    .flatMap((record) =>
+      record.kind === "item"
+        ? [
+            {
+              id: record.recordId,
+              title: record.title,
+              displayId: record.displayId ?? record.recordId,
+              target: { kind: "item", id: record.recordId } as const,
+            },
+          ]
+        : [],
+    );
+  const prds = project.value
+    .filter(({ kind }) => kind === "prd")
+    .map(({ id, title, displayId }) => ({
+      id,
+      title,
+      displayId,
+      target: { kind: "prd", id } as const,
+    }));
+  return [...prds, ...items];
+});
+
 type Link = {
   readonly entity: KnowledgeRecord;
   readonly target: EntityScopeTarget;
-  readonly peer?: KnowledgeRecord;
+  readonly peer?: KnowledgeRecord | ScopePeer;
 };
 
 const related = computed<readonly Link[]>(() => {
-  if (isEntity.value)
-    return (current.value.values.domain_scope ?? []).map((target) => {
-      const peer = project.value.find(({ id, kind }) => kind === target.kind && id === target.id);
-      return { target, entity: current.value, ...(peer && { peer }) };
+  const entity = current.value;
+  if (isEntity.value && entity) {
+    return (entity.values.domain_scope ?? []).map((target) => {
+      const peer = targets.value.find(
+        (candidate) => candidate.target.kind === target.kind && candidate.id === target.id,
+      );
+      return { target, entity, ...(peer && { peer }) };
     });
+  }
+  if (!source) return [];
   return project.value
-    .filter((record) => record.kind === "entity" && entityAssigned(record, prd.value))
-    .map((peer) => ({ peer, entity: peer, target: prd.value }));
+    .filter((record) => record.kind === "entity" && entityAssigned(record, source))
+    .map((peer) => ({ peer, entity: peer, target: source }));
 });
 const choices = computed(() => {
-  if (isEntity.value) {
-    if (current.value.values.domain_archived) return [];
-    return project.value.filter(
-      (record) =>
-        record.kind === "prd" && !entityAssigned(current.value, { kind: "prd", id: record.id }),
-    );
+  const entity = current.value;
+  if (isEntity.value && entity) {
+    if (entity.values.domain_archived) return [];
+    return targets.value.filter((peer) => !entityAssigned(entity, peer.target));
   }
+  if (!source) return [];
   return project.value.filter(
     (record) =>
-      record.kind === "entity" &&
-      !record.values.domain_archived &&
-      !entityAssigned(record, prd.value),
+      record.kind === "entity" && !record.values.domain_archived && !entityAssigned(record, source),
   );
 });
 const navigate = useNavigate();
-const { pending, message, run: write } = useCommand(setEntityScope);
+const rememberOrigin = useRememberWorkspaceOrigin();
+const {
+  pending,
+  message,
+  run: write,
+} = useCommand(
+  (
+    scopeProject: ProjectId,
+    entity: KnowledgeRecord["id"],
+    target: EntityScopeTarget,
+    assigned: boolean,
+  ) => setEntityScope(scopeProject, entity, target, assigned, backlogDomainContribution),
+);
 useNavigationGuard(() => !pending.value);
 
-function peerLabel(peer: KnowledgeRecord) {
-  const archived = peer.values.domain_archived ? " · " + text.archived : "";
+function peerLabel(peer: KnowledgeRecord | ScopePeer) {
+  const archived = "values" in peer && peer.values.domain_archived ? " · " + text.archived : "";
   return `${peer.title} · ${peer.displayId}${archived}`;
 }
 
@@ -76,29 +141,37 @@ function linkKey(link: Link) {
   return link.target.kind + ":" + (link.peer?.id ?? link.target.id);
 }
 
-function open(peer: KnowledgeRecord) {
-  return navigate(
-    knowledgeDetailRoute(note.projectId, peer.id, {
-      section: fromModel ? "domainmodel" : "knowledge-note",
-      reference: { kind: fromModel ? "entity" : "knowledge", recordId: note.id },
-    }),
-  );
+function open(peer: KnowledgeRecord | ScopePeer, event: MouseEvent) {
+  if (!projectId) return;
+  rememberOrigin(event.currentTarget as HTMLElement);
+  if ("target" in peer && peer.target.kind === "item")
+    return navigate(backlogRoute(projectId, peer.id));
+  const knowledge = project.value.find(({ id }) => id === peer.id);
+  if (!knowledge) return;
+  const origin = item
+    ? { section: "backlog", reference: { kind: "item", recordId: item.id } }
+    : note && {
+        section: fromModel ? "domainmodel" : "knowledge-note",
+        reference: { kind: fromModel ? "entity" : "knowledge", recordId: note.id },
+      };
+  return navigate(knowledgeDetailRoute(projectId, knowledge.id, origin));
 }
 
 const form = useForm({
   defaultValues: { peer: "" },
   async onSubmit({ value }) {
     const peer = choices.value.find(({ id }) => id === value.peer);
-    if (!peer) return;
-    const entity = isEntity.value ? note : peer;
-    const target = isEntity.value ? ({ kind: "prd", id: peer.id } as const) : prd.value;
-    const result = await write(note.projectId, entity.id, target, true);
+    if (!peer || !projectId) return;
+    const entity = "target" in peer ? note : peer;
+    const target = "target" in peer ? peer.target : source;
+    if (!entity || !target) return;
+    const result = await write(projectId, entity.id, target, true);
     if (result._tag === "success") form.reset();
   },
 });
 
 function remove(link: Link) {
-  return write(note.projectId, link.entity.id, link.target, false);
+  if (projectId) return write(projectId, link.entity.id, link.target, false);
 }
 </script>
 
@@ -121,7 +194,7 @@ function remove(link: Link) {
           class="pe:min-w-0 pe:max-w-full pe:text-start"
           :data-domain-scope-link="link.peer.id"
           :data-pe-focus-key="'domain-link-' + link.peer.id"
-          @click="open(link.peer)"
+          @click="open(link.peer, $event)"
         >
           <span class="pe:min-w-0 pe:wrap-anywhere pe:whitespace-normal">
             {{ peerLabel(link.peer) }}

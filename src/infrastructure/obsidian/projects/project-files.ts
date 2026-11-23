@@ -1,11 +1,11 @@
 import { Effect, Layer } from "effect";
 import { normalizePath, parseYaml, TFolder } from "obsidian";
-import type { Vault } from "obsidian";
+import type { App, Vault } from "obsidian";
 import { resolveFolderPath } from "../../../application/notes/adapter";
 import {
   availableProjectFolder,
   backlogBaseText,
-  backlogFilter,
+  backlogConfiguration,
   ProjectFiles,
   ProjectStorageError,
 } from "../../../application/projects";
@@ -16,7 +16,7 @@ function folderAt(vault: Vault, path: string) {
   return path === "/" ? vault.getRoot() : vault.getFolderByPath(path);
 }
 
-async function ownsBacklog(vault: Vault, path: string, projectId: ProjectId) {
+async function readBacklog(vault: Vault, path: string, projectId: ProjectId) {
   if (!vault.getAbstractFileByPath(path)) {
     const separator = path.lastIndexOf("/");
     const folder = path.slice(0, Math.max(0, separator)) || "/";
@@ -24,23 +24,22 @@ async function ownsBacklog(vault: Vault, path: string, projectId: ProjectId) {
     if (folderAt(vault, folder)?.children.some((entry) => clashKey(entry.name) === name)) {
       throw new Error("Backlog path is occupied");
     }
-    return false;
+    return;
   }
   const file = vault.getFileByPath(path);
   if (!file) throw new Error("Backlog path is occupied");
   const contents: unknown = parseYaml(await vault.read(file));
-  if (
-    typeof contents !== "object" ||
-    contents === null ||
-    !("filters" in contents) ||
-    contents.filters !== backlogFilter(projectId)
-  ) {
-    throw new Error("Backlog path is occupied");
-  }
-  return true;
+  const config = backlogConfiguration(contents, path, projectId);
+  if (!config) throw new Error("Backlog path is occupied or unsupported");
+  return config;
 }
 
-export function projectFilesLayer(vault: Vault) {
+export function projectFilesLayer(vault: Vault, workspace?: App["workspace"]) {
+  const read = (path: string, projectId: ProjectId) =>
+    Effect.tryPromise({
+      try: () => readBacklog(vault, normalizePath(path), projectId),
+      catch: () => new ProjectStorageError({ reason: "base" }),
+    });
   return Layer.succeed(ProjectFiles, {
     hasFolder: (path) => Effect.sync(() => folderAt(vault, path || "/") !== null),
     reserveFolder: (parent, name) =>
@@ -66,14 +65,21 @@ export function projectFilesLayer(vault: Vault) {
       Effect.tryPromise({
         try: async () => {
           const target = normalizePath(path);
-          if (!(await ownsBacklog(vault, target, projectId)))
+          if (!(await readBacklog(vault, target, projectId)))
             await vault.create(target, backlogBaseText(projectId));
         },
         catch: () => new ProjectStorageError({ reason: "base" }),
       }),
-    hasBacklog: (path, projectId) =>
+    hasBacklog: (path, projectId) => Effect.map(read(path, projectId), Boolean),
+    readBacklog: read,
+    openBacklog: (path) =>
       Effect.tryPromise({
-        try: () => ownsBacklog(vault, normalizePath(path), projectId),
+        try: async () => {
+          const file = vault.getFileByPath(normalizePath(path));
+          if (file?.extension.toLowerCase() !== "base" || !workspace)
+            throw new Error("Base unavailable");
+          await workspace.getLeaf("tab").openFile(file, { active: true });
+        },
         catch: () => new ProjectStorageError({ reason: "base" }),
       }),
   });

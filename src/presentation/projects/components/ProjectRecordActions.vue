@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
+import { backlogRoute } from "../../../application/backlog";
 import { domainModelRoute } from "../../../application/domain-model";
 import { openKnowledgeNote, projectKnowledgeRoute } from "../../../application/knowledge";
 import {
@@ -43,14 +44,24 @@ const destination = computed(() => {
 });
 
 function sectionOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
-  if (origin?.section === "knowledge") return projectKnowledgeRoute(projectId);
-  if (origin?.section === "domainmodel")
-    return domainModelRoute(projectId, origin.reference?.recordId);
-  if (origin?.section !== "templates") return;
-  const template = projectTemplateIds.find((id) => id === origin.reference?.recordId);
-  return template
-    ? projectTemplateReturnRoute(projectId, template)
-    : projectAdministrationRoute(projectId, "templates");
+  if (!origin) return;
+  const id = origin.reference?.recordId;
+  switch (origin.section) {
+    case "knowledge":
+      return projectKnowledgeRoute(projectId);
+    case "backlog":
+      return backlogRoute(projectId, id);
+    case "domainmodel":
+      return domainModelRoute(projectId, id);
+    case "templates": {
+      const template = projectTemplateIds.find((candidate) => candidate === id);
+      return template
+        ? projectTemplateReturnRoute(projectId, template)
+        : projectAdministrationRoute(projectId, "templates");
+    }
+    default:
+      return;
+  }
 }
 
 function leave() {

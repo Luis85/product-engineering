@@ -57,6 +57,7 @@ export const en = {
   noAssignments: "No assignments yet.",
   scopeUnavailable: "Target unavailable",
   assignPrd: "Assign a PRD",
+  assignScope: "Assign a PRD or backlog item",
   assignEntity: "Assign an entity",
   chooseScope: "Choose a record",
   assign: "Assign",

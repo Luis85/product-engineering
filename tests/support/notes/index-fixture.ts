@@ -67,7 +67,7 @@ export function indexFixture(
     NoteStore,
     Effect.map(NoteStore, (original) => ({
       ...original,
-      list: Effect.suspend(() => {
+      sources: Effect.suspend(() => {
         listScans += 1;
         const started = beforeList;
         beforeList = Effect.void;
@@ -75,7 +75,7 @@ export function indexFixture(
           started,
           Effect.suspend(() => {
             if (dieList) return Effect.die(new Error("Injected list defect"));
-            return failList ? readFailure : original.list;
+            return failList ? readFailure : original.sources;
           }),
         );
       }),

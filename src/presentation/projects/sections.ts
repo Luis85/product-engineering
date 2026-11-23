@@ -1,4 +1,5 @@
 import { domainModelRoute } from "../../application/domain-model";
+import { backlogRoute } from "../../application/backlog";
 import { projectKnowledgeRoute } from "../../application/knowledge";
 import type { Catalog } from "../../application/messages";
 import { projectAdministrationRoute, projectOverviewRoute } from "../../application/projects";
@@ -41,7 +42,9 @@ export function projectGroups(
           },
         ]
       : [],
-    planning: [],
+    planning: id
+      ? [{ label: catalog.backlog.title, route: backlogRoute(id), icon: "i-lucide-list-tree" }]
+      : [],
     delivery: [],
     administration: [
       ...(id

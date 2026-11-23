@@ -4,14 +4,22 @@ import UModal from "@nuxt/ui/components/Modal.vue";
 import { leafModalUi } from "../projects";
 import { useMessages, useModal } from "../shell";
 
-const { saving, restoreFocus } = defineProps<{
+const {
+  saving,
+  restoreFocus,
+  localEscape = false,
+} = defineProps<{
   readonly saving: boolean;
   readonly restoreFocus: () => void;
+  readonly localEscape?: boolean;
 }>();
 const open = defineModel<boolean>("open", { required: true });
 const emit = defineEmits<{ keep: []; discard: []; save: [] }>();
 const text = useMessages().knowledge.note;
-const modal = useModal(open, restoreFocus);
+function keepEditing() {
+  if (!saving) emit("keep");
+}
+const modal = useModal(open, restoreFocus, localEscape ? keepEditing : undefined);
 </script>
 
 <template>

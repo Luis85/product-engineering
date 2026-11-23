@@ -18,7 +18,11 @@ function focusMarkedControl(event: Event): void {
   target.focus();
 }
 
-export function useModal(open: Readonly<Ref<boolean>>, afterClose: () => void) {
+export function useModal(
+  open: Readonly<Ref<boolean>>,
+  afterClose: () => void,
+  closeOnEscape?: () => void,
+) {
   const count = inject(modalCount);
   if (!count) throw new Error("useModal requires a surface modal registry");
 
@@ -34,6 +38,14 @@ export function useModal(open: Readonly<Ref<boolean>>, afterClose: () => void) {
 
   return {
     "aria-modal": "true" as const,
+    ...(closeOnEscape && {
+      onKeydown(event: KeyboardEvent) {
+        if (event.key !== "Escape" || event.defaultPrevented || event.isComposing) return;
+        event.preventDefault();
+        event.stopPropagation();
+        closeOnEscape();
+      },
+    }),
     onOpenAutoFocus: focusMarkedControl,
     onCloseAutoFocus(event: Event) {
       event.preventDefault();

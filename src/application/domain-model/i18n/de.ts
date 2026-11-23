@@ -57,6 +57,7 @@ export const de = {
   noAssignments: "Noch keine Zuordnungen.",
   scopeUnavailable: "Ziel nicht verfügbar",
   assignPrd: "PRD zuordnen",
+  assignScope: "PRD oder Backlog-Eintrag zuordnen",
   assignEntity: "Entität zuordnen",
   chooseScope: "Eintrag wählen",
   assign: "Zuordnen",
