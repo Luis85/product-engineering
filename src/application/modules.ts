@@ -1,3 +1,4 @@
+import { domainModelModule } from "./domain-model";
 import { artifactGitModule } from "./git";
 import { integrationsModule } from "./integrations";
 import { itemsModule } from "./items";
@@ -13,6 +14,7 @@ export const APP_MODULES = [
   integrationsModule,
   projectsModule,
   knowledgeModule,
+  domainModelModule,
   artifactGitModule,
 ] as const;
 

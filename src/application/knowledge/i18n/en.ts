@@ -98,6 +98,7 @@ export const en = {
       owner_id: "Choose a current member of this project.",
       approval: "Choose a valid approval state.",
       references: "Check the Vault references.",
+      domain_attributes: "Give each attribute a unique name.",
     },
   },
   errors: {
@@ -110,6 +111,7 @@ export const en = {
     vision_id: "Choose a vision from this project.",
     job_ids: "Choose Jobs to Be Done from this project.",
     origin: "The source record is no longer available for this project and template.",
+    attributes: "Give each attribute a unique name.",
   },
   unassigned: "Unassigned",
   actorTypes: { human: "Human", system: "System" },

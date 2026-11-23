@@ -1,3 +1,4 @@
+import { domainModelRoute } from "../../application/domain-model";
 import { projectKnowledgeRoute } from "../../application/knowledge";
 import type { Catalog } from "../../application/messages";
 import { projectAdministrationRoute, projectOverviewRoute } from "../../application/projects";
@@ -32,6 +33,11 @@ export function projectGroups(
             label: catalog.knowledge.title,
             route: projectKnowledgeRoute(id),
             icon: "i-lucide-book-open",
+          },
+          {
+            label: catalog["domain-model"].title,
+            route: domainModelRoute(id),
+            icon: "i-lucide-network",
           },
         ]
       : [],

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
+import { domainModelRoute } from "../../../application/domain-model";
 import { openKnowledgeNote, projectKnowledgeRoute } from "../../../application/knowledge";
 import {
   PROJECT_RECORD,
@@ -41,25 +42,29 @@ const destination = computed(() => {
   return resolved?.route;
 });
 
+function sectionOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
+  if (origin?.section === "knowledge") return projectKnowledgeRoute(projectId);
+  if (origin?.section === "domainmodel")
+    return domainModelRoute(projectId, origin.reference?.recordId);
+  if (origin?.section !== "templates") return;
+  const template = projectTemplateIds.find((id) => id === origin.reference?.recordId);
+  return template
+    ? projectTemplateReturnRoute(projectId, template)
+    : projectAdministrationRoute(projectId, "templates");
+}
+
 function leave() {
   const { projectId, reference } = record;
-  const { section, reference: previous } = record.origin ?? {};
-  if (section === "knowledge") return navigate(projectKnowledgeRoute(projectId));
-  if (section === "templates") {
-    const template = projectTemplateIds.find((id) => id === previous?.recordId);
-    return navigate(
-      template
-        ? projectTemplateReturnRoute(projectId, template)
-        : projectAdministrationRoute(projectId, "templates"),
-    );
-  }
+  const section = sectionOrigin(projectId, record.origin);
+  if (section) return navigate(section);
+  const { section: previousSection, reference: previous } = record.origin ?? {};
   if (previous && !sameReference(reference, previous)) {
     const last = history.value.back.at(-1);
     if (returnsTo(last, projectId, previous)) return back();
     return navigate(projectRecordRoute({ projectId, ...previous }));
   }
   return navigate(
-    section === "administration"
+    previousSection === "administration"
       ? projectAdministrationRoute(projectId)
       : projectOverviewRoute(projectId),
   );

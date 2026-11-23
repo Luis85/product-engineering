@@ -1,5 +1,6 @@
 import { inject, nextTick, onScopeDispose, provide } from "vue";
 import type { InjectionKey, Ref } from "vue";
+import { PROJECT_DOMAIN_MODEL } from "../../application/domain-model";
 import { HISTORY_LIMIT } from "../../application/shell";
 import type { Route } from "../../application/routes";
 import { useRouting } from "../shell";
@@ -53,6 +54,15 @@ function restoreScroll(workspace: HTMLElement, target: Position | undefined) {
   const scroll = scrollOwner(workspace);
   scroll.scrollLeft = target?.left ?? 0;
   scroll.scrollTop = target?.top ?? 0;
+}
+
+function keepsWorkspacePosition(previous: Route, next: Route) {
+  if (previous.name === "settings") return next.name === "settings";
+  return (
+    previous.name === PROJECT_DOMAIN_MODEL &&
+    next.name === PROJECT_DOMAIN_MODEL &&
+    previous.projectId === next.projectId
+  );
 }
 
 export function useWorkspacePosition(
@@ -117,7 +127,7 @@ export function useWorkspacePosition(
       if (positions.length > HISTORY_LIMIT) positions.shift();
       origin = undefined;
       restoredControl = undefined;
-      const sectionChange = previous.name === "settings" && route.name === "settings";
+      const sectionChange = keepsWorkspacePosition(previous, route);
       previous = route;
       if (sectionChange) return;
       void nextTick(() => {

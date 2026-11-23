@@ -6,16 +6,17 @@ import { projectChanges, projectMembers, projectSnapshot } from "../../applicati
 import { useMessages, useStream } from "../shell";
 import KnowledgeNoteActions from "./KnowledgeNoteActions.vue";
 
-const { title, note, gitStatus } = defineProps<{
+const { title, note, gitStatus, persistedApproval } = defineProps<{
   readonly gitStatus: string;
   readonly title: string;
   readonly note: KnowledgeNote | undefined;
+  readonly persistedApproval: KnowledgeNote["values"]["approval"];
 }>();
 const emit = defineEmits<{ edit: []; history: [] }>();
 const text = useMessages().knowledge;
 const projects = useStream(projectSnapshot, projectChanges);
 const approval = computed(() =>
-  note?.values.approval ? text.approvals[note.values.approval] : text.note.noApproval,
+  persistedApproval ? text.approvals[persistedApproval] : text.note.noApproval,
 );
 const assignment = computed(() => {
   const owner = note?.values.owner_id;

@@ -9,11 +9,12 @@ import { approvals } from "../../domain/knowledge";
 import { useMessages, useQuery, useStream } from "../shell";
 import KnowledgeSelect from "./KnowledgeSelect.vue";
 
-const { note, saving, invalid, fields } = defineProps<{
+const { note, saving, invalid, fields, persistedApproval } = defineProps<{
   readonly note: KnowledgeNote;
   readonly saving: boolean;
   readonly invalid: string | undefined;
   readonly fields: KnowledgeEditFields;
+  readonly persistedApproval: KnowledgeNote["values"]["approval"];
 }>();
 const emit = defineEmits<{ change: [patch: KnowledgeEditFields] }>();
 const text = useMessages().knowledge;
@@ -37,16 +38,13 @@ const approvalOptions = approvals.map((value) => ({ value, label: text.approvals
 function current() {
   return {
     title: fields.title ?? note.title,
-    approval: (Object.hasOwn(fields, "approval") ? fields.approval : note.values.approval) ?? "",
+    approval: (Object.hasOwn(fields, "approval") ? fields.approval : persistedApproval) ?? "",
     owner_id: (Object.hasOwn(fields, "owner_id") ? fields.owner_id : note.values.owner_id) ?? "",
   };
 }
 const form = useForm({ defaultValues: current() });
 const values = form.useStore((state) => state.values);
-watch(
-  () => note.text,
-  () => form.reset(current()),
-);
+watch([() => note.text, () => persistedApproval], () => form.reset(current()));
 
 function updateTitle(title: string) {
   form.setFieldValue("title", title);

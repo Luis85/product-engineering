@@ -57,6 +57,7 @@ export const number = fieldKind(Schema.Finite, "field.number");
 export const checkbox = fieldKind(Schema.Boolean, "field.checkbox");
 export const date = fieldKind(Schema.String.check(Schema.makeFilter(isCalendarDate)), "field.date");
 export const list = fieldKind(Schema.Array(Schema.String), "field.list");
+export const recordList = fieldKind(Schema.Array(Schema.Unknown), "field.list");
 
 export function isControlCharacter(value: string): boolean {
   return /\p{Cc}/u.test(value);

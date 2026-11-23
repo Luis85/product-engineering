@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Result, Semaphore } from "effect";
-import { isKnowledgeId, knowledgeType } from "../../domain/knowledge";
-import type { KnowledgeId } from "../../domain/knowledge";
+import { checkedEntityAttributes, isKnowledgeId, knowledgeType } from "../../domain/knowledge";
+import type { EntityAttribute, KnowledgeId } from "../../domain/knowledge";
 import { fitsFileName, recordFileName, recordId } from "../../domain/notes";
 import { isProjectMemberId } from "../../domain/projects";
 import { IdGenerator, NoteStore, recordFrontmatter } from "../notes";
@@ -24,6 +24,10 @@ export type KnowledgeDraft = {
   readonly owner_id: string;
   readonly vision_id: string;
   readonly job_ids: readonly string[];
+  readonly entity?: {
+    readonly definition: string;
+    readonly attributes: readonly EntityAttribute[];
+  };
 };
 
 export type CreateKnowledgeRequest = {
@@ -123,6 +127,29 @@ function noteName(title: string, displayId: string) {
   return /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name) ? displayId : name;
 }
 
+function currentKnowledgeNotes(current: readonly Note[], recent: Map<KnowledgeId, Note>) {
+  // Obsidian registers a created file in the index after its metadata callback.
+  for (const note of current) {
+    const id = note.frontmatter.id;
+    if (isKnowledgeId(id)) recent.delete(id);
+  }
+  return [...current, ...recent.values()];
+}
+
+function draftContent(kind: KnowledgeKind, draft: KnowledgeDraft, requirementId?: string) {
+  return Effect.gen(function* () {
+    if (kind === "entity" && draft.entity) {
+      const attributes = checkedEntityAttributes(draft.entity.attributes);
+      if (Result.isFailure(attributes)) {
+        return yield* new KnowledgeCreateError({ reason: "attributes" });
+      }
+      return { body: draft.entity.definition, fields: { domain_attributes: attributes.success } };
+    }
+    const { knowledge } = yield* Messages;
+    return { body: knowledgeTemplateBody(knowledge.headings, kind, requirementId), fields: {} };
+  });
+}
+
 function createInProject(
   request: CreateKnowledgeRequest,
   draft: KnowledgeDraft,
@@ -135,12 +162,7 @@ function createInProject(
     const owner = yield* checkedOwner(projectId, draft.owner_id);
     const store = yield* NoteStore;
     const current = yield* store.list;
-    // Obsidian registers a created file in the index after its metadata callback.
-    for (const note of current) {
-      const knownId = note.frontmatter.id;
-      if (isKnowledgeId(knownId)) recent.delete(knownId);
-    }
-    const notes = [...current, ...recent.values()];
+    const notes = currentKnowledgeNotes(current, recent);
     const source = yield* verifyKnowledgeOrigin(projectId, kind, origin, notes);
     const prior = yield* existingNote(notes, request);
     if (prior) return prior;
@@ -152,7 +174,7 @@ function createInProject(
           ])
         : undefined;
     const { displayId, requirementId } = allocateShortIds(notes, projectId, kind);
-    const { knowledge } = yield* Messages;
+    const { body, fields } = yield* draftContent(kind, draft, requirementId);
     const note = yield* store.create({
       folder: project.folder,
       name: noteName(title, displayId),
@@ -165,10 +187,11 @@ function createInProject(
         owner_id: owner,
         actor_type: actor,
         requirement_id: requirementId,
+        ...fields,
         ...source,
         ...foundations,
       }),
-      body: knowledgeTemplateBody(knowledge.headings, kind, requirementId),
+      body,
     });
     recent.set(id, note);
     return note;

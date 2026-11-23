@@ -15,6 +15,11 @@
 | `job_ids` | Stable Knowledge IDs of Jobs to Be Done |
 | `deliverable_id` | Optional stable ID provided by the deliverables owner |
 | `references` | Additional Vault references as wikilinks. New references use the selected file's Vault path. These remain separate from links and embeds in the body. |
+| `domain_attributes` | Entity attribute mappings with `name` and `description`. The entity definition is the note's Markdown body. |
+| `domain_edges` | Outgoing entity relationships. Each mapping has a stable `id` with the `REL-` prefix, the target's Knowledge ID, a `verb`, `sourceCardinality`, `targetCardinality` and optional `rule`. |
+| `domain_retired_edges` | IDs retired by deleting a relationship, recorded on its last source. |
+| `domain_archived` | An entity archived from the model retains its Knowledge note, identity, and relationships. |
+| `domain_scope` | Direct assignments from an entity. Each mapping has a typed `kind` (`prd`, `item`, or `map`) and the target's stable `id`. |
 
 The PRD persists its chosen foundations. A note derived from a job or a vision persists the validated origin among its relationship fields. Derive reciprocal links from the index. The deliverables owner supplies a `KnowledgeDeliverableOrigins` service to resolve the exact project and stable ID at submit.
 
@@ -27,3 +32,5 @@ Application entry: [Knowledge module](../../src/application/knowledge/index.ts).
 The Knowledge screen manifest contributes the `knowledge` project record screen. Creation uses `KnowledgeCreateDialog` with a typed `KnowledgeOrigin`. Its leaf-local handoff opens the created note by its normal route and focuses the Markdown buffer. `KnowledgeRelatedNotes` joins the scoped note index to show direct sources and derived notes. The **References** view resolves explicit references against the current note path and displays inline links and Vault backlinks separately. **Git History** resolves the saved project record and reads its exact working bytes, native history and selected commit parent through the project Git port.
 
 [Artifact Git](../../src/application/git/index.ts) exposes `inspectArtifactGit`, `compareArtifactGit`, `readArtifactRevision` and `commitArtifactGit`. Knowledge supplies its canonical project record through `knowledgeGitSource`. A caller with another record type provides the same `GitArtifactSource` from its own record resolver. The adapter discovers the worktree from the desktop Vault file. Project repository and branch settings identify the delivery destination. The explicit note commit operates against the checked-out local revision and the reviewed bytes. `readArtifactRevision` returns the historical repository-relative path and exact blob bytes for the requested full commit ID.
+
+[Domain model](../../src/application/domain-model/index.ts) derives incoming edges and reciprocal assignments from Knowledge. `saveDomainEdge(projectId, draft, base?)` keeps the relationship ID on edits and source changes. A source change stages the replacement with the original Knowledge ID in `movedFrom`. While both copies exist, the original remains authoritative. A retry completes the transfer using that same ID. `setEntityScope(projectId, entityId, target, assigned)` is the assignment writer for both ends. `resolveDomainScope(projectId, targets, contribute?)` reads active entities, assignment provenance, incident relationships, and minimal immediate neighbors. V07/V08 and V13 supply their verified item and map scope through `DomainScopeContributor`. V16 and V18 consume the same result.

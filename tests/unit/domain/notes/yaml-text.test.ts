@@ -62,7 +62,7 @@ it("rejects nested values and explicit undefined entries", () => {
   for (const value of [
     undefined,
     { nested: true },
-    [{ nested: true }],
+    [{ nested: { deeper: true } }],
     [["nested"]],
     [undefined],
   ]) {

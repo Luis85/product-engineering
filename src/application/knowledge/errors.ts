@@ -13,11 +13,12 @@ export class KnowledgeCreateError extends Schema.TaggedError<KnowledgeCreateErro
       "vision_id",
       "job_ids",
       "origin",
+      "attributes",
     ]),
   },
 ) {}
 
 export class KnowledgeEditError extends Schema.TaggedError<KnowledgeEditError>()(
   "KnowledgeEditError",
-  { reason: Schema.Literals(["title", "approval", "owner_id", "references"]) },
+  { reason: Schema.Literals(["title", "approval", "owner_id", "references", "domain_attributes"]) },
 ) {}

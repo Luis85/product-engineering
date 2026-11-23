@@ -116,6 +116,7 @@
           "application/integrations",
           "application/projects",
           "application/knowledge",
+          "application/domain-model",
           "application/git",
           "application-module",
           "application-composition"
@@ -207,6 +208,7 @@
           "presentation/integrations",
           "presentation/projects",
           "presentation/knowledge",
+          "presentation/domain-model",
           "presentation/git",
           "presentation/shell",
           "application",
@@ -241,6 +243,7 @@
           "presentation/integrations",
           "presentation/projects",
           "presentation/knowledge",
+          "presentation/domain-model",
           "presentation/git",
           "application",
           "application-composition",

@@ -1,17 +1,14 @@
 import { Schema } from "effect";
-import { defineNoteType, lineOfText, list, recordIdIssue, required, text } from "../notes";
+import { defineNoteType, lineOfText, list, required, text } from "../notes";
 import type { NoteValues } from "../notes";
 import { projectIdSchema, projectMemberIdSchema } from "../projects";
+import { entityFields } from "./entity";
+import { knowledgeId } from "./identity";
 
 export const actorTypes = ["human", "system"] as const;
 export const approvals = ["draft", "in-review", "approved", "changes-requested"] as const;
 export const TITLE_MAX_LENGTH = 160;
 
-const knowledgeId = Schema.TemplateLiteral(["knowledge-", Schema.String]).check(
-  Schema.makeFilter((id) => recordIdIssue("knowledge", id) === undefined),
-);
-export const isKnowledgeId = Schema.is(knowledgeId);
-export type KnowledgeId = typeof knowledgeId.Type;
 export type ActorType = (typeof actorTypes)[number];
 
 export const knowledgeType = defineNoteType({
@@ -30,6 +27,7 @@ export const knowledgeType = defineNoteType({
     job_ids: list({ schema: Schema.Array(knowledgeId), issue: "job.invalid" }),
     deliverable_id: text({ schema: lineOfText(160), issue: "deliverable.invalid" }),
     references: list({ schema: Schema.Array(lineOfText(1024)), issue: "reference.invalid" }),
+    ...entityFields,
   },
   migrations: {},
 });

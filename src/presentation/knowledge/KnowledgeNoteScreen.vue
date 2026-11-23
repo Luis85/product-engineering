@@ -9,6 +9,7 @@ import type {
 } from "../../application/projects";
 import type { Route } from "../../application/routes";
 import { useRestoreWorkspacePosition } from "../projects";
+import { DomainKnowledgeContribution } from "../domain-model";
 import { useMessages, useNavigationGuard } from "../shell";
 import KnowledgeDraftStatus from "./KnowledgeDraftStatus.vue";
 import KnowledgeLeaveDialog from "./KnowledgeLeaveDialog.vue";
@@ -41,6 +42,7 @@ watch(
 const path = computed(() => resolved?.notePath ?? handoff.value);
 const {
   note,
+  persistedApproval,
   markdown,
   fields,
   dirty,
@@ -65,6 +67,7 @@ const references = computed(() => fields.value.references ?? note.value?.values.
 const canEditReferences = computed(() => Boolean(note.value?.editable) && !saving.value);
 const canDerive = computed(() => !dirty.value && !saving.value);
 const showSave = computed(() => pane.value === "editing" || dirty.value);
+const hasDomain = computed(() => note.value?.kind === "entity" || note.value?.kind === "prd");
 const git = useArtifactGit(() => knowledgeGitSource(record));
 let gitTrigger: HTMLElement | undefined;
 
@@ -166,6 +169,7 @@ if (autofocusDraft) {
     <KnowledgeNoteHeader
       :title="title"
       :note="note"
+      :persisted-approval="persistedApproval"
       :git-status="git.status.value"
       @edit="edit"
       @history="showWorkingChanges"
@@ -176,6 +180,7 @@ if (autofocusDraft) {
         <KnowledgeNoteMetadata
           :fields="fields"
           :note="note"
+          :persisted-approval="persistedApproval"
           :saving="saving"
           :invalid="invalidField"
           @change="(patch) => (fields = { ...fields, ...patch })"
@@ -214,6 +219,7 @@ if (autofocusDraft) {
         @commit="openGitCommit"
         @save-and-commit="saveThenCommit"
       />
+      <DomainKnowledgeContribution v-if="hasDomain" :note="note" />
       <KnowledgeRelatedNotes :note="note" :can-create="canDerive" />
     </template>
     <p v-else-if="loading" role="status">{{ text.loading }}</p>

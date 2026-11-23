@@ -1,3 +1,5 @@
+import { isPlainRecord } from "../shell";
+
 const date = /^\d{4}-\d{2}-\d{2}$/;
 const plain = /^[\p{L}_/][\p{L}\p{M}\p{N}_ .@/+()'-]*$/u;
 const legacyLiteral = /^(?:y|n|yes|no|on|off|true|false|null|e[+-]?\d+)$/i;
@@ -29,6 +31,14 @@ function yamlScalar(value: unknown): string {
   throw new TypeError("Unsupported frontmatter value");
 }
 
+function yamlValue(value: unknown): string {
+  if (!isPlainRecord(value)) return yamlScalar(value);
+  const entries = Object.entries(value).map(
+    ([key, item]) => `${yamlString(key)}: ${yamlScalar(item)}`,
+  );
+  return "{" + entries.join(", ") + "}";
+}
+
 export function yamlEntry(
   key: string,
   value: unknown,
@@ -40,11 +50,11 @@ export function yamlEntry(
       yamlString(key) +
       ":" +
       eol +
-      Array.from(value, (item: unknown) => "  - " + yamlScalar(item) + eol).join("")
+      Array.from(value, (item: unknown) => "  - " + yamlValue(item) + eol).join("")
     );
   }
   const text = Array.isArray(value)
-    ? "[" + Array.from(value, yamlScalar).join(", ") + "]"
+    ? "[" + Array.from(value, yamlValue).join(", ") + "]"
     : yamlScalar(value);
   return yamlString(key) + ": " + text + eol;
 }

@@ -30,6 +30,7 @@ export function useKnowledgeDraft(
   const writer = useCommand(saveKnowledgeNote);
   const modified = useStream(knowledgeBodySnapshot, knowledgeBodyChanges);
   const note = shallowRef<KnowledgeNote>();
+  const persistedApproval = ref<KnowledgeNote["values"]["approval"]>();
   const markdown = ref("");
   const fields = shallowRef<KnowledgeEditFields>({});
   const conflict = ref(false);
@@ -52,6 +53,7 @@ export function useKnowledgeDraft(
 
   function adopt(current: KnowledgeNote) {
     note.value = current;
+    persistedApproval.value = current.values.approval;
     markdown.value = editorText(current.body);
     fields.value = {};
     conflict.value = false;
@@ -74,6 +76,7 @@ export function useKnowledgeDraft(
   function checkOutsideChanges(base: KnowledgeNote, current: KnowledgeNote) {
     // A rename changes the resolution base without changing the record version.
     note.value = { ...base, path: current.path };
+    persistedApproval.value = current.values.approval;
     const competingBody =
       bodyDirty.value && current.body !== base.body && editorText(current.body) !== markdown.value;
     conflict.value = competingBody || fieldsConflict(base, current, changedFields.value);
@@ -85,7 +88,10 @@ export function useKnowledgeDraft(
       if (path) void refresh();
       else if (previous) {
         if (dirty.value) conflict.value = true;
-        else note.value = undefined;
+        else {
+          note.value = undefined;
+          persistedApproval.value = undefined;
+        }
       }
     },
     { immediate: true },
@@ -125,6 +131,7 @@ export function useKnowledgeDraft(
 
   return {
     note,
+    persistedApproval,
     markdown,
     fields,
     dirty,

@@ -1,6 +1,6 @@
 export { defineNoteType } from "./codec";
 export { markDuplicateIds } from "./duplicates";
-export { checkbox, date, lineOfText, list, number, required, text } from "./fields";
+export { checkbox, date, lineOfText, list, number, recordList, required, text } from "./fields";
 export type { CoreFieldIssue } from "./fields";
 export { fitsFileName, followsTitle, MAX_FILE_NAME_BYTES, recordFileName } from "./file-name";
 export { editedValues, trimmedValues } from "./form";

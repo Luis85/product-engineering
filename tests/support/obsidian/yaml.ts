@@ -2,7 +2,8 @@ import type { Pos } from "obsidian";
 import { parse, stringify } from "yaml";
 
 type Scalar = string | number | boolean | null;
-type YamlValue = Scalar | readonly Scalar[];
+type ScalarMap = Record<string, Scalar>;
+type YamlValue = Scalar | readonly (Scalar | ScalarMap)[];
 export type YamlMap = Record<string, YamlValue>;
 
 export class YAMLParseError extends Error {
@@ -22,7 +23,19 @@ function scalar(value: unknown): value is Scalar {
 }
 
 function yamlValue(value: unknown): value is YamlValue {
-  return scalar(value) || (Array.isArray(value) && value.every(scalar));
+  return (
+    scalar(value) ||
+    (Array.isArray(value) && value.every((item) => scalar(item) || scalarMap(item)))
+  );
+}
+
+function scalarMap(value: unknown): value is ScalarMap {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.values(value).every(scalar)
+  );
 }
 
 export function yamlMap(input: unknown): YamlMap | undefined {

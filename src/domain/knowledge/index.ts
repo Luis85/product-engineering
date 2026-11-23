@@ -1,4 +1,8 @@
-export { actorTypes, approvals, isKnowledgeId, knowledgeType, TITLE_MAX_LENGTH } from "./note-type";
-export type { ActorType, KnowledgeId, KnowledgeValues } from "./note-type";
+export { actorTypes, approvals, knowledgeType, TITLE_MAX_LENGTH } from "./note-type";
+export type { ActorType, KnowledgeValues } from "./note-type";
+export { isKnowledgeId } from "./identity";
+export type { KnowledgeId } from "./identity";
+export { cardinalities, checkedEntityAttributes } from "./entity";
+export type { Cardinality, EntityAttribute, EntityEdge, EntityScopeTarget } from "./entity";
 export { knowledgeExcerpt } from "./excerpt";
 export { markdownWebTarget } from "./web-link";

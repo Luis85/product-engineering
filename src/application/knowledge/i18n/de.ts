@@ -99,6 +99,7 @@ export const de: typeof en = {
       owner_id: "Wähle ein aktuelles Mitglied dieses Projekts.",
       approval: "Wähle einen gültigen Freigabestatus.",
       references: "Prüfe die Vault-Verweise.",
+      domain_attributes: "Gib jedem Attribut einen eindeutigen Namen.",
     },
   },
   errors: {
@@ -111,6 +112,7 @@ export const de: typeof en = {
     vision_id: "Wähle eine Vision aus diesem Projekt.",
     job_ids: "Wähle Jobs to Be Done aus diesem Projekt.",
     origin: "Die Quelle steht für dieses Projekt und diese Vorlage nicht mehr zur Verfügung.",
+    attributes: "Gib jedem Attribut einen eindeutigen Namen.",
   },
   unassigned: "Nicht zugewiesen",
   actorTypes: { human: "Mensch", system: "System" },
