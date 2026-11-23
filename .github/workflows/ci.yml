@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - name: Upload verification reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports
+          path: |
+            reports/junit.xml
+            reports/coverage/cobertura-coverage.xml
+      - name: Upload plugin
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: plugin
+          path: dist/
+          if-no-files-found: error
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: npm
+      - run: npm ci
+      - name: Resolve Obsidian versions
+        run: |
+          node --import tsx tests/e2e/wdio.conf.mts | grep '^obsidian-cache-key:' > obsidian-versions-lock.txt
+          rm -rf -- .obsidian-cache
+      - name: Cache Obsidian downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .obsidian-cache
+          key: obsidian-cache-${{ runner.os }}-${{ hashFiles('obsidian-versions-lock.txt') }}
+      - name: Start the virtual display
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -q -y herbstluftwm xvfb x11-utils
+          export DISPLAY=:99
+          Xvfb "$DISPLAY" -screen 0 1280x1024x24 +extension GLX -noreset > /tmp/product-engineering-xvfb.log 2>&1 &
+          for _ in {1..20}; do
+            if xdpyinfo -display "$DISPLAY" > /dev/null 2>&1; then
+              break
+            fi
+            sleep 0.25
+          done
+          xdpyinfo -display "$DISPLAY" > /dev/null
+          herbstluftwm > /tmp/product-engineering-window-manager.log 2>&1 &
+          printf 'DISPLAY=%s\n' "$DISPLAY" >> "$GITHUB_ENV"
+      - run: npm run test:e2e
+        env:
+          WDIO_MAX_INSTANCES: "2"
+      - name: Upload Obsidian test reports
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-reports
+          path: reports/e2e/
+
+  scanner-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: npm
+      - run: npm ci
+      - name: Preview the community scanner
+        id: scanner
+        continue-on-error: true
+        run: npm run lint:scanner
+      - name: Annotate scanner findings
+        if: ${{ steps.scanner.outcome == 'failure' }}
+        run: echo "::warning::The community scanner preview reported findings. Review the scanner output."

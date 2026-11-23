@@ -1,0 +1,117 @@
+name: Nightly mutation
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Evaluate every mutant again
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: npm
+      - run: npm ci
+      - name: Restore inner mutation results
+        id: mutation-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-incremental.json
+          key: nightly-inner-${{ runner.os }}-${{ hashFiles('configs/stryker.config.mjs', 'configs/vitest.stryker.config.ts', 'configs/vitest.config.ts', 'package-lock.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            nightly-inner-${{ runner.os }}-${{ hashFiles('configs/stryker.config.mjs', 'configs/vitest.stryker.config.ts', 'configs/vitest.config.ts', 'package-lock.json') }}-
+      - if: ${{ !inputs.full }}
+        run: npm run test:mutation
+      - if: ${{ inputs.full }}
+        run: npm run test:mutation:full
+      - name: Save inner mutation results
+        if: ${{ !cancelled() && hashFiles('reports/stryker-incremental.json') != '' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-incremental.json
+          key: ${{ steps.mutation-cache.outputs.cache-primary-key }}
+      - name: Upload inner mutation reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation
+          path: reports/mutation/
+
+  mutation-edge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: npm
+      - run: npm ci
+      - name: Restore edge mutation results
+        id: mutation-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-edge-incremental.json
+          key: nightly-edge-${{ runner.os }}-${{ hashFiles('configs/stryker.edge.config.mjs', 'configs/stryker.config.mjs', 'configs/vitest.stryker.edge.config.ts', 'configs/vitest.config.ts', 'package-lock.json') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            nightly-edge-${{ runner.os }}-${{ hashFiles('configs/stryker.edge.config.mjs', 'configs/stryker.config.mjs', 'configs/vitest.stryker.edge.config.ts', 'configs/vitest.config.ts', 'package-lock.json') }}-
+      - run: npm run test:mutation:edge -- ${FORCE:+"$FORCE"}
+        env:
+          FORCE: ${{ inputs.full && '--force' || '' }}
+      - name: Save edge mutation results
+        if: ${{ !cancelled() && hashFiles('reports/stryker-edge-incremental.json') != '' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker-edge-incremental.json
+          key: ${{ steps.mutation-cache.outputs.cache-primary-key }}
+      - name: Upload edge mutation reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-edge
+          path: reports/mutation-edge/
+
+  report-failure:
+    needs: [mutation, mutation-edge]
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title='Nightly mutation run failed'
+          body="Mutation workflow failed. $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          issue=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
+            --jq 'map(select(.title == "Nightly mutation run failed")) | .[0].number // empty')
+          if [[ -n "$issue" ]]; then
+            gh issue comment "$issue" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

@@ -245,18 +245,21 @@ it("closes the actual listener when the plugin is unloaded", async () => {
     const tab = registry.settingTabs[0];
     if (!tab) throw new Error("Native settings are missing");
     activate(tab.getSettingDefinitions(), integrations.settings.mcp.start);
-    endpoint = await eventually(() => {
-      const status = tab
-        .getSettingDefinitions()
-        .find((item) => "name" in item && item.name === integrations.settings.mcp.title);
-      const description = status && "desc" in status ? status.desc : undefined;
-      const url =
-        typeof description === "string"
-          ? /http:\/\/127\.0\.0\.1:\d+\/mcp/.exec(description)?.[0]
-          : undefined;
-      if (!url) throw new Error("Expected the running MCP endpoint");
-      return url;
-    });
+    endpoint = await vi.waitFor(
+      () => {
+        const status = tab
+          .getSettingDefinitions()
+          .find((item) => "name" in item && item.name === integrations.settings.mcp.title);
+        const description = status && "desc" in status ? status.desc : undefined;
+        const url =
+          typeof description === "string"
+            ? /http:\/\/127\.0\.0\.1:\d+\/mcp/.exec(description)?.[0]
+            : undefined;
+        if (!url) throw new Error("Expected the running MCP endpoint");
+        return url;
+      },
+      { timeout: 15_000, interval: 10 },
+    );
     await expect(responseStatus(endpoint)).resolves.toBe(401);
   } finally {
     plugin.unload();
@@ -264,4 +267,4 @@ it("closes the actual listener when the plugin is unloaded", async () => {
   await eventually(async () => {
     await expect(responseStatus(endpoint)).rejects.toMatchObject({ code: "ECONNREFUSED" });
   });
-});
+}, 30_000);

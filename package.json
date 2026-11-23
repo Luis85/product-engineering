@@ -12,6 +12,7 @@
     "typecheck": "vue-tsc -p configs/tsconfig.app.json && vue-tsc -p configs/tsconfig.node.json && tsc -p tests/e2e/tsconfig.json",
     "lint:ox": "oxlint --deny-warnings",
     "lint:es": "eslint --max-warnings 0 .",
+    "lint:scanner": "eslint --config configs/eslint.scanner.config.mjs .",
     "lint": "npm run lint:ox && npm run lint:es",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
