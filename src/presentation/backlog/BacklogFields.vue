@@ -7,7 +7,7 @@ import type { BacklogKind } from "../../domain/backlog";
 import { useMessages } from "../shell";
 import BacklogParentFields from "./BacklogParentFields.vue";
 
-const { kind, items, base, members, disabled, creating, fixedParent } = defineProps<{
+const { kind, items, base, members, disabled, creating, fixedParent, lockState } = defineProps<{
   readonly kind: BacklogKind;
   readonly items: readonly BacklogItem[];
   readonly base: BacklogBase;
@@ -15,6 +15,7 @@ const { kind, items, base, members, disabled, creating, fixedParent } = definePr
   readonly disabled: boolean;
   readonly creating: boolean;
   readonly fixedParent: boolean;
+  readonly lockState?: boolean;
 }>();
 const title = defineModel<string>("title", { required: true });
 const parent = defineModel<string>("parent", { required: true });
@@ -36,7 +37,14 @@ const externalOwner = computed(() =>
   <fieldset :disabled="disabled" class="pe-backlog-fields">
     <label class="pe-backlog-title">
       {{ text.titleField }}
-      <input v-model="title" name="title" type="text" data-autofocus required maxlength="160" />
+      <input
+        v-model="title"
+        name="title"
+        type="text"
+        :data-autofocus="disabled ? undefined : ''"
+        required
+        maxlength="160"
+      />
     </label>
     <BacklogParentFields
       v-if="!fixedParent"
@@ -60,7 +68,7 @@ const externalOwner = computed(() =>
     </label>
     <label>
       {{ text.status }}
-      <select v-model="state" name="state">
+      <select v-model="state" name="state" :disabled="lockState">
         <option value="">{{ text.unset }}</option>
         <option v-for="option in setOf(base.states, state)" :key="option" :value="option">
           {{ option }}

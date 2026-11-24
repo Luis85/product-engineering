@@ -24,6 +24,8 @@ const {
   level,
   path,
   fixedParent,
+  frozen,
+  lockState,
 } = defineProps<{
   readonly id: string;
   readonly kind: BacklogKind;
@@ -38,6 +40,8 @@ const {
   readonly level: BacklogKind | "";
   readonly path: string;
   readonly fixedParent: boolean;
+  readonly frozen: boolean;
+  readonly lockState: boolean;
 }>();
 const emit = defineEmits<{ field: [keyof EditorDraft, string]; submit: [] }>();
 const editing = defineModel<boolean>("editing", { required: true });
@@ -65,8 +69,9 @@ async function showDescriptionEditor() {
       :base="base"
       :members="members"
       :creating="creating"
-      :disabled="busy"
+      :disabled="busy || frozen"
       :fixed-parent="fixedParent"
+      :lock-state="lockState"
       :title="draft.title"
       :parent="draft.parent"
       :state="draft.state"
@@ -84,6 +89,7 @@ async function showDescriptionEditor() {
       @update:epic-title="emit('field', 'epicTitle', $event)"
       @update:feature-title="emit('field', 'featureTitle', $event)"
     />
+    <slot name="creation-fields" />
     <p v-if="invalidTitle" role="alert">
       {{ text.errors.title }}
     </p>
@@ -100,7 +106,7 @@ async function showDescriptionEditor() {
       <div class="pe-backlog-actions">
         <h3 class="pe:text-sm pe:font-semibold">{{ text.notes }}</h3>
         <UButton
-          v-if="!editing"
+          v-if="!editing && !frozen"
           type="button"
           variant="ghost"
           color="neutral"
@@ -116,7 +122,7 @@ async function showDescriptionEditor() {
         :model-value="draft.body"
         :path="path"
         :accessible-label="text.notes"
-        :saving="busy"
+        :saving="busy || frozen"
         @update:model-value="emit('field', 'body', $event)"
       />
       <KnowledgeMarkdown v-else-if="draft.body" :body="draft.body" :path="path" />

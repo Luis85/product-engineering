@@ -5,6 +5,7 @@ import type { BacklogItem } from "../backlog";
 import type { ProjectId } from "../projects";
 import { StoryMapError } from "./errors";
 import type { StoryMapRecord } from "./records";
+import { hasPendingStoryCreation, inStorySlice, isStorySliceDeferred } from "./slice-placement";
 import { freshStoryMap, withStoryMapWrite, writeStoryMap } from "./write";
 
 export function isCanonicalStoryItem(
@@ -68,12 +69,26 @@ export function storyMapLinkRows(map: StoryMapRecord) {
   return Array.isArray(rows) ? (rows as readonly unknown[]) : [];
 }
 
-export function setStoryMapItemLink(base: StoryMapRecord, link: StoryMapCardLink, linked: boolean) {
+function canChangeLink(map: StoryMapRecord, cardId: string, linked: boolean, sliceId?: string) {
+  if (linked && hasPendingStoryCreation(map, cardId)) return false;
+  if (sliceId === undefined) return cardExists(map, cardId);
+  const target = { cardId, sliceId };
+  return inStorySlice(map, target) && (!linked || !isStorySliceDeferred(map, target));
+}
+
+export function setStoryMapItemLink(
+  base: StoryMapRecord,
+  link: StoryMapCardLink,
+  linked: boolean,
+  sliceId?: string,
+) {
   return withStoryMapWrite(
     Effect.gen(function* () {
       const current = yield* freshStoryMap(base);
-      if ((link.projectId !== current.projectId && linked) || !cardExists(current, link.cardId))
+      if (link.projectId !== current.projectId && linked)
         return yield* new StoryMapError({ reason: "target" });
+      if (!canChangeLink(current, link.cardId, linked, sliceId))
+        return yield* new StoryMapError({ reason: sliceId ? "handoff" : "target" });
       if (linked && !(yield* readCanonicalStoryItem(current.projectId, link.recordId)))
         return yield* new StoryMapError({ reason: "target" });
       const rows = storyMapLinkRows(current);
@@ -85,7 +100,7 @@ export function setStoryMapItemLink(base: StoryMapRecord, link: StoryMapCardLink
         {
           card_links: linked ? [...rows, link] : rows.filter((row) => !sameStoryLink(row, link)),
         },
-        (actual) => cardExists(actual, link.cardId),
+        (actual) => canChangeLink(actual, link.cardId, linked, sliceId),
       );
     }),
   );

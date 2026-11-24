@@ -15,6 +15,8 @@ import {
 import type { BacklogDraft } from "./draft";
 import { BacklogError, backlogItems, backlogLink, inBacklog } from "./model";
 import type { BacklogItem } from "./model";
+import { newPbiSourceFields } from "./pbi-sources";
+import type { PbiSourceDraft } from "./pbi-sources";
 import { nextRank, verifyPeers } from "./placement";
 import {
   BacklogWrites,
@@ -31,12 +33,13 @@ export type BacklogCreation = {
   readonly item: BacklogIdentity;
 };
 
-type BacklogCreateDraft = BacklogDraft & {
+export type BacklogCreateDraft = BacklogDraft & {
   readonly kind: BacklogKind;
   readonly epicTitle?: string;
   readonly featureTitle?: string;
   readonly epic?: string;
   readonly preserveBlankState?: boolean;
+  readonly sources?: Partial<PbiSourceDraft>;
 };
 
 export function newBacklogCreation(kind: BacklogKind) {
@@ -147,12 +150,16 @@ function planCreation(
       context.base,
       owner,
     );
+    const sources =
+      draft.kind === "UC" && draft.sources
+        ? yield* newPbiSourceFields(context.project.id, draft.sources)
+        : {};
     const planned: readonly PlannedItem[] = [
       ...prerequisites,
       {
         identity: identity.item,
         kind: draft.kind,
-        fields: properties,
+        fields: { ...properties, ...sources },
         body: draft.body,
         ...(parent && { parent }),
       },
@@ -186,10 +193,11 @@ function creationFields(
     : undefined;
 }
 
-export const createBacklogItem = (
+export const createBacklogItem = <E = never, R = never>(
   project: ProjectId,
   identity: BacklogCreation,
   draft: BacklogCreateDraft,
+  beforeWrite: Effect.Effect<unknown, E, R> = Effect.void,
 ) =>
   BacklogWrites.use(({ lock, recent }) =>
     lock.withPermit(
@@ -199,6 +207,7 @@ export const createBacklogItem = (
           const { base, others } = context;
           const { items } = yield* writableItems(context);
           const planned = yield* planCreation(context, items, identity, draft);
+          yield* beforeWrite;
           const all = items.map(({ path, fields }) => ({ path, frontmatter: fields }));
           const store = yield* NoteStore;
           let current = items;

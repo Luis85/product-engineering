@@ -9,6 +9,8 @@ import {
   isStoryMapSlice,
   isStoryMapStep,
   isStoryMapWork,
+  isStorySliceDeferral,
+  isStorySliceHandoff,
   storyMapType,
 } from "../../domain/story-maps";
 import { noteChanges, noteSnapshot } from "../notes";
@@ -53,6 +55,8 @@ function recordOf(note: Decoded) {
     frontmatter: note.frontmatter,
     prdId: note.values.prd_id,
     ...collectionFields(note.values),
+    sliceDeferrals: (note.values.slice_deferrals ?? []).filter(isStorySliceDeferral),
+    sliceHandoffs: (note.values.slice_handoffs ?? []).filter(isStorySliceHandoff),
   };
 }
 

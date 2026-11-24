@@ -20,7 +20,7 @@ export {
 } from "./service";
 export type { BacklogItem, BacklogSnapshot } from "./model";
 export { createBacklogItem, newBacklogCreation } from "./creation";
-export type { BacklogCreation } from "./creation";
+export type { BacklogCreateDraft, BacklogCreation } from "./creation";
 export { initialBacklogDraft, backlogTitleIssue, ownerName } from "./draft";
 export type { BacklogDraft } from "./draft";
 export { readBacklogItem, saveBacklogItem } from "./edit";

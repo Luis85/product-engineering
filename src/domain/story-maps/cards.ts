@@ -48,3 +48,35 @@ export const isStoryMapSlice = Schema.is(slice);
 export const isStoryMapCard = Schema.is(card);
 export const isStoryMapCardLink = Schema.is(cardLink);
 export const isStoryMapWork = Schema.is(storyWork);
+
+const sliceStory = { sliceId: nodeId, cardId: nodeId };
+const sliceDeferral = Schema.Struct({ ...sliceStory, decision: Schema.Literal("deferred") });
+const backlogRecord = storyWork.fields.recordId;
+const handoffIdentity = { ...sliceStory, itemId: backlogIdSchema, itemRecord: backlogRecord };
+const finishedHandoff = Schema.Struct({ ...handoffIdentity, state: Schema.Literal("created") });
+const pendingHandoff = Schema.Struct({
+  ...handoffIdentity,
+  state: Schema.Literal("pending"),
+  epicId: backlogIdSchema,
+  epicRecord: backlogRecord,
+  featureId: backlogIdSchema,
+  featureRecord: backlogRecord,
+  title: named.fields.title,
+  body: Schema.String,
+  parent: Schema.String,
+  parentRecord: Schema.String,
+  epic: Schema.String,
+  selectedEpicRecord: Schema.String,
+  epicTitle: Schema.String,
+  featureTitle: Schema.String,
+  priority: Schema.String,
+  owner: Schema.String,
+  prd: Schema.String,
+  requirement: Schema.String,
+  job: Schema.String,
+});
+
+export type StorySliceDeferral = typeof sliceDeferral.Type;
+export type StorySliceCreation = typeof pendingHandoff.Type;
+export const isStorySliceDeferral = Schema.is(sliceDeferral);
+export const isStorySliceHandoff = Schema.is(Schema.Union([pendingHandoff, finishedHandoff]));

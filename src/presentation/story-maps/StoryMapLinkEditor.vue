@@ -10,10 +10,16 @@ import type { StoryMapCard, StoryMapCardLink } from "../../domain/story-maps";
 import { leafModalUi } from "../projects";
 import { ErrorNotice, useCommand, useMessages, useModal, useNavigationGuard } from "../shell";
 
-const { map, card, items } = defineProps<{
+const {
+  map,
+  card,
+  items,
+  sliceId = undefined,
+} = defineProps<{
   readonly map: StoryMapRecord;
   readonly card: StoryMapCard;
   readonly items: readonly BacklogItem[];
+  readonly sliceId?: string;
 }>();
 const emit = defineEmits<{ dismiss: [] }>();
 const text = useMessages()["story-maps"];
@@ -40,13 +46,14 @@ const form = useForm({
       map,
       { projectId: map.projectId, kind: "item", cardId: card.id, recordId: item.id },
       true,
+      sliceId,
     );
     if (result._tag === "success") close();
   },
 });
 
 function remove(link: StoryMapCardLink) {
-  return setLink(map, link, false);
+  return setLink(map, link, false, sliceId);
 }
 
 function close() {
@@ -57,7 +64,7 @@ function close() {
 <template>
   <UModal
     :open="open"
-    :title="text.journey.editLinks"
+    :title="sliceId ? text.handoff.link : text.journey.editLinks"
     :description="card.title"
     :content="modal"
     :ui="leafModalUi"
@@ -85,7 +92,8 @@ function close() {
           </li>
         </ul>
         <form class="pe:grid pe:min-w-0 pe:gap-3" @submit.prevent="form.handleSubmit()">
-          <form.Field v-slot="{ field }" name="itemId">
+          <p v-if="sliceId && !choices.length">{{ text.handoff.noChoices }}</p>
+          <form.Field v-else v-slot="{ field }" name="itemId">
             <label class="pe:grid pe:gap-1">
               {{ text.journey.linkedItems }}
               <select

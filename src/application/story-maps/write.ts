@@ -30,7 +30,9 @@ type WritableField =
   | "slices"
   | "cards"
   | "card_links"
-  | "story_work";
+  | "story_work"
+  | "slice_deferrals"
+  | "slice_handoffs";
 type StoryMapFields = {
   readonly [Key in WritableField]?: NoteValues<typeof storyMapType.fields>[Key] | undefined;
 };

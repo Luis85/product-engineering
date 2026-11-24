@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import UIcon from "@nuxt/ui/components/Icon.vue";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { backlogChanges } from "../../application/backlog";
 import type { BacklogSnapshot } from "../../application/backlog";
@@ -10,12 +9,15 @@ import {
   storyMapsChanges,
   storyMapsRoute,
   storyMapsSnapshot,
+  storyMapSliceRoute,
 } from "../../application/story-maps";
 import type { StoryMapId } from "../../domain/story-maps";
 import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../projects";
 import { useAsyncStream, useMessages, useNavigate, useStream } from "../shell";
 import StoryMapCreateDialog from "./StoryMapCreateDialog.vue";
 import StoryMapDetail from "./StoryMapDetail.vue";
+import StoryMapsRegister from "./StoryMapsRegister.vue";
+import StorySliceReview from "./StorySliceReview.vue";
 
 const { scope } = defineProps<{ readonly scope: ReturnType<typeof storyMapsRoute> }>();
 const projectId = scope.projectId;
@@ -35,6 +37,7 @@ const current = computed(
 const ready = computed(
   () => projects.value.ready && maps.value.ready && (backlog.value.ready || !rows.value.length),
 );
+const canCreate = computed(() => Boolean(project.value && !scope.mapId));
 const status = computed(() => {
   if (projects.value.failed || maps.value.failed)
     return { label: catalog.projects.unavailable, role: "alert" };
@@ -55,6 +58,11 @@ function openMap(id: StoryMapId, origin?: HTMLElement) {
   void navigate(storyMapsRoute(projectId, id));
 }
 
+async function openSlice(id: StoryMapId, sliceId: string, event: MouseEvent) {
+  remember(event.currentTarget as HTMLElement);
+  if (!(await navigate(storyMapSliceRoute(projectId, id, sliceId)))) remember(undefined);
+}
+
 function start(event: Event) {
   trigger = event.currentTarget as HTMLElement;
   creating.value = true;
@@ -68,62 +76,41 @@ async function dismiss(id?: StoryMapId) {
 </script>
 
 <template>
+  <StorySliceReview
+    v-if="current && scope.sliceId"
+    :key="current.id + '/' + scope.sliceId"
+    :map="current"
+    :slice-id="scope.sliceId"
+    :backlog="backlog"
+  />
   <StoryMapDetail
-    v-if="current"
+    v-else-if="current"
     :key="current.id"
     :map="current"
     :backlog="backlog"
     :card-id="scope.cardId"
-  />
-  <section v-else class="pe-story-maps" data-testid="story-maps">
-    <header class="pe-story-maps-heading">
-      <div>
-        <h1 tabindex="-1" class="pe-story-map-title">{{ text.title }}</h1>
-        <p class="pe:text-sm pe:text-muted">{{ text.intro }}</p>
-      </div>
+  >
+    <template #slice-review="{ map, slice }">
       <UButton
-        v-if="project && !scope.mapId"
         type="button"
-        icon="i-lucide-plus"
-        :label="text.create"
-        data-testid="story-map-create"
-        data-pe-focus-key="story-map-create"
-        @click="start"
+        color="primary"
+        variant="soft"
+        size="xs"
+        :label="text.handoff.review"
+        :data-testid="'story-map-slice-review-' + slice.id"
+        :data-pe-focus-key="'slice-review-' + slice.id"
+        @click="openSlice(map.id, slice.id, $event)"
       />
-    </header>
-    <p
-      v-if="status"
-      :role="status.role"
-      :class="{ 'pe-story-maps-empty': status.empty }"
-      :data-testid="status.empty ? 'story-maps-empty' : undefined"
-    >
-      {{ status.label }}
-    </p>
-    <ul v-else :aria-label="text.title" class="pe-story-map-list">
-      <li v-for="map in rows" :key="map.id">
-        <button
-          type="button"
-          class="pe-story-map-row"
-          data-testid="story-map-row"
-          :data-story-map-id="map.id"
-          :data-pe-focus-key="map.id"
-          @click="openMap(map.id, $event.currentTarget as HTMLElement)"
-        >
-          <span class="pe-story-map-row-copy">
-            <strong data-testid="story-map-row-title">{{ map.title }}</strong>
-            <span>{{ map.goal }}</span>
-          </span>
-          <span class="pe-story-map-row-meta">
-            <span>{{ map.persona }}</span>
-            <span data-testid="story-map-row-counts">
-              {{ map.displayId }} · {{ text.storyCount(map.storyCount) }} ·
-              {{ text.linkedStoryCount(map.linkedStoryCount) }}
-            </span>
-          </span>
-          <UIcon name="i-lucide-chevron-right" aria-hidden="true" />
-        </button>
-      </li>
-    </ul>
+    </template>
+  </StoryMapDetail>
+  <StoryMapsRegister
+    v-else
+    :can-create="canCreate"
+    :rows="rows"
+    :status="status"
+    @open="openMap"
+    @create="start"
+  >
     <StoryMapCreateDialog v-if="creating" :project-id="projectId" @dismiss="dismiss" />
-  </section>
+  </StoryMapsRegister>
 </template>

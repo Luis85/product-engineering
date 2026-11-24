@@ -21,6 +21,7 @@ const originKey: InjectionKey<(control: HTMLElement | undefined) => void> = Symb
   "workspace-position-origin",
 );
 const previousKey: InjectionKey<() => string | undefined> = Symbol("workspace-previous-focus-key");
+const routeFocusKey: InjectionKey<(control: HTMLElement) => void> = Symbol("workspace-route-focus");
 
 export function useRestoreWorkspacePosition() {
   return inject(restoreKey, () => undefined);
@@ -32,6 +33,10 @@ export function useRememberWorkspaceOrigin() {
 
 export function useWorkspaceOriginKey() {
   return inject(previousKey, () => undefined);
+}
+
+export function useWorkspaceRouteFocus() {
+  return inject(routeFocusKey, (control) => control.focus({ preventScroll: true }));
 }
 
 function activeControl(workspace: HTMLElement) {
@@ -100,6 +105,11 @@ export function useWorkspacePosition(
     return positions.findLast((candidate) => definition.equals(candidate.route, route));
   }
   provide(previousKey, () => (history.value.forward.length ? currentPosition()?.key : undefined));
+  provide(routeFocusKey, (control) => {
+    // An explicit route selection takes precedence over the heading fallback.
+    restoredControl = control;
+    control.focus({ preventScroll: true });
+  });
 
   function restore(fallback = false) {
     const workspace = frame.value;

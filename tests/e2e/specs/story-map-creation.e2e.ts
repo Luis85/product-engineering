@@ -6,6 +6,13 @@ import { isKnowledgeId } from "../../../src/domain/knowledge";
 import { isProjectId } from "../../../src/domain/projects";
 import { isStoryMapId } from "../../../src/domain/story-maps";
 import {
+  fields,
+  firstTitle,
+  handoffBlankProject,
+  secondTitle,
+  thirdTitle,
+} from "../story-map-handoff";
+import {
   openView,
   readVaultText,
   readViewRoute,
@@ -101,8 +108,8 @@ async function createEmptyProject() {
   return projectId;
 }
 
-it("creates a real Job and PRD in an empty project, cancels and retries its linked Story Map, and follows both entries", async function () {
-  this.timeout(120_000);
+it("takes a blank project from Job and shared Vision to one durable PBI covering two stories", async function () {
+  this.timeout(155_000);
   await browser.sendCommandAndGetResult("Emulation.setDeviceMetricsOverride", {
     width: 1440,
     height: 860,
@@ -248,13 +255,14 @@ it("creates a real Job and PRD in an empty project, cancels and retries its link
     `${ROOT} button[aria-label='Story für „Offene Fragen sichten“ in „Erste Übergabe“ hinzufügen']`,
   );
   await addStory.click();
-  await addTitle("Nachfragen zur Übergabe erkennen");
-  const card = browser.$(`${ROOT} article[aria-label="Nachfragen zur Übergabe erkennen"]`);
+  await field("detail").setValue("Die offene Frage ist für die nächste Schicht sichtbar.");
+  await addTitle(firstTitle);
+  const card = browser.$(`${ROOT} article[aria-label="${firstTitle}"]`);
   await addStory.click();
-  await addTitle("Antworten für die nächste Schicht sammeln");
-  await expect(
-    browser.$(`${ROOT} article[aria-label="Antworten für die nächste Schicht sammeln"]`),
-  ).toExist();
+  await addTitle(secondTitle);
+  await expect(browser.$(`${ROOT} article[aria-label="${secondTitle}"]`)).toExist();
+  await addStory.click();
+  await addTitle(thirdTitle);
   await card.$('[data-testid="story-map-work"]').click();
   await el("story-map-work-add").click();
   const workEditor = browser.$(`${ROOT} form:has([data-testid="story-map-work-save"])`);
@@ -271,4 +279,17 @@ it("creates a real Job and PRD in an empty project, cancels and retries its link
   expect(authored).toContain("Antworten für die nächste Schicht sammeln");
   expect(authored).toContain("Wer beantwortet offene Rückfragen?");
   expect(authored).toContain("card_links: []");
+  await browser.keys("Escape");
+
+  await handoffBlankProject({
+    projectId,
+    id,
+    folder,
+    mapFile: paths[0] ?? "",
+    authored,
+    job,
+    prdId,
+    requirementId: fields(prd).requirement_id,
+  });
+  expect(await stored(renamedPrd)).toBe(prd);
 });

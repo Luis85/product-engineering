@@ -18,6 +18,8 @@ export {
   isStoryMapSlice,
   isStoryMapStep,
   isStoryMapWork,
+  isStorySliceDeferral,
+  isStorySliceHandoff,
 } from "./cards";
 export type {
   StoryMapActivity,
@@ -26,6 +28,8 @@ export type {
   StoryMapSlice,
   StoryMapStep,
   StoryMapWork,
+  StorySliceCreation,
+  StorySliceDeferral,
 } from "./cards";
 
 export const storyMapIdSchema = Schema.TemplateLiteral(["story-map-", Schema.String]).check(
@@ -70,6 +74,8 @@ export const storyMapType = defineNoteType({
     cards: required(recordList()),
     card_links: recordList(),
     story_work: recordList(),
+    slice_deferrals: recordList(),
+    slice_handoffs: recordList(),
   },
   migrations: {},
 });

@@ -80,15 +80,17 @@ const nfrOrigin = computed(() => {
 });
 const storyOrigin = computed(() => {
   const previous = history.value.back.at(-1);
-  return (
-    previous?.name === PROJECT_STORY_MAPS &&
+  return previous?.name === PROJECT_STORY_MAPS &&
     previous.projectId === projectId &&
     previous.mapId !== undefined
-  );
+    ? previous
+    : undefined;
 });
 const returnLabel = computed(() =>
   storyOrigin.value
-    ? catalogs["story-maps"].backToMap
+    ? storyOrigin.value.sliceId
+      ? catalogs["story-maps"].handoff.back
+      : catalogs["story-maps"].backToMap
     : nfrOrigin.value
       ? text.nfr.back
       : boardOrigin.value

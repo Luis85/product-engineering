@@ -9,6 +9,7 @@ import {
 } from "../../application/story-maps";
 import type { StoryMapNodeEdit, StoryMapRecord } from "../../application/story-maps";
 import type { StoryMapSlice } from "../../domain/story-maps";
+import { useWorkspaceOriginKey, useWorkspaceRouteFocus } from "../projects";
 import { ErrorNotice, useCommand, useMessages, useNavigationGuard, useQuery } from "../shell";
 import StoryMapBand from "./StoryMapBand.vue";
 import StoryMapBackbone from "./StoryMapBackbone.vue";
@@ -33,6 +34,8 @@ const scroll = ref<HTMLElement>();
 const editing = shallowRef<{ readonly base: StoryMapRecord; readonly edit: StoryMapNodeEdit }>();
 const read = useQuery(readStoryMapForEdit);
 const moving = useCommand(moveStoryMapNode);
+const originKey = useWorkspaceOriginKey();
+const focusRouteControl = useWorkspaceRouteFocus();
 const message = computed(() => read.message.value ?? moving.message.value);
 let trigger: HTMLElement | undefined;
 let target: string | undefined;
@@ -63,10 +66,10 @@ watch(
 watch(
   [() => cardId, section],
   ([id]) => {
-    if (!id) return;
+    if (!id || originKey()?.startsWith("slice-review-")) return;
     const control = findNode(id);
     control?.scrollIntoView({ block: "nearest", inline: "nearest" });
-    control?.focus({ preventScroll: true });
+    if (control) focusRouteControl(control);
   },
   { flush: "post" },
 );

@@ -11,6 +11,7 @@ export const projectStoryMapsSchema = Schema.Struct({
   projectId: projectIdSchema,
   mapId: Schema.optionalKey(storyMapIdSchema),
   cardId: Schema.optionalKey(lineOfText(160).check(Schema.isMinLength(1))),
+  sliceId: Schema.optionalKey(lineOfText(160).check(Schema.isMinLength(1))),
 });
 
 export function storyMapsRoute(
@@ -23,4 +24,12 @@ export function storyMapsRoute(
     projectId,
     ...(mapId && { mapId, ...(cardId && { cardId }) }),
   };
+}
+
+export function storyMapSliceRoute(
+  projectId: ProjectId,
+  mapId: StoryMapId,
+  sliceId: string,
+): typeof projectStoryMapsSchema.Type {
+  return { ...storyMapsRoute(projectId, mapId), sliceId };
 }

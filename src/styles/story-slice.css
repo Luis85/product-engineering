@@ -1,0 +1,106 @@
+.product-engineering-root .pe-story-slice-review {
+  max-width: 82rem;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+
+.product-engineering-root .pe-story-slice-path,
+.product-engineering-root .pe-story-slice-actions,
+.product-engineering-root .pe-story-slice-heading,
+.product-engineering-root .pe-story-slice-empty {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+}
+
+.product-engineering-root .pe-story-slice-path,
+.product-engineering-root .pe-story-slice-step {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.product-engineering-root .pe-story-slice-path button {
+  white-space: normal;
+  text-align: start;
+}
+
+.product-engineering-root .pe-story-slice-list,
+.product-engineering-root .pe-story-slice-empty {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+}
+
+.product-engineering-root .pe-story-slice-empty,
+.product-engineering-root .pe-story-slice-heading {
+  justify-content: space-between;
+}
+
+.product-engineering-root .pe-story-slice-empty,
+.product-engineering-root .pe-story-slice-row {
+  padding: 0.85rem 1rem;
+}
+
+.product-engineering-root .pe-story-slice-row {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.product-engineering-root .pe-story-slice-row + .pe-story-slice-row {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.product-engineering-root .pe-story-slice-row:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
+}
+
+.product-engineering-root .pe-story-slice-heading h2 {
+  font-size: var(--font-ui-medium);
+  line-height: 1.3;
+  font-weight: 650;
+}
+
+.product-engineering-root .pe-story-slice-decision {
+  padding: 0.15rem 0.55rem;
+  border-radius: 1rem;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.product-engineering-root .pe-story-slice-decision[data-covered="true"] {
+  color: var(--pe-ok-fg);
+}
+
+.product-engineering-root .pe-story-slice-links {
+  display: grid;
+  gap: 0.25rem;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.product-engineering-root .pe-story-slice-links li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.55rem;
+}
+
+.product-engineering-root .pe-story-slice-sources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: 0.6rem;
+}
+
+.product-engineering-root .pe-story-slice-sources label {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.product-engineering-root .pe-story-slice-sources :is(input, select) {
+  width: 100%;
+  min-width: 0;
+}

@@ -25,6 +25,7 @@ export const SHELL_ICONS: readonly string[] = [
   "lucide:folder",
   "lucide:flag",
   "lucide:layout-grid",
+  "lucide:link",
   "lucide:list-tree",
   "lucide:menu",
   "lucide:map",

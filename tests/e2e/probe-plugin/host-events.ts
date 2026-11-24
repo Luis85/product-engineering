@@ -2,8 +2,17 @@ import { Effect, Layer, ManagedRuntime, Option, Stream } from "effect";
 import type { Plugin } from "obsidian";
 import type { AppRuntime } from "../../../src/application/app-services";
 import { appServicesLayer } from "../../../src/application/app-services-layer";
+import { resolveNfrScope } from "../../../src/application/backlog";
+import { resolveDomainScope } from "../../../src/application/domain-model";
+import { appNoteTypes } from "../../../src/application/note-types";
 import { NoteIndex, noteSnapshot } from "../../../src/application/notes";
+import type { ProjectId } from "../../../src/application/projects";
 import { EventBus } from "../../../src/application/shell";
+import {
+  storyMapDomainContribution,
+  storyMapNfrContribution,
+} from "../../../src/application/story-maps";
+import type { NfrTarget } from "../../../src/domain/backlog";
 import type { NoteType } from "../../../src/domain/notes";
 import { notesAdapters } from "../../../src/infrastructure/obsidian/notes";
 import { projectFilesLayer } from "../../../src/infrastructure/obsidian/projects";
@@ -63,7 +72,11 @@ export function startupRuntime(plugin: Plugin, startup: StartupRecorder): AppRun
       projectFiles: projectFilesLayer(plugin.app.vault),
       hostEvents: Layer.empty,
     },
-    { language: hostLanguage(), developmentMode: false, noteTypes: types },
+    {
+      language: hostLanguage(),
+      developmentMode: false,
+      noteTypes: [...appNoteTypes, ...types.filter((type) => !appNoteTypes.includes(type))],
+    },
   );
   const observed = Layer.provide(
     hostEvents,
@@ -80,6 +93,13 @@ export function probeEvents(runtime: AppRuntime) {
     })),
   );
   return {
+    productScope: (project: ProjectId, target: NfrTarget) =>
+      runtime.runPromise(
+        Effect.all({
+          domain: resolveDomainScope(project, [target], storyMapDomainContribution),
+          nfrs: resolveNfrScope(project, target, storyMapNfrContribution),
+        }),
+      ),
     counts: () =>
       runtime.runPromise(
         Effect.map(snapshots, (byType) =>

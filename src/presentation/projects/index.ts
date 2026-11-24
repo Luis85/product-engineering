@@ -11,6 +11,7 @@ export {
   useRememberWorkspaceOrigin,
   useRestoreWorkspacePosition,
   useWorkspaceOriginKey,
+  useWorkspaceRouteFocus,
 } from "./workspace-position";
 export { leafModalUi } from "./overlay-ui";
 export type { ProjectRecordPart } from "./record-screens";

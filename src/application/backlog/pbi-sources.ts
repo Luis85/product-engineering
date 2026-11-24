@@ -61,6 +61,20 @@ export function resolvePbiSources(project: ProjectId, fields: Frontmatter) {
   );
 }
 
+export function newPbiSourceFields(project: ProjectId, draft: Partial<PbiSourceDraft>) {
+  return Effect.gen(function* () {
+    const sources = pbiSourceDraft(draft);
+    for (const kind of pbiSourceKinds)
+      yield* verifySource(
+        project,
+        kind,
+        sources[pbiSourceFields[kind]],
+        sources.pbi_requirement_id,
+      );
+    return Object.fromEntries(Object.entries(sources).filter(([, value]) => value));
+  });
+}
+
 export function editedPbiSources(project: ProjectId, before: BacklogEdit, next: PbiSourceDraft) {
   return Effect.gen(function* () {
     const previous = pbiSourceDraft(before.item.fields);

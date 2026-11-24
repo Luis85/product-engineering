@@ -16,6 +16,7 @@ import {
 } from "../../application/backlog";
 import type {
   BacklogCreation,
+  BacklogCreateDraft,
   BacklogEdit,
   BacklogItem,
   BacklogPlacement,
@@ -39,8 +40,7 @@ import {
   useRouting,
 } from "../shell";
 import BacklogEditorForm from "./BacklogEditorForm.vue";
-import NfrSourceLinks from "./nfr/NfrSourceLinks.vue";
-import StoryMapItemLinks from "./StoryMapItemLinks.vue";
+import BacklogEditorLinks from "./BacklogEditorLinks.vue";
 import { focusNfrLink } from "./nfr/focus";
 
 const {
@@ -52,6 +52,7 @@ const {
   level = "",
   fixedParent = "",
   restoreNfr = undefined,
+  creation = undefined,
 } = defineProps<{
   readonly project: ProjectId;
   readonly base: BacklogBase;
@@ -61,6 +62,17 @@ const {
   readonly level?: BacklogKind | "";
   readonly fixedParent?: string;
   readonly restoreNfr?: NfrId | undefined;
+  readonly creation?: {
+    readonly title: string;
+    readonly submit: string;
+    readonly initial: Partial<BacklogCreateDraft>;
+    readonly frozen: boolean;
+    readonly dirty: boolean;
+    readonly persist: (
+      operation: BacklogCreation,
+      draft: BacklogCreateDraft,
+    ) => Promise<BacklogItem | undefined>;
+  };
 }>();
 const emit = defineEmits<{
   dismiss: [reason?: "native-note"];
@@ -73,12 +85,19 @@ const { history: navigationHistory } = useRouting();
 const { back } = useHistory();
 const storyOrigin = computed(() => {
   const previous = navigationHistory.value.back.at(-1);
-  return (
-    previous?.name === PROJECT_STORY_MAPS &&
+  return previous?.name === PROJECT_STORY_MAPS &&
     previous.projectId === project &&
     previous.mapId !== undefined
-  );
+    ? previous
+    : undefined;
 });
+const storyReturnLabel = computed(() =>
+  storyOrigin.value?.sliceId
+    ? catalogs["story-maps"].handoff.back
+    : catalogs["story-maps"].backToMap,
+);
+const frozen = computed(() => creation?.frozen ?? false);
+const submitAutofocus = computed(() => (frozen.value ? "" : undefined));
 const edit = shallowRef(initialEdit);
 const assignedItem = computed(() => (edit.value?.item.adopted ? edit.value.item.id : undefined));
 const open = ref(true);
@@ -104,8 +123,10 @@ const git = useArtifactGit(() => backlogGitSource(project, edit.value?.item.key 
 const error = computed(
   () => save.message.value ?? create.message.value ?? adopt.message.value ?? native.message.value,
 );
+const submitting = ref(false);
 const busy = computed(
   () =>
+    submitting.value ||
     create.pending.value ||
     save.pending.value ||
     adopt.pending.value ||
@@ -118,16 +139,17 @@ const createLabel =
 const creationTitle = fixedParent
   ? text.companions.creationTitle(createLabel, fixedParent)
   : createLabel;
-const title = computed(() => edit.value?.item.title ?? creationTitle);
+const title = computed(() => edit.value?.item.title ?? creation?.title ?? creationTitle);
 const submitted = ref(false);
 let operation: BacklogCreation | undefined;
 
 const form = useForm({
   defaultValues: {
-    ...(initialEdit?.draft ?? initialDraft()),
     epic: "",
     epicTitle: "",
     featureTitle: "",
+    ...(initialEdit?.draft ?? initialDraft()),
+    ...creation?.initial,
   },
   async onSubmit({ value }) {
     if (await persist(value)) close();
@@ -152,8 +174,8 @@ const invalidTitle = computed(
 const editPath = computed(() => edit.value?.item.path ?? base.folder);
 const dialogDescription = computed(() => edit.value?.item.id ?? text.types[kind]);
 const cancelLabel = computed(() => (history.value ? text.close : text.cancel));
-const submitLabel = computed(() => (edit.value ? text.save : createLabel));
-const dirty = computed(() => isDirty.value || placement.value !== undefined);
+const submitLabel = computed(() => (edit.value ? text.save : (creation?.submit ?? createLabel)));
+const dirty = computed(() => isDirty.value || placement.value !== undefined || creation?.dirty);
 watch(
   () => draft.value.parent,
   () => {
@@ -184,15 +206,26 @@ async function persistExisting(current: BacklogEdit, value: typeof draft.value, 
 }
 
 async function persistNew(value: typeof draft.value) {
-  if (!operation) {
-    const next = await nextCreation.run(kind);
-    if (next._tag !== "success") return false;
-    operation = next.value;
+  if (submitting.value) return false;
+  submitting.value = true;
+  try {
+    if (!operation) {
+      const next = await nextCreation.run(kind);
+      if (next._tag !== "success") return false;
+      operation = next.value;
+    }
+    const input = { ...value, kind };
+    const item = creation
+      ? await creation.persist(operation, input)
+      : await create
+          .run(project, operation, input)
+          .then((result) => (result._tag === "success" ? result.value : undefined));
+    if (!item) return false;
+    emit("saved", item.key, false, item);
+    return true;
+  } finally {
+    submitting.value = false;
   }
-  const result = await create.run(project, operation, { ...value, kind });
-  if (result._tag !== "success") return false;
-  emit("saved", result.value.key, false, result.value);
-  return true;
 }
 
 function close() {
@@ -285,38 +318,28 @@ async function adoptItem(event: MouseEvent) {
             :level="level"
             :path="editPath"
             :fixed-parent="Boolean(fixedParent)"
+            :frozen="frozen"
+            :lock-state="Boolean(creation)"
             v-model:editing="editBody"
             v-model:placement="placement"
             @field="form.setFieldValue"
             @submit="form.handleSubmit"
-          />
-          <section v-if="edit" :aria-label="text.related" class="pe-backlog-editor-section">
-            <h3 class="pe:text-sm pe:font-semibold">{{ text.related }}</h3>
+          >
+            <template #creation-fields><slot name="creation-fields" /></template>
+          </BacklogEditorForm>
+          <slot name="creation-feedback" />
+          <BacklogEditorLinks
+            v-if="edit"
+            :project="project"
+            :item="assignedItem"
+            :adopted="edit.item.adopted"
+            :opening="native.pending.value"
+            :adopting="adopt.pending.value"
+            @open="openFile"
+            @adopt="adoptItem"
+          >
             <slot name="links" />
-            <StoryMapItemLinks :project="project" :item="assignedItem" />
-            <NfrSourceLinks :project="project" :item-id="assignedItem" />
-            <div class="pe-backlog-actions">
-              <UButton
-                type="button"
-                variant="soft"
-                color="neutral"
-                data-testid="backlog-open-note"
-                :label="text.nativeNote"
-                :loading="native.pending.value"
-                @click="openFile"
-              />
-              <UButton
-                v-if="!edit.item.adopted"
-                type="button"
-                variant="soft"
-                color="neutral"
-                data-testid="backlog-adopt"
-                :label="text.adopt"
-                :loading="adopt.pending.value"
-                @click="adoptItem"
-              />
-            </div>
-          </section>
+          </BacklogEditorLinks>
           <UButton
             v-if="edit"
             type="button"
@@ -337,7 +360,7 @@ async function adoptItem(event: MouseEvent) {
         type="button"
         variant="link"
         color="neutral"
-        :label="catalogs['story-maps'].backToMap"
+        :label="storyReturnLabel"
         :disabled="busy"
         data-testid="backlog-return-story-map"
         @click="back()"
@@ -364,6 +387,7 @@ async function adoptItem(event: MouseEvent) {
         type="submit"
         :form="id"
         data-testid="backlog-save"
+        :data-autofocus="submitAutofocus"
         :loading="busy"
         :label="submitLabel"
       />
