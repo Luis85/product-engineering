@@ -8,8 +8,9 @@ const active = useRoute();
 <template>
   <PbiDetail
     v-if="active.name === PROJECT_USE_CASE"
-    :key="active.projectId + '/' + active.pbiId"
+    :key="active.projectId + '/' + active.pbiId + '/' + (active.tab ?? '')"
     :project-id="active.projectId"
     :pbi-id="active.pbiId"
+    :initial-tab="active.tab"
   />
 </template>

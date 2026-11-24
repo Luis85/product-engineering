@@ -1,9 +1,8 @@
 import { reactive, toRefs } from "vue";
 import type { ProjectId } from "../../application/projects";
+import type { PbiTab } from "../../application/backlog";
 import { useRouting } from "../shell";
 
-export const pbiTabs = ["usecase", "companions", "criteria", "links", "edit", "git"] as const;
-export type PbiTab = (typeof pbiTabs)[number];
 type Preferences = { tab: PbiTab; gaps: boolean | undefined };
 const byLeaf = new WeakMap<object, Map<string, Preferences>>();
 

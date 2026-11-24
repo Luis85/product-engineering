@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
-import { PROJECT_USE_CASE, backlogRoute, pbiDetailRoute } from "../../../application/backlog";
+import {
+  PROJECT_BACKLOG,
+  PROJECT_USE_CASE,
+  backlogBoardRoute,
+  backlogRoute,
+  pbiDetailRoute,
+} from "../../../application/backlog";
 import { domainModelRoute } from "../../../application/domain-model";
 import { openKnowledgeNote, projectKnowledgeRoute } from "../../../application/knowledge";
 import {
@@ -35,7 +41,7 @@ const {
 const texts = useMessages();
 const text = texts.projects;
 const navigate = useNavigate();
-const { definition, history } = useRouting();
+const { history } = useRouting();
 const { back } = useHistory();
 const { pending: filePending, message: fileMessage, run: openFile } = useCommand(openKnowledgeNote);
 const destination = computed(() => {
@@ -49,10 +55,12 @@ function sectionOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"
   switch (origin.section) {
     case "knowledge":
       return projectKnowledgeRoute(projectId);
+    case "board-git":
+      return backlogBoardRoute(projectId);
     case "backlog":
       return backlogRoute(projectId, id);
     case "usecase":
-      return id?.startsWith("UC-") ? pbiDetailRoute(projectId, id) : backlogRoute(projectId);
+      return pbiOrigin(projectId, id);
     case "domainmodel":
       return domainModelRoute(projectId, id);
     case "templates": {
@@ -61,6 +69,10 @@ function sectionOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"
     default:
       return;
   }
+}
+
+function pbiOrigin(projectId: ProjectId, id: string | undefined) {
+  return id?.startsWith("UC-") ? pbiDetailRoute(projectId, id) : backlogRoute(projectId);
 }
 
 function templateOrigin(projectId: ProjectId, id: string | undefined) {
@@ -72,8 +84,27 @@ function templateOrigin(projectId: ProjectId, id: string | undefined) {
 
 function returnToSection(section: Route) {
   const last = history.value.back.at(-1);
-  if (section.name === PROJECT_USE_CASE && last && definition.equals(last, section)) return back();
+  if (returnsToPbi(last, section)) return back();
+  if (record.origin?.section === "board-git" && returnsToBoard(last)) return back();
   return navigate(section);
+}
+
+function returnsToPbi(last: Route | undefined, section: Route) {
+  return (
+    section.name === PROJECT_USE_CASE &&
+    last?.name === PROJECT_USE_CASE &&
+    last.projectId === section.projectId &&
+    last.pbiId === section.pbiId
+  );
+}
+
+function returnsToBoard(last: Route | undefined) {
+  return (
+    last?.name === PROJECT_BACKLOG &&
+    last.projectId === record.projectId &&
+    last.tab !== "list" &&
+    !last.item
+  );
 }
 
 function leave() {

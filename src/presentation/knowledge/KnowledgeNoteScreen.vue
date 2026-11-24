@@ -60,7 +60,9 @@ const restorePosition = useRestoreWorkspacePosition();
 watch(note, () => restorePosition(), { flush: "post", once: true });
 const surface = ref<HTMLElement>();
 const editor = ref<InstanceType<typeof KnowledgeNoteEditor>>();
-const pane = ref<"content" | "editing" | "references" | "history">("content");
+const pane = ref<"content" | "editing" | "references" | "history">(
+  record.origin?.section === "board-git" ? "history" : "content",
+);
 const leaving = ref(false);
 const title = computed(() => note.value?.title ?? resolved?.title ?? text.title);
 const references = computed(() => fields.value.references ?? note.value?.values.references ?? []);

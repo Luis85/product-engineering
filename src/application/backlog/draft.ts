@@ -1,5 +1,10 @@
 import { Effect } from "effect";
-import { validBacklogTitle } from "../../domain/backlog";
+import {
+  mappedBoardStage,
+  normalizedBoardStage,
+  parentKind,
+  validBacklogTitle,
+} from "../../domain/backlog";
 import type { BacklogKind } from "../../domain/backlog";
 import type { Frontmatter } from "../../domain/notes";
 import { projectMemberChoices } from "../projects";
@@ -23,23 +28,36 @@ export function initialBacklogDraft(kind: BacklogKind, base: BacklogBase): Backl
   return {
     title: "",
     parent: "",
-    state: kind === "UC" ? (base.states.find((state) => state === "Backlog") ?? "") : "",
+    state: initialBacklogState(kind, base),
     priority: "",
     owner: "",
     body: "",
   };
 }
 
-export function validSelections(draft: BacklogDraft, base: BacklogBase, original?: BacklogDraft) {
+export function initialBacklogState(kind: BacklogKind, base: BacklogBase) {
+  if (kind === "UC") return mappedBoardStage("Backlog", base.states);
+  return parentKind(kind) === "UC" ? mappedBoardStage("Open", base.states) : "";
+}
+
+function validSelection(
+  value: string,
+  current: string | undefined,
+  options: readonly string[],
+  fallback?: string,
+) {
+  return !value || value === current || value === fallback || options.includes(value);
+}
+
+export function validSelections(
+  draft: BacklogDraft,
+  base: BacklogBase,
+  original?: BacklogDraft,
+  defaultState?: string,
+) {
   if (backlogTitleIssue(draft.title)) return "title";
-  if (draft.state && draft.state !== original?.state && !base.states.includes(draft.state))
-    return "state";
-  if (
-    draft.priority &&
-    draft.priority !== original?.priority &&
-    !base.priorities.includes(draft.priority)
-  )
-    return "priority";
+  if (!validSelection(draft.state, original?.state, base.states, defaultState)) return "state";
+  if (!validSelection(draft.priority, original?.priority, base.priorities)) return "priority";
 }
 
 export function ownerName(owner: string) {
@@ -67,5 +85,12 @@ export function draftProperties(
     [base.state]: draft.state || undefined,
     [base.priority]: draft.priority || undefined,
     [base.owner]: owner,
+  };
+}
+
+export function manualPbiStageFields(base: BacklogBase, state: string): Frontmatter {
+  return {
+    [base.state]: state || undefined,
+    pbi_stage_choice: normalizedBoardStage(state),
   };
 }

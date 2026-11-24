@@ -90,7 +90,10 @@ it("adopts one note, edits through native Bases and the plugin, and resolves the
   const current = await readVaultText(renamed);
   expect(current).toContain("pe-id: " + id);
   expect(current).toContain(exportBody);
-  expect(current).toBe(nativeWrite?.replace("DeliveryState: Review", "DeliveryState: Done"));
+  expect(current).toMatch(/^pbi_stage_choice: Done\r?$/m);
+  expect(current?.replace(/^pbi_stage_choice: Done\r?\n/m, "")).toBe(
+    nativeWrite?.replace("DeliveryState: Review", "DeliveryState: Done"),
+  );
   expect(await readVaultText(reviewPath)).toBe(secondText);
   expect(await readVaultText(existingBase)).toBe(baseBefore);
   expect(await count()).toBe(files);

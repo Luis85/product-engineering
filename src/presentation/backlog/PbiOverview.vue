@@ -5,7 +5,7 @@ import { pbiCompanions } from "../../application/backlog";
 import type { BacklogItem, PbiDetail } from "../../application/backlog";
 import { KnowledgeMarkdown } from "../knowledge";
 import { useMessages } from "../shell";
-import type { PbiTab } from "./pbi-tabs";
+import type { PbiTab } from "../../application/backlog";
 
 const { detail, items } = defineProps<{
   readonly detail: PbiDetail;

@@ -3,6 +3,7 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import { computed, nextTick, ref, shallowRef, watch } from "vue";
 import {
   approvePbi,
+  PROJECT_BACKLOG,
   backlogChanges,
   backlogRoute,
   inspectPbiPreparation,
@@ -14,6 +15,7 @@ import type {
   PbiDetail,
   PbiPreparation,
   PbiPreparationGap,
+  PbiTab,
 } from "../../application/backlog";
 import { knowledgeDetailRoute, projectKnowledgeRoute } from "../../application/knowledge";
 import type { KnowledgeRecord } from "../../application/knowledge";
@@ -26,9 +28,11 @@ import {
   ErrorNotice,
   useAsyncStream,
   useCommand,
+  useHistory,
   useMessages,
   useNavigate,
   useQuery,
+  useRouting,
 } from "../shell";
 import PbiCompanions from "./PbiCompanions.vue";
 import PbiContext from "./PbiContext.vue";
@@ -41,17 +45,33 @@ import PbiOverview from "./PbiOverview.vue";
 import PbiReadiness from "./PbiReadiness.vue";
 import PbiTabs from "./PbiTabs.vue";
 import { usePbiPreferences } from "./pbi-tabs";
-import type { PbiTab } from "./pbi-tabs";
 
-const { projectId, pbiId } = defineProps<{
+const {
+  projectId,
+  pbiId,
+  initialTab = undefined,
+} = defineProps<{
   readonly projectId: ProjectId;
   readonly pbiId: string;
+  readonly initialTab?: PbiTab | undefined;
 }>();
 const text = useMessages().backlog;
 const navigate = useNavigate();
+const { history } = useRouting();
+const { back } = useHistory();
+const boardOrigin = computed(() => {
+  const previous = history.value.back.at(-1);
+  return (
+    previous?.name === PROJECT_BACKLOG &&
+    previous.projectId === projectId &&
+    previous.tab !== "list" &&
+    !previous.item
+  );
+});
 const restore = useRestoreWorkspacePosition();
 const remember = useRememberWorkspaceOrigin();
 const { tab, gaps } = usePbiPreferences(projectId, pbiId);
+if (initialTab) tab.value = initialTab;
 const snapshot = useAsyncStream<BacklogSnapshot, never>(
   { ready: false, items: [], duplicates: [] },
   backlogChanges(projectId),
@@ -182,8 +202,8 @@ async function openFile(event: MouseEvent) {
       variant="ghost"
       class="pe:justify-self-start"
       data-testid="pbi-return"
-      :label="text.pbiReturn"
-      @click="navigate(backlogRoute(projectId))"
+      :label="boardOrigin ? text.board.returnToBoard : text.pbiReturn"
+      @click="boardOrigin ? back() : navigate(backlogRoute(projectId))"
     />
     <PbiHeader
       v-if="detail"

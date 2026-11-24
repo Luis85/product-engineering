@@ -3,6 +3,7 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import UModal from "@nuxt/ui/components/Modal.vue";
 import { computed, nextTick, ref, shallowRef, watch } from "vue";
 import {
+  backlogBoardRoute,
   backlogChanges,
   backlogRoute,
   moveBacklogItem,
@@ -49,7 +50,13 @@ const snapshot = useAsyncStream<BacklogSnapshot, never>(
 );
 const preferences = useBacklogPreferences(project);
 const rows = computed(() => visibleBacklog(snapshot.value.items, preferences));
-const states = computed(() => snapshot.value.base?.states ?? []);
+const states = computed(() => [
+  ...new Set([
+    ...(snapshot.value.base?.states ?? []),
+    ...(preferences.status ? [preferences.status] : []),
+    ...snapshot.value.items.map(({ state }) => state).filter(Boolean),
+  ]),
+]);
 const priorities = computed(() => snapshot.value.base?.priorities ?? []);
 const read = useQuery(readBacklogItem);
 const moveCommand = useCommand(moveBacklogItem);
@@ -221,13 +228,14 @@ async function undoMove() {
   <section ref="panel" class="pe-backlog" data-testid="backlog-list">
     <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">{{ text.title }}</h1>
     <BacklogToolbar
-      :tabs="['list']"
+      :tabs="['board', 'list']"
       active="list"
       :model-value="preferences"
       :can-create="Boolean(snapshot.base)"
       :can-undo="preferences.canUndo"
       :states="states"
       :priorities="priorities"
+      @select="(tab) => tab === 'board' && navigate(backlogBoardRoute(project, true))"
       @create="choose"
       @undo="undoMove"
       @base="showBase"

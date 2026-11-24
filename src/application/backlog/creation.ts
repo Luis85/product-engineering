@@ -8,7 +8,7 @@ import type { ProjectId } from "../projects";
 import {
   backlogTitleIssue,
   draftProperties,
-  initialBacklogDraft,
+  initialBacklogState,
   ownerValue,
   validSelections,
 } from "./draft";
@@ -133,14 +133,15 @@ function planCreation(
   draft: BacklogCreateDraft,
 ) {
   return Effect.gen(function* () {
-    const invalid = validSelections(draft, context.base);
+    const defaultState = initialBacklogState(draft.kind, context.base);
+    const invalid = validSelections(draft, context.base, undefined, defaultState);
     if (invalid) return yield* new BacklogError({ reason: invalid });
     const owner = yield* ownerValue(context.project.id, draft.owner);
     const { parent, prerequisites } = yield* planParents(items, identity, draft);
     const properties = draftProperties(
       {
         ...draft,
-        state: draft.state || initialBacklogDraft(draft.kind, context.base).state,
+        state: draft.state || defaultState,
       },
       context.base,
       owner,

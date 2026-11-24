@@ -49,3 +49,5 @@ export const backlogType = defineNoteType({
   },
   migrations: {},
 });
+export { boardStages, mappedBoardStage, normalizedBoardStage } from "./stages";
+export type { BoardStage } from "./stages";

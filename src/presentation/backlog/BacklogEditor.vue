@@ -56,7 +56,7 @@ const {
 }>();
 const emit = defineEmits<{
   dismiss: [reason?: "native-note"];
-  saved: [BacklogItem["key"], boolean];
+  saved: [BacklogItem["key"], boolean, BacklogItem?];
   adopted: [BacklogItem];
 }>();
 const text = useMessages().backlog;
@@ -116,7 +116,6 @@ function initialDraft() {
   return {
     ...draft,
     parent: fixedParent,
-    state: base.states.find((state) => /^(open|offen)$/i.test(state)) ?? "",
     priority: base.priorities.includes("P2") ? "P2" : "",
   };
 }
@@ -168,7 +167,7 @@ async function persistNew(value: typeof draft.value) {
   }
   const result = await create.run(project, operation, { ...value, kind });
   if (result._tag !== "success") return false;
-  emit("saved", result.value.key, false);
+  emit("saved", result.value.key, false, result.value);
   return true;
 }
 

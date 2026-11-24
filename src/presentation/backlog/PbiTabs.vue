@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useId } from "vue";
 import { useMessages } from "../shell";
-import { pbiTabs } from "./pbi-tabs";
-import type { PbiTab } from "./pbi-tabs";
+import { pbiTabs } from "../../application/backlog";
+import type { PbiTab } from "../../application/backlog";
 
 const { active } = defineProps<{ readonly active: PbiTab }>();
 const emit = defineEmits<{ select: [PbiTab, MouseEvent] }>();

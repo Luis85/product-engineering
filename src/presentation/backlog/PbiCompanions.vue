@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import UIcon from "@nuxt/ui/components/Icon.vue";
-import UModal from "@nuxt/ui/components/Modal.vue";
-import { computed, ref, shallowRef, useId } from "vue";
-import {
-  companionKinds,
-  ownerName,
-  pbiCompanions,
-  readBacklogItem,
-} from "../../application/backlog";
+import { computed, ref, shallowRef } from "vue";
+import { ownerName, pbiCompanions, readBacklogItem } from "../../application/backlog";
 import type {
   BacklogEdit,
   BacklogItem,
@@ -17,23 +10,22 @@ import type {
 } from "../../application/backlog";
 import type { ProjectId } from "../../application/projects";
 import type { BacklogKind } from "../../domain/backlog";
-import { leafModalUi } from "../projects";
 import { ErrorNotice, useMessages, useModal, useQuery } from "../shell";
 import BacklogEditor from "./BacklogEditor.vue";
+import PbiCompanionChooser from "./PbiCompanionChooser.vue";
 
-const { project, item, snapshot } = defineProps<{
+const {
+  project,
+  item,
+  snapshot,
+  compact = false,
+} = defineProps<{
   readonly project: ProjectId;
   readonly item: BacklogItem;
   readonly snapshot: BacklogSnapshot;
+  readonly compact?: boolean;
 }>();
 const text = useMessages().backlog;
-const chooserId = useId();
-const icons = {
-  TASK: "i-lucide-check",
-  ISS: "i-lucide-info",
-  Q: "i-lucide-circle-help",
-  BUG: "i-lucide-flag",
-} satisfies Record<CompanionKind, string>;
 const read = useQuery(readBacklogItem);
 const children = computed(() => pbiCompanions(snapshot.items, item));
 const chooserOpen = ref(false);
@@ -91,7 +83,26 @@ function dismiss(reason?: "native-note") {
 </script>
 
 <template>
-  <section class="pe:grid pe:min-w-0 pe:gap-3" :aria-label="text.pbiTabs.companions">
+  <div v-if="compact" class="pe-board-companions">
+    <UButton
+      type="button"
+      variant="ghost"
+      color="neutral"
+      size="sm"
+      icon="i-lucide-plus"
+      data-testid="board-add-companion"
+      :label="text.companions.add"
+      @click="choose"
+    />
+    <span
+      v-if="children.total"
+      class="pe:text-xs pe:text-muted"
+      data-testid="board-companion-count"
+    >
+      {{ text.companions.count(children.open, children.total) }}
+    </span>
+  </div>
+  <section v-else class="pe:grid pe:min-w-0 pe:gap-3" :aria-label="text.pbiTabs.companions">
     <div class="pe-backlog-actions pe:justify-between">
       <h2 class="pe:font-semibold">{{ text.pbiTabs.companions }}</h2>
       <UButton
@@ -125,38 +136,12 @@ function dismiss(reason?: "native-note") {
     </ul>
     <ErrorNotice v-if="read.message.value" :message="read.message.value" />
   </section>
-  <UModal
+  <PbiCompanionChooser
     v-model:open="chooserOpen"
-    :title="text.companions.add"
-    :description="text.companions.context(item.key, item.title)"
+    :context="text.companions.context(item.key, item.title)"
     :content="chooser"
-    :ui="{ ...leafModalUi, description: 'pe:wrap-anywhere' }"
-  >
-    <template #body>
-      <div class="pe:grid pe:grid-cols-[repeat(auto-fit,minmax(min(13rem,100%),1fr))] pe:gap-2">
-        <UButton
-          v-for="kind in companionKinds"
-          :key="kind"
-          type="button"
-          variant="soft"
-          class="pe-pbi-companion-choice pe:flex pe:min-w-0 pe:items-start pe:text-start pe:whitespace-normal"
-          :aria-labelledby="chooserId + '-label-' + kind"
-          :aria-describedby="chooserId + '-purpose-' + kind"
-          :data-testid="'pbi-companion-' + kind"
-          :data-autofocus="kind === 'TASK' || undefined"
-          @click="create(kind)"
-        >
-          <UIcon :name="icons[kind]" aria-hidden="true" class="pe:size-5 pe:shrink-0" />
-          <span class="pe:grid pe:min-w-0 pe:gap-0.5 pe:wrap-anywhere">
-            <strong :id="chooserId + '-label-' + kind">{{ text.companions.labels[kind] }}</strong>
-            <span :id="chooserId + '-purpose-' + kind" class="pe:text-xs">{{
-              text.companions.purpose[kind]
-            }}</span>
-          </span>
-        </UButton>
-      </div>
-    </template>
-  </UModal>
+    @select="create"
+  />
   <BacklogEditor
     v-if="editor && snapshot.base"
     :project="project"

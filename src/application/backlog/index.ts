@@ -2,11 +2,13 @@ export { backlogModule } from "./module";
 export {
   PROJECT_BACKLOG,
   PROJECT_USE_CASE,
+  backlogBoardRoute,
   backlogRoute,
   backlogTabs,
   pbiDetailRoute,
+  pbiTabs,
 } from "./routes";
-export type { BacklogTab } from "./routes";
+export type { BacklogTab, PbiTab } from "./routes";
 export {
   backlogChanges,
   backlogInputs,
@@ -34,3 +36,6 @@ export { pbiSourceDraft, pbiSourceFields, pbiSourceKinds } from "./pbi-sources";
 export type { PbiSourceKind } from "./pbi-sources";
 export { approvePbi, inspectPbiPreparation } from "./pbi-preparation";
 export type { PbiPreparation, PbiPreparationGap } from "./pbi-preparation";
+export { boardRequestDestination, boardRequestHandoff, pbiBoardStage } from "./board-requests";
+export type { BoardRequest, BoardRequestHandoff } from "./board-requests";
+export { inspectBoardPreparation, moveBoardCard } from "./board";

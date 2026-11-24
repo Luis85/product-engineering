@@ -87,6 +87,7 @@ before(async () => {
   await openView();
   await browser.$(ROOT).$("button=Kundenportal").click();
   await el("project-rail").$("button=Backlog").click();
+  await el("backlog-board").$("button=Liste").click();
   await expect(trigger()).toBeClickable();
 });
 

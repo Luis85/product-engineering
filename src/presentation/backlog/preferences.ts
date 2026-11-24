@@ -1,6 +1,7 @@
 import { reactive } from "vue";
 import type { BacklogItem } from "../../application/backlog";
 import type { ProjectId } from "../../application/projects";
+import { normalizedBoardStage } from "../../domain/backlog";
 import type { BacklogKind } from "../../domain/backlog";
 import { useRouting } from "../shell";
 
@@ -11,7 +12,11 @@ export type BacklogFilters = {
   priority: string;
 };
 
-type Preferences = BacklogFilters & { readonly collapsed: Set<string>; canUndo: boolean };
+type Preferences = BacklogFilters & {
+  readonly collapsed: Set<string>;
+  canUndo: boolean;
+  boardScroll: number;
+};
 const byLeaf = new WeakMap<object, Map<ProjectId, Preferences>>();
 
 export function resetBacklogFilters() {
@@ -24,7 +29,12 @@ export function useBacklogPreferences(project: ProjectId) {
   byLeaf.set(navigation, projects);
   const preferences =
     projects.get(project) ??
-    reactive({ ...resetBacklogFilters(), collapsed: new Set<string>(), canUndo: false });
+    reactive({
+      ...resetBacklogFilters(),
+      collapsed: new Set<string>(),
+      canUndo: false,
+      boardScroll: 0,
+    });
   projects.set(project, preferences);
   return preferences;
 }
@@ -39,6 +49,12 @@ export type BacklogRow = {
   readonly fixed?: boolean;
 };
 
+function matchesStatus(kind: BacklogKind, state: string, filter: string) {
+  if (!filter || filter === state) return true;
+  const stage = normalizedBoardStage(filter);
+  return kind === "UC" && stage !== undefined && normalizedBoardStage(state) === stage;
+}
+
 export function visibleBacklog(
   items: readonly BacklogItem[],
   preferences: Preferences,
@@ -49,7 +65,7 @@ export function visibleBacklog(
       .filter(
         ({ key, kind, id, title, state, priority }) =>
           (!preferences.level || preferences.level === kind) &&
-          (!preferences.status || preferences.status === state) &&
+          matchesStatus(kind, state, preferences.status) &&
           (!preferences.priority || preferences.priority === priority) &&
           (!query || (title + " " + (id ?? key)).toLocaleLowerCase().includes(query)),
       )

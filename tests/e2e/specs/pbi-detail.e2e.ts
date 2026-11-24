@@ -26,7 +26,7 @@ before(async () => {
   await openView();
   await browser.$(ROOT).$("button=Kundenportal").click();
   await el("project-rail").$("button=Backlog").click();
-  await el("backlog-list").$("button=Liste").click();
+  await el("backlog-board").$("button=Liste").click();
 });
 
 it("opens a canonical PBI from Liste and writes one unassigned companion visible in both surfaces", async () => {
@@ -182,7 +182,12 @@ it("writes criterion IDs once, approves separately from Git and commits the cano
   await expect(el("pbi-business-status")).toHaveText(expect.stringContaining("Freigegeben"));
   await expect(el("pbi-next")).toHaveText("Ausstehende Änderungen prüfen und committen");
   await expect(el("pbi-stage")).toHaveText(expect.stringContaining("Active"));
-  await activate(await el("pbi-next"));
+  await activate(await el("pbi-return"));
+  await el("backlog-list").$("button=Board").click();
+  const boardCard = browser.$(`${ROOT} [data-board-card="${pbiId}"]`);
+  const boardGit = () => boardCard.$("[data-testid=board-git]");
+  await activate(await boardGit());
+  await expect(el("pbi-tab-git")).toHaveAttribute("aria-selected", "true");
   await expect(el("git-versions").$('[data-git-oid="' + repo.baseline + '"]')).toBeDisplayed();
   await activate(await el("git-commit"));
   const commit = el("git-commit-form");
@@ -196,11 +201,21 @@ it("writes criterion IDs once, approves separately from Git and commits the cano
   );
   await expect(el("pbi-ready")).toBeDisplayed({ wait: 15_000 });
   expect(await readVaultText(exportPath)).toContain(sentinel);
+  await activate(await el("pbi-return"));
+  await expect(boardCard).toHaveText(expect.stringContaining("Bereit"));
   await browser.executeObsidian(async ({ app }, path) => {
     const source = app.vault.getFileByPath(path);
     if (!source) throw new Error("Missing linked PRD fixture");
     await app.vault.process(source, (raw) => raw + "\nWeitere Randbedingung.\n");
   }, customerFolder + "/PRD-03.md");
+  await expect(boardCard).toHaveText(expect.stringContaining("PRD-03"));
+  await activate(await boardGit());
+  await expect(el("knowledge-note-header")).toHaveText(expect.stringContaining("PRD-03"));
+  await expect(el("git-versions")).toBeDisplayed();
+  await activate(await el("project-record-return"));
+  await expect(boardGit()).toBeFocused();
+  await activate(await boardCard.$("[data-testid=board-card-open]"));
+  await expect(el("pbi-tab-git")).toHaveAttribute("aria-selected", "true");
   await el("pbi-readiness-refresh").click();
   await expect(el("pbi-next")).toHaveText("Ausstehende Änderungen prüfen und committen · PRD-03");
   expect(repo.git("diff", "--name-only")).toBe("PRD-03.md");
@@ -225,6 +240,7 @@ it("writes criterion IDs once, approves separately from Git and commits the cano
 });
 
 it("leaves a missing typed PBI in its own project and supplies a return", async () => {
+  await setViewRoute(backlogRoute(customerProject));
   await setViewRoute(pbiDetailRoute(customerProject, "UC-404"));
   await expect(detail().$("[role=alert]")).toBeDisplayed();
   await el("pbi-return").click();

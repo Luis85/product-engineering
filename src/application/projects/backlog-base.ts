@@ -1,3 +1,4 @@
+import { boardStages } from "../../domain/backlog";
 import type { ProjectId } from "../../domain/projects";
 import { isInFolder } from "../notes";
 import { backlogFilter } from "./ports";
@@ -99,19 +100,12 @@ const reserved = new Set([
   "pbl-id",
   "pe-id",
   "project_id",
+  "pbi_stage_choice",
   "__proto__",
   "constructor",
   "prototype",
 ]);
 
-const backlogStages = [
-  "Backlog",
-  "Open",
-  "In Progress",
-  "Review",
-  "In Development",
-  "Done",
-] as const;
 function fieldsOf(view: Record<string, unknown>) {
   const { stateProperty, assigneeProperty, priorityProperty, stateValues, priorityValues } = view;
   const state = property(stateProperty, "status");
@@ -124,7 +118,7 @@ function fieldsOf(view: Record<string, unknown>) {
     state,
     owner,
     priority,
-    states: choices(stateValues, backlogStages),
+    states: choices(stateValues, boardStages),
     priorities: choices(priorityValues, ["P1", "P2", "P3"]),
   };
 }

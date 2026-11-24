@@ -9,13 +9,22 @@ import { useMessages } from "../shell";
 import BacklogFilterSelect from "./BacklogFilterSelect.vue";
 import type { BacklogFilters } from "./preferences";
 
-const { tabs, active, states, priorities, canCreate, canUndo } = defineProps<{
+const {
+  tabs,
+  active,
+  states,
+  priorities,
+  canCreate,
+  canUndo,
+  statusLabels = undefined,
+} = defineProps<{
   readonly tabs: readonly BacklogTab[];
   readonly active: BacklogTab;
   readonly states: readonly string[];
   readonly priorities: readonly string[];
   readonly canCreate: boolean;
   readonly canUndo: boolean;
+  readonly statusLabels?: Readonly<Record<string, string>>;
 }>();
 const filters = defineModel<BacklogFilters>({ required: true });
 const emit = defineEmits<{
@@ -28,7 +37,7 @@ const emit = defineEmits<{
 const text = useMessages().backlog;
 const filtered = computed(() => {
   const { query, level, status, priority } = filters.value;
-  return Boolean(query || level || status || priority);
+  return Boolean(query || (active === "list" && level) || status || priority);
 });
 const visibleTabs = computed(() => backlogTabs.filter((candidate) => tabs.includes(candidate)));
 
@@ -53,7 +62,7 @@ function input(event: Event) {
         />
       </nav>
       <UButton
-        v-if="canCreate"
+        v-if="canCreate && active === 'list'"
         type="button"
         data-testid="backlog-new"
         data-pe-focus-key="backlog-new"
@@ -76,6 +85,7 @@ function input(event: Event) {
         :placeholder="text.search"
         :aria-label="text.search"
         :value="filters.query"
+        data-pe-focus-key="backlog-search"
         @input="filters.query = input($event)"
       />
       <select
@@ -96,6 +106,7 @@ function input(event: Event) {
         :label="text.status"
         :all="text.statuses"
         :options="states"
+        :labels="statusLabels"
       />
       <BacklogFilterSelect
         v-model="filters.priority"

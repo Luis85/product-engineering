@@ -2,7 +2,7 @@ import { Effect, Result } from "effect";
 import type { Frontmatter } from "../../domain/notes";
 import { NoteStore } from "../notes";
 import type { BacklogBase, ProjectId } from "../projects";
-import { draftProperties, ownerValue, validSelections } from "./draft";
+import { draftProperties, manualPbiStageFields, ownerValue, validSelections } from "./draft";
 import type { BacklogDraft } from "./draft";
 import { BacklogError, backlogItems } from "./model";
 import type { BacklogItem } from "./model";
@@ -64,6 +64,7 @@ function changedProperties(
   next: BacklogDraft,
   before: BacklogDraft,
   base: BacklogBase,
+  kind: BacklogItem["kind"],
   owner?: string,
 ) {
   const fields = draftProperties(next, base, owner);
@@ -73,7 +74,10 @@ function changedProperties(
     [base.priority]: next.priority !== before.priority,
     [base.owner]: next.owner !== before.owner,
   };
-  return Object.fromEntries(Object.entries(fields).filter(([key]) => changed[key]));
+  const selected = Object.fromEntries(Object.entries(fields).filter(([key]) => changed[key]));
+  return kind === "UC" && changed[base.state]
+    ? { ...selected, ...manualPbiStageFields(base, next.state) }
+    : selected;
 }
 
 function rankChanges(
@@ -172,7 +176,7 @@ export const saveBacklogItem = (
         if (invalid) return yield* new BacklogError({ reason: invalid });
         const owner =
           draft.owner === before.draft.owner ? undefined : yield* ownerValue(project, draft.owner);
-        const fields = changedProperties(draft, before.draft, base, owner);
+        const fields = changedProperties(draft, before.draft, base, row.kind, owner);
         const newParent = draft.parent === before.draft.parent ? undefined : draft.parent;
         const rank = yield* rankChanges(context, row, items, newParent, place);
         const saved = yield* writeDraft(context, row, before, draft, { ...fields, ...rank });

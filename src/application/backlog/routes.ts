@@ -11,9 +11,16 @@ export type BacklogTab = (typeof backlogTabs)[number];
 export const projectBacklogSchema = Schema.Struct({
   name: Schema.Literal(PROJECT_BACKLOG),
   projectId: projectIdSchema,
-  tab: Schema.optionalKey(Schema.Literal("list")),
+  tab: Schema.optionalKey(Schema.Literals(["board", "list"])),
   item: Schema.optionalKey(backlogIdSchema),
 });
+
+export function backlogBoardRoute(
+  projectId: ProjectId,
+  explicit = false,
+): typeof projectBacklogSchema.Type {
+  return { name: PROJECT_BACKLOG, projectId, ...(explicit && { tab: "board" as const }) };
+}
 
 export function backlogRoute(
   projectId: ProjectId,
@@ -22,15 +29,20 @@ export function backlogRoute(
   return { name: PROJECT_BACKLOG, projectId, tab: "list", ...(item && { item }) };
 }
 
+export const pbiTabs = ["usecase", "companions", "criteria", "links", "edit", "git"] as const;
+export type PbiTab = (typeof pbiTabs)[number];
+
 export const projectUseCaseSchema = Schema.Struct({
   name: Schema.Literal(PROJECT_USE_CASE),
   projectId: projectIdSchema,
   pbiId: backlogIdSchema.check(Schema.isPattern(/^UC-/)),
+  tab: Schema.optionalKey(Schema.Literals(pbiTabs)),
 });
 
 export function pbiDetailRoute(
   projectId: ProjectId,
   pbiId: string,
+  tab?: PbiTab,
 ): typeof projectUseCaseSchema.Type {
-  return { name: PROJECT_USE_CASE, projectId, pbiId };
+  return { name: PROJECT_USE_CASE, projectId, pbiId, ...(tab && { tab }) };
 }
