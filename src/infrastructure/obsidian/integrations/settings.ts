@@ -1,8 +1,8 @@
 import { Effect } from "effect";
-import type { SettingDefinitionItem } from "obsidian";
+import type { SettingDefinitionControl } from "obsidian";
 import type { AppRuntime, AppServices } from "../../../application/app-services";
 import type { AppError } from "../../../application/errors";
-import { McpSettingsError } from "../../../application/integrations";
+import { aiCapability, McpSettingsError } from "../../../application/integrations";
 import type { IntegrationsCatalog, McpController } from "../../../application/integrations";
 import type { Catalog } from "../../../application/messages";
 import { Clipboard, Notifier, SettingsService } from "../../../application/shell";
@@ -13,7 +13,8 @@ import type { SettingsMirror, SettingsTabPart } from "../shell";
 import type { McpItemChoices } from "./mcp-items";
 import { createMcpSharing } from "./mcp-sharing";
 
-type AgentSetting = "mcpPort" | "claudeCodePath" | "codexPath";
+type TextSetting = "mcpPort" | "claudeCodePath" | "codexPath";
+type AgentSetting = TextSetting | "aiEnabled" | "aiMode";
 
 type AgentSettings = {
   readonly controller: McpController;
@@ -24,11 +25,17 @@ type AgentSettings = {
 };
 
 function isAgentSetting(key: string): key is AgentSetting {
-  return key === "mcpPort" || key === "claudeCodePath" || key === "codexPath";
+  return (
+    key === "mcpPort" ||
+    key === "claudeCodePath" ||
+    key === "codexPath" ||
+    key === "aiEnabled" ||
+    key === "aiMode"
+  );
 }
 
 function patchFor(key: AgentSetting, value: unknown): object {
-  if (typeof value !== "string") return { [key]: value };
+  if (key === "aiEnabled" || key === "aiMode" || typeof value !== "string") return { [key]: value };
   if (value.trim() === "") return { [key]: undefined };
   return { [key]: key === "mcpPort" ? (parseMcpPort(value) ?? value) : value };
 }
@@ -71,8 +78,10 @@ export function createAgentSettingsPart({
   let pending = false;
   let selectionWrites: Promise<void> = Promise.resolve();
   let refreshDefinitions: (() => void) | undefined;
+  let refreshDestination: (() => void) | undefined;
   const { mcp, ai } = messages.integrations.settings;
   const sharing = createMcpSharing({ mirror, messages: mcp.sharing, choices: items });
+  const activeMode = () => aiCapability(mirror.current).mode;
 
   const start = Effect.gen(function* () {
     yield* Effect.promise(() => selectionWrites);
@@ -109,9 +118,9 @@ export function createAgentSettingsPart({
   }
 
   function field(
-    key: AgentSetting,
+    key: TextSetting,
     text: { readonly name: string; readonly desc: string },
-  ): SettingDefinitionItem {
+  ): SettingDefinitionControl {
     return {
       ...text,
       control: {
@@ -132,6 +141,48 @@ export function createAgentSettingsPart({
       const status = controller.status();
       const running = status.state === "running";
       return [
+        {
+          type: "group",
+          heading: ai.title,
+          items: [
+            {
+              ...ai.enabled,
+              control: {
+                key: "aiEnabled",
+                type: "toggle",
+                disabled: !mirror.status.writable,
+              },
+            },
+          ],
+        },
+        {
+          type: "group",
+          heading: ai.connection,
+          items: [
+            {
+              ...ai.mode,
+              control: {
+                key: "aiMode",
+                type: "dropdown",
+                options: { ...ai.modes },
+                disabled: !mirror.status.writable,
+              },
+            },
+            {
+              name: ai.destination,
+              desc: ai.disclosure(activeMode()),
+              render(setting) {
+                const update = () => setting.setDesc(ai.disclosure(activeMode()));
+                refreshDestination = update;
+                return () => {
+                  if (refreshDestination === update) refreshDestination = undefined;
+                };
+              },
+            },
+            field("claudeCodePath", ai.claudeCodePath),
+            field("codexPath", ai.codexPath),
+          ],
+        },
         { name: mcp.title, desc: running ? mcp.running(status.endpoint) : mcp.stopped },
         field("mcpPort", mcp.port),
         { name: mcp.start, disabled: running || pending, action: () => action(start, refresh) },
@@ -142,12 +193,11 @@ export function createAgentSettingsPart({
           action: () => action(copyConnection(controller, messages.integrations), refresh),
         },
         ...sharing.definitions(),
-        { name: ai.title },
-        field("claudeCodePath", ai.claudeCodePath),
-        field("codexPath", ai.codexPath),
       ];
     },
     getControlValue(key) {
+      if (key === "aiEnabled") return mirror.current.aiEnabled === true;
+      if (key === "aiMode") return activeMode();
       return isAgentSetting(key) ? String(mirror.current[key] ?? "") : sharing.controlValue(key);
     },
     async setControlValue(key, value) {
@@ -159,6 +209,10 @@ export function createAgentSettingsPart({
             messages,
           ),
         );
+        if (key === "aiMode") {
+          await mirror.refresh();
+          refreshDestination?.();
+        }
         return;
       }
       const change = sharing.change(key, value);

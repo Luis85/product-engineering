@@ -15,6 +15,7 @@
 
 @import "./tokens.css";
 @import "./bridge.css";
+@import "./native-settings.css";
 @import "./knowledge.css";
 @import "./git.css";
 @import "./domain-model.css";

@@ -102,6 +102,8 @@ export function createProviderChat(run: ProviderRun): ProviderChat {
   return {
     async *stream({ provider, messages }: ChatRequest, signal?: AbortSignal) {
       if (signal?.aborted) throw new ProviderChatError({ provider, reason: "cancelled" });
+      if (provider === "demo")
+        throw new ProviderChatError({ provider, reason: "unsupported-request" });
 
       const adapter = new CliTextAdapter(provider, run, signal);
       const stream = chat({ adapter, messages: [...messages], threadId: randomUUID() });

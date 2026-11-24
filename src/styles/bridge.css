@@ -47,46 +47,46 @@
   z-index: var(--layer-modal, 50);
 }
 
-:root,
-*,
-*::before,
-*::after {
+.product-engineering-root:where(:not(.pe-native-settings)),
+.product-engineering-root:where(:not(.pe-native-settings)) *,
+.product-engineering-root:where(:not(.pe-native-settings)) *::before,
+.product-engineering-root:where(:not(.pe-native-settings)) *::after {
   box-sizing: border-box;
   border: 0 solid var(--pe-border);
 }
 
-button,
-input,
-select,
-textarea {
+.product-engineering-root:where(:not(.pe-native-settings)) :is(button, input, select, textarea) {
   font: inherit;
 }
 
-:focus-visible {
+.product-engineering-root:where(:not(.pe-native-settings)) :focus-visible {
   outline: 2px solid var(--pe-accent);
   outline-offset: 2px;
 }
 
 @media (forced-colors: active) {
-  :focus-visible {
+  .product-engineering-root:where(:not(.pe-native-settings)) :focus-visible {
     outline-color: Highlight;
   }
 }
 
-:is(ol, ul, h1, h2, h3, h4, h5, h6, p, fieldset, legend):not(:where(.markdown-rendered *)) {
+.product-engineering-root:where(:not(.pe-native-settings))
+  :is(ol, ul, h1, h2, h3, h4, h5, h6, p, fieldset, legend):not(:where(.markdown-rendered *)) {
   margin: 0;
   padding: 0;
 }
 
-:is(ol, ul):not(:where(.markdown-rendered *)) {
+.product-engineering-root:where(:not(.pe-native-settings))
+  :is(ol, ul):not(:where(.markdown-rendered *)) {
   list-style: none;
 }
 
-:is(h1, h2, h3, h4, h5, h6):not(:where(.markdown-rendered *)) {
+.product-engineering-root:where(:not(.pe-native-settings))
+  :is(h1, h2, h3, h4, h5, h6):not(:where(.markdown-rendered *)) {
   font: inherit;
 }
 
-button:not(svg) {
+.product-engineering-root:where(:not(.pe-native-settings)) button:not(svg) {
   appearance: none;
   background: transparent;
   border-radius: 0;

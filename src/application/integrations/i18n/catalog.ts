@@ -1,5 +1,6 @@
+import type { AiMode } from "../../../domain/shell";
 import type { Language, UserMessage } from "../../shell";
-import type { ChatFailure, ChatProvider, ProviderChatError } from "../chat";
+import type { ChatFailure, ProviderChatError } from "../chat";
 import type { McpSettingsAction, McpSettingsError } from "../mcp/settings-error";
 
 type ChatFailureText = (provider: string) => UserMessage;
@@ -8,12 +9,12 @@ type MessageText = { readonly title: string; readonly detail: string };
 
 export interface IntegrationsCatalog {
   readonly language: Language;
-  readonly providers: Readonly<Record<ChatProvider, string>>;
+  readonly providers: Readonly<Record<AiMode, string>>;
   readonly chatFailures: Readonly<Record<ChatFailure, ChatFailureText>>;
   readonly chat: {
     readonly title: string;
-    readonly provider: string;
-    readonly recipientHint: string;
+    readonly demoReply: string;
+    readonly correctExecutable: string;
     readonly conversation: string;
     readonly empty: string;
     readonly message: string;
@@ -46,6 +47,12 @@ export interface IntegrationsCatalog {
     };
     readonly ai: {
       readonly title: string;
+      readonly enabled: SettingText;
+      readonly connection: string;
+      readonly mode: SettingText;
+      readonly modes: Readonly<Record<AiMode, string>>;
+      readonly destination: string;
+      readonly disclosure: (mode: AiMode) => string;
       readonly claudeCodePath: SettingText;
       readonly codexPath: SettingText;
     };

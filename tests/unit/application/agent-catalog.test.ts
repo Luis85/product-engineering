@@ -22,7 +22,10 @@ it("uses the selected provider's CLI in the authentication instruction", () => {
 
 it("registers provider failures with the application error catalog", () => {
   const error = new ProviderChatError({ reason: "provider-not-found", provider: "codex" });
-  expect(describeError(error, catalogFor("en")).title).toBe("Codex is unavailable");
+  expect(describeError(error, catalogFor("en"))).toMatchObject({
+    title: "Codex is unavailable",
+    detail: "Check the Codex executable or install the CLI, then resend your message.",
+  });
   expect(describeError(error, catalogFor("de")).title).toBe("Codex ist nicht verfügbar");
 });
 
@@ -35,7 +38,8 @@ it("describes a missing CLI and a cancellation in German", () => {
   ).toMatchObject({
     severity: "error",
     title: "Codex ist nicht verfügbar",
-    detail: "Installiere Codex und sende deine Nachricht erneut.",
+    detail:
+      "Prüfe die Programmdatei für Codex oder installiere die CLI. Sende danach deine Nachricht erneut.",
   });
   expect(
     describeProviderChatError(

@@ -1,4 +1,4 @@
-export { parseMcpPort } from "./agent-settings";
+export { AiMode, parseMcpPort } from "./agent-settings";
 export { isPlainRecord, runMigrations } from "./migrations";
 export type { MigrationSteps } from "./migrations";
 export { ReadOnlyReason } from "./settings-codec";

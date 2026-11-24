@@ -2,7 +2,7 @@ import { Effect, Layer } from "effect";
 import type { Plugin } from "obsidian";
 import type { AppRuntime } from "./application/app-services";
 import { appCommands } from "./application/commands";
-import { configuredAgentChat } from "./application/integrations";
+import { configuredAgentChat, deterministicDemoChat } from "./application/integrations";
 import { catalogFor } from "./application/messages";
 import { noteChanges, noteSnapshot } from "./application/notes";
 import { currentProjectMcpCandidate } from "./application/projects";
@@ -101,16 +101,20 @@ export async function bootstrap(
   { signal }: { readonly signal: AbortSignal },
 ): Promise<BootstrapHandle> {
   let mcp: ReturnType<typeof createMcpController> | undefined;
+  const language = hostLanguage();
+  const integrations = catalogFor(language).integrations;
   const runtime = makeRuntime(
     appLayer(
       plugin,
-      { developmentMode: import.meta.env.MODE === "development", language: hostLanguage() },
+      { developmentMode: import.meta.env.MODE === "development", language },
       configuredAgentChat(async (executablePaths) => {
         const { createProviderCliChat } = await import("./infrastructure/provider-cli");
         return createProviderCliChat({ executablePaths });
-      }),
-      projectIntegrationSettingsLayer(plugin, (id, requestSignal) =>
-        probeProjectMcpRead(mcp?.connection(), id, requestSignal),
+      }, deterministicDemoChat(integrations.chat.demoReply)),
+      projectIntegrationSettingsLayer(
+        plugin,
+        (id, requestSignal) => probeProjectMcpRead(mcp?.connection(), id, requestSignal),
+        integrations.settings.ai,
       ),
     ),
   );

@@ -43,7 +43,24 @@ export const de: IntegrationsCatalog = {
       },
     },
     ai: {
-      title: "KI-Adapter",
+      title: "KI-Copilot",
+      enabled: {
+        name: "KI-Copilot aktivieren",
+        desc: "Der Copilot unterstützt Fragen, Entwürfe und Reviews. Diese Einstellung gilt für alle Projekte.",
+      },
+      connection: "Modellanbindung",
+      mode: {
+        name: "Betriebsart",
+        desc: "Die Betriebsart gilt für alle Produktprojekte.",
+      },
+      modes: { demo: "Lokale Demo", codex: "Codex (CLI)", "claude-code": "Claude Code (CLI)" },
+      destination: "Datenübertragung",
+      disclosure: (mode) => {
+        if (mode === "demo")
+          return "Lokale Demo erzeugt Beispielantworten auf diesem Gerät. Projektdaten bleiben hier.";
+        const provider = de.providers[mode];
+        return `Erst beim Senden erhält ${provider} deine Eingabe, den verwendeten Gesprächsverlauf und die ausgewählten Projektquellen. Die CLI startet lokal, verwaltet ihre Anmeldung selbst und kann externe Anfragen senden.`;
+      },
       claudeCodePath: {
         name: "Claude-Code-Programmdatei",
         desc: "Gib einen absoluten Pfad ein oder lass das Feld für die automatische Suche leer.",
@@ -54,11 +71,11 @@ export const de: IntegrationsCatalog = {
       },
     },
   },
-  providers: { "claude-code": "Claude Code", codex: "Codex" },
+  providers: { "claude-code": "Claude Code", codex: "Codex", demo: "Lokale Demo" },
   chat: {
     title: "KI-Chat",
-    provider: "Anbieter",
-    recipientHint: "Beim Senden erhält der ausgewählte Anbieter den bisherigen Gesprächsverlauf.",
+    demoReply: "Das ist eine lokale Beispielantwort der Demo.",
+    correctExecutable: "Programmdatei in den Einstellungen korrigieren",
     conversation: "Gespräch",
     empty: "Sende eine Nachricht, um das Gespräch zu beginnen.",
     message: "Nachricht",
@@ -79,7 +96,7 @@ export const de: IntegrationsCatalog = {
       severity: "error",
       action: "retry",
       title: `${provider} ist nicht verfügbar`,
-      detail: `Installiere ${provider} und sende deine Nachricht erneut.`,
+      detail: `Prüfe die Programmdatei für ${provider} oder installiere die CLI. Sende danach deine Nachricht erneut.`,
     }),
     "authentication-required": (provider) => ({
       severity: "error",

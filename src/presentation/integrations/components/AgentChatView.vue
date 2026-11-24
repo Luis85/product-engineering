@@ -3,24 +3,25 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import UTextarea from "@nuxt/ui/components/Textarea.vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed, onScopeDispose, ref, shallowRef, useId, watch } from "vue";
-import type { ChatProvider } from "../../../application/integrations";
-import { ErrorNotice, useMessages, useSettings } from "../../shell";
+import { aiCapability, sameAiCapability } from "../../../application/integrations";
+import { openProjectIntegrationSettings } from "../../../application/projects";
+import { ErrorNotice, useCommand, useMessages, useSettings } from "../../shell";
 import { createChatSession } from "../chat-session";
 import { useProviderChat } from "../use-provider-chat";
 
 const catalog = useMessages().integrations;
 const text = catalog.chat;
 const settings = useSettings();
-const enabled = computed(() => settings.value.aiEnabled === true);
-const provider = ref<ChatProvider>("codex");
-const providers = ["codex", "claude-code"] as const;
-const providerId = useId();
-const providerHintId = useId();
+const settingsLink = useCommand(openProjectIntegrationSettings);
+const capability = computed(() => aiCapability(settings.value));
+const enabled = computed(() => capability.value.enabled);
+const provider = computed(() => capability.value.mode);
 const messageId = useId();
 const session = createChatSession(useProviderChat());
 const state = shallowRef(session.getState());
 const stopRequested = ref(false);
 let disposed = false;
+let configuration = 0;
 const unsubscribe = session.subscribe((next) => {
   state.value = next;
 });
@@ -30,19 +31,32 @@ onScopeDispose(() => {
   unsubscribe();
   session.dispose();
 });
-watch(enabled, (allowed) => {
-  if (!allowed) session.cancel();
-});
+watch(
+  capability,
+  (current, previous) => {
+    if (sameAiCapability(current, previous)) return;
+    configuration += 1;
+    stopRequested.value = false;
+    session.reset();
+  },
+  { flush: "sync" },
+);
 
 const form = useForm({
   defaultValues: { message: "" },
   async onSubmit({ value, formApi }) {
     if (!enabled.value || state.value.pending || !value.message.trim()) return;
+    const sentWith = configuration;
     stopRequested.value = false;
     const sending = session.send(provider.value, value.message);
     formApi.setFieldValue("message", "");
     await sending;
-    if (!disposed && state.value.failure && formApi.getFieldValue("message") === "") {
+    if (
+      !disposed &&
+      sentWith === configuration &&
+      state.value.failure &&
+      formApi.getFieldValue("message") === ""
+    ) {
       formApi.setFieldValue("message", value.message);
     }
   },
@@ -61,6 +75,12 @@ const failure = computed(() => {
   const current = state.value.failure;
   return current
     ? catalog.chatFailures[current.reason](catalog.providers[current.provider])
+    : undefined;
+});
+const missingExecutable = computed(() => {
+  const current = state.value.failure;
+  return current?.reason === "provider-not-found" && current.provider !== "demo"
+    ? current.provider
     : undefined;
 });
 const transcript = computed(() =>
@@ -85,21 +105,12 @@ function stop(): void {
   <div v-if="enabled" data-testid="agent-chat-screen" class="pe:grid pe:min-w-0 pe:gap-4">
     <header class="pe:flex pe:flex-wrap pe:items-end pe:justify-between pe:gap-3">
       <h2 class="pe:text-lg pe:font-semibold">{{ text.title }}</h2>
-      <div class="pe:grid pe:min-w-0 pe:gap-1">
-        <label :for="providerId" class="pe:text-sm pe:font-medium">{{ text.provider }}</label>
-        <select
-          :id="providerId"
-          v-model="provider"
-          :aria-describedby="providerHintId"
-          class="pe:min-h-8 pe:w-fit pe:max-w-full pe:rounded-md pe:border pe:border-accented pe:bg-default pe:px-2.5 pe:py-1 pe:text-sm"
-        >
-          <option v-for="key in providers" :key="key" :value="key">
-            {{ catalog.providers[key] }}
-          </option>
-        </select>
-      </div>
+      <dl class="pe:grid pe:min-w-0 pe:gap-1 pe:text-sm">
+        <dt class="pe:font-medium">{{ catalog.settings.ai.mode.name }}</dt>
+        <dd>{{ catalog.settings.ai.modes[provider] }}</dd>
+      </dl>
     </header>
-    <p :id="providerHintId" class="pe:text-sm pe:text-muted">{{ text.recipientHint }}</p>
+    <p class="pe:text-sm pe:text-muted">{{ catalog.settings.ai.disclosure(provider) }}</p>
 
     <ol
       role="log"
@@ -126,6 +137,16 @@ function stop(): void {
     </ol>
 
     <ErrorNotice v-if="failure" :message="failure" />
+    <UButton
+      v-if="missingExecutable"
+      type="button"
+      variant="outline"
+      color="neutral"
+      class="pe:w-fit pe:whitespace-normal"
+      @click="settingsLink.run(missingExecutable)"
+      >{{ text.correctExecutable }}</UButton
+    >
+    <ErrorNotice v-if="settingsLink.message.value" :message="settingsLink.message.value" />
 
     <form class="pe:grid pe:min-w-0 pe:gap-2" @submit.prevent="submit">
       <label :for="messageId" class="pe:text-sm pe:font-medium">{{ text.message }}</label>

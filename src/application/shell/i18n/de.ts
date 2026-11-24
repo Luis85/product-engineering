@@ -19,6 +19,7 @@ const issues: IssueDescriptions = {
   "codexPath.invalid": () =>
     "Gib den absoluten Pfad zur ausführbaren Datei von Codex ein oder lass das Feld für die automatische Suche leer.",
   "aiEnabled.invalid": () => "Die KI-Zustimmung muss aktiviert oder deaktiviert sein.",
+  "aiMode.invalid": () => "Wähle eine verfügbare Betriebsart für den KI-Copilot.",
   "rootFolder.invalid": ({ max }) =>
     `Verwende einen Ordnerpfad mit höchstens ${max} Zeichen ohne versteckte oder ungültige Ordnernamen.`,
 };

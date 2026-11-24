@@ -1,5 +1,8 @@
 import { Schema, SchemaGetter } from "effect";
 
+export const AiMode = Schema.Literals(["demo", "codex", "claude-code"]);
+export type AiMode = typeof AiMode.Type;
+
 export const McpPort = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 65535 }));
 
 export const CliExecutablePath = Schema.Trim.check(

@@ -5,8 +5,10 @@ import type { AppRuntime } from "../../../application/app-services";
 import { describeShellError, ISSUES_URL, Notifier, setLogLevel } from "../../../application/shell";
 import type { ShellCatalog } from "../../../application/shell";
 import { validatePatch } from "../../../domain/shell";
+import { SCOPE_CLASS } from "../../../presentation/shell/host";
 import { runSafely } from "./run";
 import type { SettingsMirror } from "./settings-mirror";
+import { observeSettingValidation } from "./settings-validation";
 
 export interface SettingsTabPart {
   readonly definitions: (refresh: () => void) => SettingDefinitionItem[];
@@ -24,6 +26,8 @@ export class ShellSettingTab extends PluginSettingTab {
     private readonly extra?: SettingsTabPart,
   ) {
     super(app, plugin);
+    this.containerEl.classList.add(SCOPE_CLASS, "pe-native-settings");
+    plugin.register(observeSettingValidation(this.containerEl));
   }
 
   override getSettingDefinitions(): SettingDefinitionItem[] {

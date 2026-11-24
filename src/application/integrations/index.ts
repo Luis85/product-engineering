@@ -1,6 +1,12 @@
 export { chatFailureOf, isChatFailure, ProviderChatError } from "./chat";
 export type { ChatFailure, ChatMessage, ChatProvider, ChatRequest, ProviderChat } from "./chat";
-export { AgentChat, configuredAgentChat, unavailableAgentChat } from "./chat/service";
+export { aiCapability, sameAiCapability } from "./chat/capability";
+export {
+  AgentChat,
+  configuredAgentChat,
+  deterministicDemoChat,
+  unavailableAgentChat,
+} from "./chat/service";
 export type { IntegrationsCatalog } from "./i18n/catalog";
 export { defineLocalMcpTool } from "./mcp";
 export type {

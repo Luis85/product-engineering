@@ -265,7 +265,12 @@ export class PluginSettingTab implements Pick<
   update(): void {
     this.containerEl.replaceChildren();
     this.renderedSettings.clear();
-    for (const definition of this.getSettingDefinitions()) this.#render(definition);
+    const rows = this.getSettingDefinitions().flatMap((definition) =>
+      "type" in definition && definition.type === "group" && flag(definition.visible, true)
+        ? (definition.items ?? [])
+        : [definition],
+    );
+    for (const row of rows) this.#render(row);
   }
 
   #render(definition: SettingDefinitionItem): void {

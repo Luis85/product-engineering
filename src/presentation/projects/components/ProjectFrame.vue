@@ -289,7 +289,11 @@ function switchProject(project: Project) {
           @click="forward"
         />
       </div>
-      <ProjectCopilot v-if="activeProject" :key="activeProject.id" />
+      <ProjectCopilot
+        v-if="activeProject"
+        :key="activeProject.id"
+        :focus-workspace="position.focusHeading"
+      />
     </header>
     <div class="pe:grid pe:min-w-0" :class="rail.columns">
       <aside

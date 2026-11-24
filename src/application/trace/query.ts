@@ -1,10 +1,15 @@
-import { Effect } from "effect";
-import { requestInputChanges } from "../feature-requests";
+import { Effect, Stream } from "effect";
+import { featureRequestsChanges, requestInputChanges } from "../feature-requests";
 import type { ProjectId } from "../projects";
 import { readTraceDelivery } from "./delivery";
 import { readTraceSources } from "./source";
 
-export const traceChanges = requestInputChanges;
+export function traceChanges(project: ProjectId) {
+  return Stream.merge(
+    requestInputChanges(project),
+    Stream.map(featureRequestsChanges(project), () => Symbol()),
+  );
+}
 
 export function readTrace(projectId: ProjectId, key: string) {
   return Effect.gen(function* () {

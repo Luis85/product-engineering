@@ -2,15 +2,15 @@ import { chatFailureOf } from "../../application/integrations";
 import type {
   ChatFailure,
   ChatMessage,
-  ChatProvider,
   ChatRequest,
   ProviderChat,
 } from "../../application/integrations";
+import type { AiMode } from "../../domain/shell";
 
 export interface ChatSessionState {
   readonly messages: readonly ChatMessage[];
   readonly pending: boolean;
-  readonly failure?: { readonly provider: ChatProvider; readonly reason: ChatFailure };
+  readonly failure?: { readonly provider: AiMode; readonly reason: ChatFailure };
 }
 
 type Listener = (state: ChatSessionState) => void;
@@ -39,7 +39,7 @@ export function createChatSession(chat: ProviderChat) {
     }
   }
 
-  async function send(provider: ChatProvider, text: string): Promise<void> {
+  async function send(provider: AiMode, text: string): Promise<void> {
     if (disposed || active || !text.trim()) return;
 
     const controller = new AbortController();
@@ -53,9 +53,11 @@ export function createChatSession(chat: ProviderChat) {
       const reason = chatFailureOf(error);
       if (!controller.signal.aborted && reason !== "cancelled") failure = { provider, reason };
     } finally {
-      active = undefined;
-      const settled = { messages: snapshot.messages, pending: false };
-      publish(failure ? { ...settled, failure } : settled);
+      if (active === controller) {
+        active = undefined;
+        const settled = { messages: snapshot.messages, pending: false };
+        publish(failure ? { ...settled, failure } : settled);
+      }
     }
   }
 
@@ -73,6 +75,12 @@ export function createChatSession(chat: ProviderChat) {
     send,
     cancel(): void {
       active?.abort();
+    },
+    reset(): void {
+      const previous = active;
+      active = undefined;
+      previous?.abort();
+      publish({ messages: [], pending: false });
     },
     dispose(): void {
       if (disposed) return;

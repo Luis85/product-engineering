@@ -1,8 +1,11 @@
+import { Effect } from "effect";
 import { beforeEach, expect, it, vi } from "vitest";
 import { defineComponent, h, nextTick } from "vue";
 import { AGENT_CHAT, ProviderChatError } from "../../../src/application/integrations";
 import type { ProviderChat } from "../../../src/application/integrations";
 import { catalogFor } from "../../../src/application/messages";
+import { SettingsService } from "../../../src/application/shell";
+import type { Settings } from "../../../src/domain/shell";
 import { appSurface } from "../../../src/presentation/app-surface";
 import { agentChat } from "../../../src/presentation/integrations";
 import { mountSurface } from "../../../src/presentation/shell";
@@ -32,8 +35,8 @@ function find<E extends Element>(root: HTMLElement, selector: string): E {
   return element;
 }
 
-async function fixture(aiEnabled = true) {
-  const { runtime } = testRuntime({ language: "en", initialSettings: { aiEnabled } });
+async function fixture(aiEnabled = true, aiMode: Settings["aiMode"] = "codex") {
+  const { runtime } = testRuntime({ language: "en", initialSettings: { aiEnabled, aiMode } });
   const root = document.body.appendChild(document.createElement("div"));
   try {
     const content = defineComponent({ render: () => h(agentChat) });
@@ -41,6 +44,8 @@ async function fixture(aiEnabled = true) {
     return {
       root,
       close,
+      configure: (patch: Partial<Settings>) =>
+        runtime.runPromise(Effect.flatMap(SettingsService, (settings) => settings.update(patch))),
       async dispose() {
         close();
         root.remove();
@@ -58,13 +63,6 @@ function setText(root: HTMLElement, value: string) {
   const field = find<HTMLTextAreaElement>(root, "textarea");
   field.value = value;
   field.dispatchEvent(new Event("input", { bubbles: true }));
-  return nextTick();
-}
-
-function choose(root: HTMLElement, value: string) {
-  const select = find<HTMLSelectElement>(root, "select");
-  select.value = value;
-  select.dispatchEvent(new Event("change", { bubbles: true }));
   return nextTick();
 }
 
@@ -99,14 +97,13 @@ it("guards a blank or overlapping submit and renders the streamed response as pl
     await finish.ready;
     yield " a reply</em>";
   });
-  const view = await fixture();
+  const view = await fixture(true, "claude-code");
   try {
     const send = find<HTMLButtonElement>(view.root, "button[type=submit]");
     expect(send.getAttribute("aria-disabled")).toBe("true");
     expect(send.disabled).toBe(false);
     submit(view.root);
     expect(stream).not.toHaveBeenCalled();
-    await choose(view.root, "claude-code");
     await setText(view.root, "  Check the response");
     submit(view.root);
     const log = find(view.root, "[role=log]");
@@ -172,13 +169,11 @@ it.each(["", "Keep editing while waiting"])(
       await finish.ready;
       throw new ProviderChatError({ provider, reason: "authentication-required" });
     });
-    const view = await fixture();
+    const view = await fixture(true, "claude-code");
     try {
-      await choose(view.root, "claude-code");
       await setText(view.root, "Previous message");
       submit(view.root);
       await eventually(() => expect(view.root.textContent).toContain("Partial"));
-      await choose(view.root, "codex");
       await setText(view.root, draft);
       finish.release();
       await eventually(() =>
@@ -211,6 +206,40 @@ it("aborts any active stream when the view closes", async () => {
     view.close();
     expect(stream.mock.calls[0]?.[1]?.aborted).toBe(true);
     expect(view.root.childElementCount).toBe(0);
+  } finally {
+    finish.release();
+    await view.dispose();
+  }
+});
+
+it("starts a clean direct conversation after switching mode while a stale reply is still pending", async () => {
+  const finish = latch();
+  stream.mockImplementation(async function* ({ provider }) {
+    if (provider === "codex") {
+      await finish.ready;
+      yield "Late Codex content";
+      return;
+    }
+    yield "Fresh Claude content";
+  });
+  const view = await fixture();
+  try {
+    await setText(view.root, "Old Codex input");
+    submit(view.root);
+    await eventually(() => expect(stream).toHaveBeenCalledTimes(1));
+    await view.configure({ aiMode: "claude-code" });
+    await eventually(() => expect(stream.mock.calls[0]?.[1]?.aborted).toBe(true));
+    await setText(view.root, "Fresh Claude input");
+    submit(view.root);
+    await eventually(() => expect(view.root.textContent).toContain("Fresh Claude content"));
+    expect(stream.mock.calls[1]?.[0]).toEqual({
+      provider: "claude-code",
+      messages: [{ role: "user", content: "Fresh Claude input" }],
+    });
+    finish.release();
+    await finish.ready;
+    await nextTick();
+    expect(view.root.textContent).not.toContain("Late Codex content");
   } finally {
     finish.release();
     await view.dispose();

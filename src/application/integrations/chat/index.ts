@@ -1,7 +1,7 @@
 import { Schema } from "effect";
+import { AiMode } from "../../../domain/shell";
 
-const ChatProvider = Schema.Literals(["claude-code", "codex"]);
-export type ChatProvider = typeof ChatProvider.Type;
+export type ChatProvider = Exclude<AiMode, "demo">;
 
 const ChatFailure = Schema.Literals([
   "provider-not-found",
@@ -18,7 +18,7 @@ export const isChatFailure = Schema.is(ChatFailure);
 export class ProviderChatError extends Schema.TaggedError<ProviderChatError>()(
   "ProviderChatError",
   {
-    provider: ChatProvider,
+    provider: AiMode,
     reason: ChatFailure,
   },
 ) {}
@@ -33,7 +33,7 @@ export interface ChatMessage {
 }
 
 export interface ChatRequest {
-  readonly provider: ChatProvider;
+  readonly provider: AiMode;
   readonly messages: readonly ChatMessage[];
 }
 

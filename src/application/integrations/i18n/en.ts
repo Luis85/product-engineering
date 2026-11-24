@@ -40,7 +40,24 @@ export const en: IntegrationsCatalog = {
       },
     },
     ai: {
-      title: "AI adapters",
+      title: "AI Copilot",
+      enabled: {
+        name: "Enable AI Copilot",
+        desc: "Copilot helps with questions, drafts, and reviews. This setting applies to every project.",
+      },
+      connection: "Model connection",
+      mode: {
+        name: "Execution mode",
+        desc: "This mode applies to every product project.",
+      },
+      modes: { demo: "Local demo", codex: "Codex (CLI)", "claude-code": "Claude Code (CLI)" },
+      destination: "Data transfer",
+      disclosure: (mode) => {
+        if (mode === "demo")
+          return "Local demo produces example responses on this device. Project data stays here.";
+        const provider = en.providers[mode];
+        return `When you send a request, ${provider} receives your input, the conversation history used and your selected project sources. The CLI runs locally, manages its own sign-in, and may send remote requests.`;
+      },
       claudeCodePath: {
         name: "Claude Code executable",
         desc: "Use an absolute path or leave blank for automatic discovery.",
@@ -51,11 +68,11 @@ export const en: IntegrationsCatalog = {
       },
     },
   },
-  providers: { "claude-code": "Claude Code", codex: "Codex" },
+  providers: { "claude-code": "Claude Code", codex: "Codex", demo: "Local demo" },
   chat: {
     title: "AI chat",
-    provider: "Provider",
-    recipientHint: "Sending a message shares this conversation with the selected provider.",
+    demoReply: "This is a sample response from the local demo.",
+    correctExecutable: "Correct the executable in Settings",
     conversation: "Conversation",
     empty: "Send a message to start the conversation.",
     message: "Message",
@@ -76,7 +93,7 @@ export const en: IntegrationsCatalog = {
       severity: "error",
       action: "retry",
       title: `${provider} is unavailable`,
-      detail: `Install ${provider} and resend your message.`,
+      detail: `Check the ${provider} executable or install the CLI, then resend your message.`,
     }),
     "authentication-required": (provider) => ({
       severity: "error",

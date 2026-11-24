@@ -17,6 +17,7 @@ const issues: IssueDescriptions = {
   "codexPath.invalid": () =>
     "Enter an absolute path to the Codex executable, or leave it blank to find it automatically.",
   "aiEnabled.invalid": () => "AI consent must be enabled or disabled.",
+  "aiMode.invalid": () => "Choose an available execution mode for AI Copilot.",
   "rootFolder.invalid": ({ max }) =>
     `Use a folder path of up to ${max} characters without hidden or invalid folder names.`,
 };

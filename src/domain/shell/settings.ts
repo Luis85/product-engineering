@@ -1,5 +1,5 @@
 import { Schema, SchemaGetter } from "effect";
-import { CliExecutablePath, McpPort, McpSharedItemIds } from "./agent-settings";
+import { AiMode, CliExecutablePath, McpPort, McpSharedItemIds } from "./agent-settings";
 import { DEFAULT_ROOT_FOLDER, RootFolder, ROOT_FOLDER_MAX_LENGTH } from "./root-folder";
 import { makeSettingsCodec, StructuralSettingsIssue } from "./settings-codec";
 import type { SettingsFields } from "./settings-codec";
@@ -19,6 +19,7 @@ const InvalidMcpSharedItemIds = Schema.Struct({ code: Schema.Literal("mcpSharedI
 const InvalidClaudeCodePath = Schema.Struct({ code: Schema.Literal("claudeCodePath.invalid") });
 const InvalidCodexPath = Schema.Struct({ code: Schema.Literal("codexPath.invalid") });
 const InvalidAiEnabled = Schema.Struct({ code: Schema.Literal("aiEnabled.invalid") });
+const InvalidAiMode = Schema.Struct({ code: Schema.Literal("aiMode.invalid") });
 const InvalidRootFolder = Schema.Struct({
   code: Schema.Literal("rootFolder.invalid"),
   max: Schema.Number,
@@ -31,6 +32,7 @@ export const SettingsIssue = Schema.Union([
   InvalidClaudeCodePath,
   InvalidCodexPath,
   InvalidAiEnabled,
+  InvalidAiMode,
   InvalidRootFolder,
 ]);
 export type SettingsIssue = typeof SettingsIssue.Type;
@@ -43,6 +45,7 @@ export type Settings = {
   readonly claudeCodePath?: string | undefined;
   readonly codexPath?: string | undefined;
   readonly aiEnabled?: boolean | undefined;
+  readonly aiMode?: AiMode | undefined;
 };
 
 const OptionalCliExecutablePath = Schema.UndefinedOr(CliExecutablePath).pipe(
@@ -93,6 +96,12 @@ const FIELDS = {
     default: undefined,
     omitWhenDefault: true,
     issue: { code: "aiEnabled.invalid" },
+  },
+  aiMode: {
+    schema: Schema.UndefinedOr(AiMode),
+    default: undefined,
+    omitWhenDefault: true,
+    issue: { code: "aiMode.invalid" },
   },
 } satisfies SettingsFields<Settings, SettingsIssue>;
 
