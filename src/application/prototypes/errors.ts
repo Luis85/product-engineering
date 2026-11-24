@@ -9,5 +9,11 @@ export class PrototypeError extends Schema.TaggedError<PrototypeError>()("Protot
     "source",
     "design",
     "designDraft",
+    "outputInvalid",
+    "outputTooLarge",
+    "outputChanged",
+    "generationCancelled",
+    "generationFailed",
+    "generationReplacement",
   ]),
 }) {}

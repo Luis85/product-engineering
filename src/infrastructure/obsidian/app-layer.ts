@@ -17,7 +17,11 @@ export function appLayer(
       ...shellAdapters(plugin),
       ...notesAdapters(plugin),
       artifactGit: artifactGitLayer(plugin.app.vault),
-      projectFiles: projectFilesLayer(plugin.app.vault, plugin.app.workspace),
+      projectFiles: projectFilesLayer(
+        plugin.app.vault,
+        plugin.app.workspace,
+        plugin.app.metadataCache,
+      ),
       ...(agentChat ? { agentChat } : {}),
       ...(projectIntegrationHost ? { projectIntegrationHost } : {}),
     },

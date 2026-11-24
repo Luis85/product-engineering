@@ -152,3 +152,31 @@ it("opens the registered Base in a native tab and refuses a Markdown or missing 
     Effect.runPromise(files.openBacklog(backlogFolder + "/Missing.base")),
   ).rejects.toMatchObject({ reason: "base" });
 });
+
+it("resolves the scoped Vault link independently of its alias and reads the real binary bytes", async () => {
+  const { vault, files } = await setup();
+  const path = "Sources/Übergabe.txt";
+  const raw = "\uFEFFText mit Grüße\r\n";
+  await vault.seedFile(path, raw);
+  await expect(
+    Effect.runPromise(files.findReference("[[Sources/Übergabe.txt#Titel|Alias]]", "Story.md")),
+  ).resolves.toEqual({ path, extension: "txt" });
+  await expect(
+    Effect.runPromise(files.findReference("[[Vermisst|Hinweis]]", "Story.md")),
+  ).resolves.toBeUndefined();
+  await expect(Effect.runPromise(files.readReference(path))).resolves.toEqual(
+    new TextEncoder().encode(raw),
+  );
+  await expect(Effect.runPromise(files.findReference("[[#Titel]]", path))).resolves.toEqual({
+    path,
+    extension: "txt",
+  });
+  await expect(
+    Effect.runPromise(files.readReference("Sources/missing.txt")),
+  ).resolves.toBeUndefined();
+  vault.failReads = true;
+  await expect(
+    Effect.runPromise(files.findReference("[[Sources/Übergabe.txt]]", "Story.md")),
+  ).resolves.toBeUndefined();
+  await expect(Effect.runPromise(files.readReference(path))).resolves.toBeUndefined();
+});

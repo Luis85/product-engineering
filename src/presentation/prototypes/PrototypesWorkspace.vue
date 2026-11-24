@@ -14,6 +14,7 @@ import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../proj
 import { useAsyncStream, useMessages, useNavigate, useStream } from "../shell";
 import PrototypeCreateAction from "./PrototypeCreateAction.vue";
 import PrototypeDetail from "./PrototypeDetail.vue";
+import PrototypeOutput from "./PrototypeOutput.vue";
 import PrototypeScopeLink from "./PrototypeScopeLink.vue";
 import PrototypeStatus from "./PrototypeStatus.vue";
 
@@ -60,7 +61,11 @@ async function open(record: PrototypeRecord, event: MouseEvent) {
 </script>
 
 <template>
-  <PrototypeDetail v-if="current" :key="current.id" :record="current" :scope="scopeFor(current)" />
+  <PrototypeDetail v-if="current" :key="current.id" :record="current" :scope="scopeFor(current)">
+    <template #output="{ record }">
+      <PrototypeOutput :record="record" />
+    </template>
+  </PrototypeDetail>
   <section v-else class="pe-prototypes" data-testid="prototype-register">
     <header class="pe-prototype-header">
       <div class="pe:grid pe:min-w-0 pe:gap-1">

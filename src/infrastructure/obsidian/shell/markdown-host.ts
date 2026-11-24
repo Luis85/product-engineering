@@ -1,6 +1,7 @@
-import { Component, MarkdownRenderer, parseLinktext } from "obsidian";
+import { Component, MarkdownRenderer } from "obsidian";
 import type { App, TFile } from "obsidian";
 import type { MarkdownHost, VaultFile } from "../../../presentation/shell/host";
+import { resolveVaultLink, vaultLinkText } from "../vault-link";
 import { previewMarkdown } from "./preview-markdown";
 
 const images = new Set(["avif", "bmp", "gif", "jpeg", "jpg", "png", "webp"]);
@@ -14,23 +15,15 @@ function kindOf(file: TFile): VaultFile["kind"] {
   return attachments.has(extension) ? "attachment" : "unsupported";
 }
 
-function linkText(link: string) {
-  const wiki = /^!?\[\[([^\]]+)\]\]$/.exec(link);
-  return (wiki?.[1] ?? link).split("|")[0] ?? "";
-}
-
 function resolveFile(app: App, link: string, source: string) {
-  const target = parseLinktext(linkText(link)).path;
-  return target
-    ? app.metadataCache.getFirstLinkpathDest(target, source)
-    : app.vault.getFileByPath(source);
+  return resolveVaultLink(app.vault, app.metadataCache, link, source);
 }
 
 export function markdownHost(app: App): MarkdownHost {
   const open: MarkdownHost["open"] = async (link, source) => {
     const file = resolveFile(app, link, source);
     if (file && kindOf(file) !== "unsupported")
-      await app.workspace.openLinkText(linkText(link), source, true);
+      await app.workspace.openLinkText(vaultLinkText(link), source, true);
   };
   return {
     open,

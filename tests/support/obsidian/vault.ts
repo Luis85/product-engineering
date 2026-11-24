@@ -117,6 +117,13 @@ export class Vault extends Events {
     return this.read(file);
   }
 
+  readBinary(file: TFile): Promise<ArrayBuffer> {
+    return Promise.resolve().then(() => {
+      this.#checkReads();
+      return new TextEncoder().encode(this.#text(file)).buffer;
+    });
+  }
+
   #text(file: TFile): string {
     const text = this.#contents.get(file);
     if (text === undefined)

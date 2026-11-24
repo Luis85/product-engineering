@@ -24,6 +24,7 @@ import type {
   ProjectRecordRoute,
   ProjectSearchRecord,
 } from "../../../application/projects";
+import { PROJECT_PROTOTYPES, prototypeOriginRoute } from "../../../application/prototypes";
 import type { Route } from "../../../application/routes";
 import { PROJECT_STORY_MAPS, storyMapsRoute } from "../../../application/story-maps";
 import { isDeliverableId } from "../../../domain/backlog";
@@ -87,6 +88,15 @@ function deliverableOrigin(projectId: ProjectId, origin: ProjectRecordRoute["ori
   return deliverablesRoute(projectId, isDeliverableId(id) ? id : undefined);
 }
 
+function returnSection(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
+  return (
+    prototypeOriginRoute(projectId, origin) ??
+    storyMapOrigin(projectId, origin) ??
+    deliverableOrigin(projectId, origin) ??
+    sectionOrigin(projectId, origin)
+  );
+}
+
 function pbiOrigin(projectId: ProjectId, id: string | undefined) {
   return id?.startsWith("UC-") ? pbiDetailRoute(projectId, id) : backlogRoute(projectId);
 }
@@ -100,7 +110,11 @@ function templateOrigin(projectId: ProjectId, id: string | undefined) {
 
 function returnToSection(section: Route) {
   const last = history.value.back.at(-1);
-  if (section.name === PROJECT_STORY_MAPS && last && definition.equals(last, section))
+  if (
+    (section.name === PROJECT_STORY_MAPS || section.name === PROJECT_PROTOTYPES) &&
+    last &&
+    definition.equals(last, section)
+  )
     return back();
   if (returnsToPbi(last, section)) return back();
   if (record.origin?.section === "board-git" && returnsToBoard(last)) return back();
@@ -127,10 +141,7 @@ function returnsToBoard(last: Route | undefined) {
 
 function leave() {
   const { projectId, reference } = record;
-  const section =
-    storyMapOrigin(projectId, record.origin) ??
-    deliverableOrigin(projectId, record.origin) ??
-    sectionOrigin(projectId, record.origin);
+  const section = returnSection(projectId, record.origin);
   if (section) return returnToSection(section);
   const { section: previousSection, reference: previous } = record.origin ?? {};
   if (previous && !sameReference(reference, previous)) {

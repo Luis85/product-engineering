@@ -188,6 +188,23 @@ function matchingPrototype(notes: readonly Note[], projectId: ProjectId, id: Pro
   });
 }
 
+export function withCurrentPrototype<A, E, R>(
+  base: PrototypeRecord,
+  use: (record: PrototypeRecord, store: NoteStore["Service"]) => Effect.Effect<A, E, R>,
+) {
+  return PrototypeWrites.use(({ lock, recent }) =>
+    lock.withPermit(
+      Effect.gen(function* () {
+        const store = yield* NoteStore;
+        const notes = yield* freshPrototypes(store, yield* store.sources, recent);
+        const current = yield* matchingPrototype(notes, base.projectId, base.id);
+        if (!current) return yield* new PrototypeError({ reason: "identity" });
+        return yield* use(current, store);
+      }),
+    ),
+  );
+}
+
 function prepareCreate(
   store: NoteStore["Service"],
   project: ProjectSettings,

@@ -74,6 +74,23 @@
   padding: 0.9rem;
 }
 
+.pe-prototype-legacy-brief {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.5rem;
+  margin: 0;
+  padding-block: 0.6rem;
+}
+
+.pe-prototype-legacy-brief > div:first-child {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.pe-prototype-legacy-brief dd {
+  margin-inline-start: 0;
+}
+
 .pe-prototype-brief dt,
 .pe-prototype-mobile-label {
   color: var(--text-muted);
@@ -83,6 +100,25 @@
 
 .pe-prototype-description dd {
   white-space: pre-wrap;
+}
+
+.pe-prototype-context summary {
+  cursor: pointer;
+  color: var(--text-normal);
+  font-weight: 600;
+}
+
+.pe-prototype-context > div {
+  padding-top: 0.65rem;
+}
+
+.pe-prototype-context h2 {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.pe-prototype-context li {
+  padding-top: 0.4rem;
 }
 
 .pe-prototype-status {
@@ -123,6 +159,69 @@
 }
 
 .pe-prototype-select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.pe-prototype-browser {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.65rem;
+  background: var(--background-secondary);
+}
+
+.pe-prototype-browser-tab,
+.pe-prototype-browser-location {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.pe-prototype-browser-tab > span,
+.pe-prototype-browser-location > span {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.pe-prototype-browser-location {
+  justify-content: space-between;
+  border-block: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.pe-prototype-window-dots i {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.pe-prototype-browser iframe {
+  display: block;
+  width: 100%;
+  height: clamp(16rem, 52vh, 36rem);
+  border: 0;
+  background: var(--background-primary);
+}
+
+.pe-prototype-html-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pe-prototype-html-form label {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.pe-prototype-html-form input,
+.pe-prototype-html-form textarea {
   width: 100%;
   max-width: 100%;
 }

@@ -31,6 +31,11 @@
 | Story card | `card` |
 | Story backlog link | `card_links` |
 | Story-owned companion work | `story_work` |
+| Prototype | `prototype` |
+| Prototype brief | `prototypeBrief` |
+| Prototype HTML source | `output_html` |
+| Prototype output input fingerprint | `output_input_fingerprint` |
+| Prototype output provenance | `output_provenance` |
 | Originating deliverable | `deliverable_id` |
 | Deliverable | `deliverable` |
 | Expected deliverable outcome | `outcome` |

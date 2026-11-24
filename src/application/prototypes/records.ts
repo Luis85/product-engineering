@@ -2,9 +2,10 @@ import { Effect, Stream } from "effect";
 import { isPrototypeId, isPrototypeSource, prototypeType } from "../../domain/prototypes";
 import type { PrototypeSource } from "../../domain/prototypes";
 import type { NoteValues } from "../../domain/notes";
-import { noteChanges, noteSnapshot } from "../notes";
+import { NoteIndex, noteChanges, noteSnapshot } from "../notes";
 import type { Note } from "../notes";
 import type { ProjectId } from "../projects";
+import { EventBus } from "../shell";
 
 type Decoded = ReturnType<typeof prototypeType.decode<Note["frontmatter"]>>;
 type PrototypeValues = NoteValues<typeof prototypeType.fields>;
@@ -76,8 +77,40 @@ export function prototypesForSource(records: readonly PrototypeRecord[], source:
   );
 }
 
-export function prototypeOutputStatus({ values, revision }: PrototypeRecord) {
-  if (!values.output_html && !(values.uc && values.label)) return "brief";
+// The transferred Clickdummy fixture has a stable identity in the Kundenportal project.
+const bundledPrototype = {
+  projectId: "project-33333333-3333-4333-8333-000000000001",
+  id: "prototype-33333333-3333-4333-8333-000000000283",
+} satisfies Pick<PrototypeRecord, "projectId" | "id">;
+
+export function prototypeOutputKind({ id, projectId, values }: PrototypeRecord) {
+  if (values.output_html) return "stored";
+  const bundled =
+    id === bundledPrototype.id &&
+    projectId === bundledPrototype.projectId &&
+    values.uc === "UC-09" &&
+    values.rev === 2 &&
+    values.label === "CSV exportieren";
+  return bundled ? "bundled" : "none";
+}
+
+export function prototypeOutputStatus(record: PrototypeRecord, fingerprint?: string) {
+  if (prototypeOutputKind(record) === "none") return "brief";
+  const { values, revision } = record;
+  if (values.output_input_fingerprint && fingerprint)
+    return values.output_input_fingerprint === fingerprint ? "recorded" : "stale";
   const outputRevision = values.output_revision ?? values.rev ?? revision;
   return outputRevision === revision ? "recorded" : "stale";
 }
+
+export const prototypeInputChanges = Stream.unwrap(
+  Effect.gen(function* () {
+    const index = yield* NoteIndex;
+    const { subscribe } = yield* EventBus;
+    const files = (yield* subscribe).pipe(Stream.filter((event) => "path" in event));
+    return Stream.merge(
+      Stream.map(index.sourceChanges, () => ({})),
+      Stream.map(files, () => ({})),
+    ).pipe(Stream.debounce("100 millis"));
+  }),
+);

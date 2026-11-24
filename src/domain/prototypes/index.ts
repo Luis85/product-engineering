@@ -65,8 +65,9 @@ export const prototypeType = defineNoteType({
     output_html: text(),
     output_file_name: text({ schema: lineOfText(255), issue: "output.invalid" }),
     output_revision: revision,
+    output_input_fingerprint: text(),
     output_provenance: text({
-      schema: Schema.Literals(["manual", "legacy"]),
+      schema: Schema.Literals(["manual", "legacy", "import", "generated", "simulation"]),
       issue: "output.invalid",
     }),
     uc: text({ schema: backlogIdSchema.check(Schema.isPattern(/^UC-/)), issue: "source.invalid" }),
@@ -86,4 +87,22 @@ export function invalidPrototypeBriefField(
 
 export function prototypeSourceKey({ kind, id }: Pick<PrototypeSource, "kind" | "id">) {
   return `${kind}:${id}`;
+}
+
+export const PROTOTYPE_HTML_LIMIT = 2 * 1024 * 1024;
+const htmlStart =
+  /^\s*(?:(?:<!doctype\s+html[^>]*>|<!--[\s\S]*?-->)\s*)*<[a-z][\w-]*(?:\s[^<>]*|\s*\/?)>/iu;
+
+export function prototypeHtmlIssue(html: string) {
+  if (new TextEncoder().encode(html).byteLength > PROTOTYPE_HTML_LIMIT) return "outputTooLarge";
+  if (!htmlStart.test(html) || html.includes("\0") || /\p{Surrogate}/u.test(html))
+    return "outputInvalid";
+}
+
+export function prototypeHtmlName(name: string) {
+  return (
+    !/[\\/]/.test(name) &&
+    /\S.*\.html?$/iu.test(name) &&
+    Result.isSuccess(prototypeType.fields.output_file_name.check(name))
+  );
 }

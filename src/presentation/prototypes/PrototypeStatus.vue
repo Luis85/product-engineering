@@ -1,12 +1,35 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { prototypeOutputStatus } from "../../application/prototypes";
+import { computed, watch } from "vue";
+import {
+  currentPrototypeFingerprint,
+  prototypeInputChanges,
+  prototypeOutputStatus,
+} from "../../application/prototypes";
 import type { PrototypeRecord } from "../../application/prototypes";
-import { useMessages } from "../shell";
+import { useAsyncStream, useMessages, useQuery } from "../shell";
 
-const { record } = defineProps<{ readonly record: PrototypeRecord }>();
+const {
+  record,
+  detail = false,
+  fingerprint = undefined,
+} = defineProps<{
+  readonly record: PrototypeRecord;
+  readonly detail?: boolean;
+  readonly fingerprint?: string | undefined;
+}>();
 const text = useMessages().prototypes;
-const status = computed(() => prototypeOutputStatus(record));
+const changes = useAsyncStream({}, prototypeInputChanges);
+const inspection = useQuery(currentPrototypeFingerprint);
+watch(
+  [() => record, changes],
+  () => {
+    if (!detail && record.values.output_input_fingerprint) void inspection.run(record);
+  },
+  { immediate: true },
+);
+const status = computed(() =>
+  prototypeOutputStatus(record, detail ? fingerprint : inspection.value.value),
+);
 </script>
 
 <template>

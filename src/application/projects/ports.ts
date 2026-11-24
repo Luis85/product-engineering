@@ -26,6 +26,11 @@ export class ProjectFiles extends Context.Service<
     ) => Effect.Effect<BacklogBase | undefined, ProjectStorageError>;
     readonly openBacklog: (path: string) => Effect.Effect<void, ProjectStorageError>;
     readonly hasFolder: (path: string) => Effect.Effect<boolean>;
+    readonly findReference: (
+      link: string,
+      sourcePath: string,
+    ) => Effect.Effect<{ readonly path: string; readonly extension: string } | undefined>;
+    readonly readReference: (path: string) => Effect.Effect<Uint8Array<ArrayBuffer> | undefined>;
   }
 >()("product-engineering/application/ProjectFiles") {}
 

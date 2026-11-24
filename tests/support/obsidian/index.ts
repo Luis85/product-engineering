@@ -18,3 +18,10 @@ export { ItemView, View, WorkspaceLeaf } from "./views";
 export { Workspace } from "./workspace";
 export { TFile, TFolder } from "./vault";
 export { parseYaml, stringifyYaml, YAMLParseError } from "./yaml";
+
+export function parseLinktext(linktext: string) {
+  const heading = linktext.indexOf("#");
+  return heading < 0
+    ? { path: linktext, subpath: "" }
+    : { path: linktext.slice(0, heading), subpath: linktext.slice(heading) };
+}

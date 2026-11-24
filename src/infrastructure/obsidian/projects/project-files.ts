@@ -11,6 +11,7 @@ import {
 } from "../../../application/projects";
 import type { ProjectId } from "../../../application/projects";
 import { clashKey } from "../../../domain/notes";
+import { resolveVaultLink } from "../vault-link";
 
 function folderAt(vault: Vault, path: string) {
   return path === "/" ? vault.getRoot() : vault.getFolderByPath(path);
@@ -34,7 +35,11 @@ async function readBacklog(vault: Vault, path: string, projectId: ProjectId) {
   return config;
 }
 
-export function projectFilesLayer(vault: Vault, workspace?: App["workspace"]) {
+export function projectFilesLayer(
+  vault: Vault,
+  workspace?: App["workspace"],
+  metadataCache?: App["metadataCache"],
+) {
   const read = (path: string, projectId: ProjectId) =>
     Effect.tryPromise({
       try: () => readBacklog(vault, normalizePath(path), projectId),
@@ -42,6 +47,22 @@ export function projectFilesLayer(vault: Vault, workspace?: App["workspace"]) {
     });
   return Layer.succeed(ProjectFiles, {
     hasFolder: (path) => Effect.sync(() => folderAt(vault, path || "/") !== null),
+    findReference: (link, source) =>
+      Effect.orElseSucceed(
+        Effect.try(() => {
+          const file = resolveVaultLink(vault, metadataCache, link, source);
+          return file ? { path: file.path, extension: file.extension.toLowerCase() } : undefined;
+        }),
+        () => undefined,
+      ),
+    readReference: (path) =>
+      Effect.orElseSucceed(
+        Effect.tryPromise(async () => {
+          const file = vault.getFileByPath(path);
+          return file ? new Uint8Array(await vault.readBinary(file)) : undefined;
+        }),
+        () => undefined,
+      ),
     reserveFolder: (parent, name) =>
       Effect.tryPromise({
         try: async () => {

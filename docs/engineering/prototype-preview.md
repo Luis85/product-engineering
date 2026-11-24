@@ -1,0 +1,9 @@
+# Prototype HTML preview
+
+The prototype note stores the UTF-8 HTML source, original filename, provenance, brief revision and input fingerprint. The HTML download uses the stored source. A selected UTF-8 file round-trips its BOM, line endings and Unicode. The import dialog accepts up to 2 MiB. Releases before fingerprints were added keep their revision-based status.
+
+The preview parses submitted markup in an inert HTML template and projects an allowlist into a sandboxed iframe. It supports common document elements, inline CSS without external resources, embedded raster data images, native controls and button handlers that assign literal text to the button or a named element. The iframe runs a fixed script for that button interaction. It has an opaque origin and a restrictive Content Security Policy. The renderer removes arbitrary scripts, frames, external styles, resource URLs and navigations from the preview. The HTML export retains the exact source.
+
+The original PT-03 artifact uses the reference Clickdummy file. Its preview supports the authored status filter, keyboard case expansion and local CSV download. The prototype and project IDs identify the bundled fixture after a title or Vault path change. Older notes with an embedded HTML artifact and newly imported files use the bounded preview. The register and detail report a briefing until a recognized artifact is available.
+
+Local Markdown briefs include selected UTF-8 Vault excerpts of up to 512 KiB per file. The application exports `preparePrototypeGeneration` and `runPrototypeGeneration` for a later consented UI. The preparation exposes the target, destination and provider-visible Markdown, with attachments excluded. To run it, the caller supplies the current target, an abort signal, explicit replacement confirmation when needed and a provider function.

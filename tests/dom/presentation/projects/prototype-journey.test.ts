@@ -106,6 +106,7 @@ async function seed(host: ReturnType<typeof testRuntime>) {
     uc: useCase,
     rev: 2,
     label: "Export CSV",
+    output_html: "<main>Saved legacy prototype for the case list.</main>",
   });
   await run(rebuildNoteIndex);
 }
@@ -165,6 +166,7 @@ it("authors and reuses a real design note, moves scope to the map, and never inv
       await text(root, '[data-prototype-row="PT-03"]', "Clickable");
       section(find(root, '[data-prototype-row="PT-03"]'), legacyTitle).click();
       await text(root, detail, "Revision 2");
+      await shown(root, testId("prototype-preview"));
       expect((await run(store.readContent(legacyPath))).text).toBe(before.text);
       section(find(root, detail), "Back to prototypes").click();
       await start(root, "", "Try an export");
@@ -217,7 +219,22 @@ it("authors and reuses a real design note, moves scope to the map, and never inv
       material.click();
       if (!isKnowledgeId(style)) throw new Error("Expected the canonical style guide ID");
       await eventually(() =>
-        expect(navigation.current()).toEqual(knowledgeDetailRoute(first, style)),
+        expect(navigation.current()).toEqual(
+          knowledgeDetailRoute(first, style, {
+            section: "prototypes",
+            reference: { kind: "prototype", recordId: record.id },
+          }),
+        ),
+      );
+      const returnAction = testId("project-record-return");
+      await shown(root, returnAction);
+      press(root, returnAction);
+      await text(root, detail, "Portal colours");
+      expect(navigation.current()).toEqual(prototypesRoute(first, record.id));
+      await eventually(() =>
+        expect(root.ownerDocument.activeElement).toBe(
+          find(root, '[data-pe-focus-key="prototype-design-style-guide"]'),
+        ),
       );
       expect(stream).not.toHaveBeenCalled();
     },
@@ -268,5 +285,78 @@ it("guards a dirty Task editor when a saved child brief tries to leave, and mark
     await gone(root, form);
     await navigation.navigate(storyMapsRoute(first, map));
     await shown(root, testId("story-map-context-prototypes"));
+  });
+}, 20_000);
+
+it("keeps the file's exact text and filename across validation, preview and a manual replacement cancellation", async () => {
+  await withProject(async ({ root, host, navigation }) => {
+    const run = host.runtime.runPromise.bind(host.runtime);
+    await seed(host);
+    const id = "prototype-33333333-3333-4333-8333-000000000697";
+    const path = `${folder}/Prototypes/PT-04.md`;
+    const inputDialog = testId("prototype-import-form");
+    const importHtml = testId("prototype-import-html");
+    const html = "\uFEFF<!doctype html>\r\n<p>Grüße ✓</p>\r\n";
+    await run(
+      host.notes.seed(path, {
+        schema: "product-engineering.prototype/v1",
+        id,
+        display_id: "PT-04",
+        title: "Try the portal",
+        project_id: first,
+        revision: 1,
+        source_kind: "UC",
+        source_id: useCase,
+        source_project_id: first,
+        description: "Review the portal.",
+      }),
+    );
+    await run(rebuildNoteIndex);
+    await navigation.navigate(prototypesRoute(first, id));
+    await shown(root, importHtml);
+    press(root, importHtml);
+    await shown(root, inputDialog);
+    press(root, testId("prototype-html-save"));
+    await text(root, inputDialog, "Enter a valid UTF-8 HTML document");
+    const input = find<HTMLInputElement>(root, testId("prototype-html-file"));
+    const file = new File([html], "Portal-Grüße.html", { type: "text/html" });
+    Object.defineProperty(input, "files", { value: { item: () => file } });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    await eventually(() =>
+      expect(find<HTMLTextAreaElement>(root, testId("prototype-html-source")).value).toContain(
+        "Grüße ✓",
+      ),
+    );
+    press(root, testId("prototype-html-save"));
+    await gone(root, inputDialog);
+    await text(root, detail, "Imported HTML");
+    const frame = find<HTMLIFrameElement>(root, testId("prototype-preview"));
+    expect(frame.getAttribute("srcdoc")).toContain("Grüße ✓");
+    expect(frame.getAttribute("sandbox")).toBe("allow-scripts");
+    const store = await run(NoteStore);
+    const saved = await run(store.readFresh(path));
+    expect(saved.frontmatter).toMatchObject({
+      output_html: html,
+      output_file_name: file.name,
+      output_provenance: "import",
+    });
+    const owner = root.ownerDocument.defaultView;
+    if (!owner) throw new Error("Expected owner for manual file download");
+    const capture = vi.spyOn(owner.URL, "createObjectURL").mockReturnValue("blob:fixture");
+    const click = vi.spyOn(owner.HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    try {
+      press(root, testId("prototype-export-html"));
+      const [blob] = capture.mock.calls[0] ?? [];
+      expect(await (blob as Blob).text()).toBe(html);
+      expect(click.mock.instances[0]).toMatchObject({ download: file.name });
+    } finally {
+      capture.mockRestore();
+      click.mockRestore();
+    }
+    press(root, importHtml);
+    await text(root, inputDialog, "Saving replaces the current HTML");
+    press(root, testId("prototype-html-cancel"));
+    await gone(root, inputDialog);
+    expect(await run(store.readFresh(path))).toEqual(saved);
   });
 }, 20_000);

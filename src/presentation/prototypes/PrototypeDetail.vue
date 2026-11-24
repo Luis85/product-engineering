@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import { computed, ref } from "vue";
-import {
-  knowledgeChanges,
-  knowledgeDetailRoute,
-  knowledgeSnapshot,
-  projectKnowledge,
-} from "../../application/knowledge";
+import { computed, ref, shallowRef, watch } from "vue";
 import type { PrototypeRecord, PrototypeSourceOption } from "../../application/prototypes";
-import { prototypesRoute } from "../../application/prototypes";
-import { prototypeDesignFields, prototypeDesignKinds } from "../../domain/prototypes";
-import { useRememberWorkspaceOrigin } from "../projects";
-import { useHistory, useMessages, useNavigate, useRouting, useStream } from "../shell";
+import {
+  inspectPrototypeBrief,
+  prototypeInputChanges,
+  prototypeOutputKind,
+  prototypesRoute,
+} from "../../application/prototypes";
+import {
+  useAsyncStream,
+  useHistory,
+  useMessages,
+  useNavigate,
+  useQuery,
+  useRouting,
+} from "../shell";
 import PrototypeBriefDialog from "./PrototypeBriefDialog.vue";
+import PrototypeBriefContext from "./PrototypeBriefContext.vue";
+import PrototypeDesignLinks from "./PrototypeDesignLinks.vue";
 import PrototypeScopeLink from "./PrototypeScopeLink.vue";
 import PrototypeStatus from "./PrototypeStatus.vue";
 
@@ -20,23 +26,23 @@ const { record, scope } = defineProps<{
   readonly record: PrototypeRecord;
   readonly scope: PrototypeSourceOption | undefined;
 }>();
-const catalogs = useMessages();
-const text = catalogs.prototypes;
-const labels = catalogs.projects.templates.labels;
+const text = useMessages().prototypes;
 const navigate = useNavigate();
 const { definition, history } = useRouting();
 const { back } = useHistory();
-const remember = useRememberWorkspaceOrigin();
-const knowledge = useStream(knowledgeSnapshot, knowledgeChanges);
+const changes = useAsyncStream({}, prototypeInputChanges);
+const inspection = useQuery(inspectPrototypeBrief);
+const inspected = shallowRef<typeof inspection.value.value>();
+// Keep the rendered links in place until the refresh has a settled result.
+watch([inspection.pending, inspection.value], ([pending, value]) => {
+  if (!pending) inspected.value = value;
+});
+watch([() => record, changes], () => void inspection.run(record), { immediate: true });
 const editing = ref<PrototypeRecord>();
-const designs = computed(() => {
-  const notes = projectKnowledge(record.projectId, knowledge.value.records);
-  return prototypeDesignKinds.flatMap((kind) => {
-    const id = record.values[prototypeDesignFields[kind]];
-    return id
-      ? [{ kind, id, note: notes.find((note) => note.kind === kind && note.id === id) }]
-      : [];
-  });
+const bundled = computed(() => prototypeOutputKind(record) === "bundled");
+const briefPlacement = computed(() => {
+  const brief = inspected.value?.brief;
+  return bundled.value ? { after: brief, before: undefined } : { before: brief, after: undefined };
 });
 let trigger: HTMLElement | undefined;
 
@@ -88,39 +94,36 @@ function goBack() {
         @click="edit"
       />
     </header>
-    <dl class="pe-prototype-brief">
+    <dl class="pe-prototype-brief" :class="{ 'pe-prototype-legacy-brief': bundled }">
       <div>
         <dt>{{ text.scope }}</dt>
         <dd><PrototypeScopeLink :record="record" :scope="scope" /></dd>
       </div>
       <div>
         <dt>{{ text.status }}</dt>
-        <dd><PrototypeStatus :record="record" /></dd>
+        <dd><PrototypeStatus :record="record" detail :fingerprint="inspected?.fingerprint" /></dd>
       </div>
-      <div class="pe-prototype-description">
+      <div v-if="!bundled" class="pe-prototype-description">
         <dt>{{ text.description }}</dt>
         <dd>{{ record.description || text.noDescription }}</dd>
       </div>
-      <div v-for="{ kind, id, note } in designs" :key="kind">
-        <dt>{{ labels[kind] }}</dt>
-        <dd>
-          <UButton
-            v-if="note"
-            type="button"
-            variant="link"
-            class="pe:p-0 pe:text-start pe:wrap-anywhere"
-            :data-pe-focus-key="'prototype-design-' + kind"
-            @click="
-              remember($event.currentTarget as HTMLElement);
-              navigate(knowledgeDetailRoute(record.projectId, id));
-            "
-            >{{ note.displayId }} · {{ note.title }}</UButton
-          >
-          <span v-else class="pe:text-muted">{{ text.missingSource }}</span>
-        </dd>
-      </div>
+      <PrototypeDesignLinks :record="record" />
     </dl>
+    <PrototypeBriefContext
+      v-if="briefPlacement.before"
+      :brief="briefPlacement.before"
+      :prototype-id="record.id"
+    />
     <slot name="output" :record="record" :scope="scope" />
+    <dl v-if="bundled && record.description" class="pe-prototype-brief pe-prototype-description">
+      <dt>{{ text.description }}</dt>
+      <dd>{{ record.description }}</dd>
+    </dl>
+    <PrototypeBriefContext
+      v-if="briefPlacement.after"
+      :brief="briefPlacement.after"
+      :prototype-id="record.id"
+    />
     <PrototypeBriefDialog
       v-if="editing"
       :project-id="record.projectId"
