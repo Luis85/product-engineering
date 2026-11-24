@@ -1,10 +1,10 @@
 import { storyMapType } from "../../domain/story-maps";
 import { defineModule } from "../module";
-import { storyMapWritesLayer } from "./create";
 import type { StoryMapError } from "./errors";
 import { de } from "./i18n/de";
 import { en } from "./i18n/en";
 import { projectStoryMapsSchema } from "./routes";
+import { storyMapWritesLayer } from "./write";
 
 export const storyMapsModule = defineModule({
   name: "story-maps",

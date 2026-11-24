@@ -6,3 +6,13 @@ export function focusNfrLink(event: Event, selector: string | undefined) {
   link.focus();
   return true;
 }
+import { backlogRoute, pbiDetailRoute } from "../../../application/backlog";
+import type { ProjectId } from "../../../application/projects";
+import { storyMapsRoute } from "../../../application/story-maps";
+import type { NfrTarget } from "../../../domain/backlog";
+import { isStoryMapId } from "../../../domain/story-maps";
+
+export function nfrTargetRoute(project: ProjectId, { id, kind }: NfrTarget) {
+  if (kind === "map") return isStoryMapId(id) ? storyMapsRoute(project, id) : undefined;
+  return id.startsWith("UC-") ? pbiDetailRoute(project, id) : backlogRoute(project, id);
+}

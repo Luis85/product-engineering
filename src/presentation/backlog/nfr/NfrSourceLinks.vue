@@ -3,38 +3,43 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import { computed, ref, watch } from "vue";
 import {
   backlogChanges,
-  backlogRoute,
   directNfrs,
   nfrCatalogRoute,
   nfrChanges,
   nfrSnapshot,
   nfrTargetKey,
-  pbiDetailRoute,
   resolveNfrScope,
 } from "../../../application/backlog";
 import type { BacklogSnapshot, NfrOrigin } from "../../../application/backlog";
 import type { ProjectId } from "../../../application/projects";
+import { storyMapNfrContribution } from "../../../application/story-maps";
 import type { NfrId, NfrTarget } from "../../../domain/backlog";
+import type { StoryMapId } from "../../../domain/story-maps";
 import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../../projects";
 import { useAsyncStream, useMessages, useNavigate, useQuery, useStream } from "../../shell";
 import NfrAssignmentPicker from "./NfrAssignmentPicker.vue";
 import NfrRelatedList from "./NfrRelatedList.vue";
+import { nfrTargetRoute } from "./focus";
 
 const {
   project,
   itemId = undefined,
+  mapId = undefined,
+  label = undefined,
   showScope = false,
 } = defineProps<{
   readonly project: ProjectId;
   readonly itemId?: string | undefined;
+  readonly mapId?: StoryMapId | undefined;
+  readonly label?: string | undefined;
   readonly showScope?: boolean;
 }>();
 const text = useMessages().backlog.nfr;
 const catalog = useStream(nfrSnapshot(project), nfrChanges(project));
-const target: NfrTarget = { kind: "item", id: itemId ?? "" };
+const target: NfrTarget = mapId ? { kind: "map", id: mapId } : { kind: "item", id: itemId ?? "" };
 const direct = computed(() => directNfrs(catalog.value.records, target));
 const scope = useQuery((projectId: ProjectId, source: NfrTarget) =>
-  resolveNfrScope(projectId, source),
+  resolveNfrScope(projectId, source, storyMapNfrContribution),
 );
 const inherited = computed(
   () =>
@@ -72,17 +77,16 @@ async function open(id: NfrId, event: MouseEvent) {
 }
 
 async function openOrigin(origin: NfrOrigin, event: MouseEvent) {
-  if (origin.kind !== "item") return;
+  if (origin.kind === "nfr") return;
+  const route = nfrTargetRoute(project, origin);
+  if (!route) return;
   remember(event.currentTarget as HTMLElement);
-  const route = origin.id.startsWith("UC-")
-    ? pbiDetailRoute(project, origin.id)
-    : backlogRoute(project, origin.id);
   if (!(await navigate(route))) remember(undefined);
 }
 </script>
 
 <template>
-  <section v-if="itemId" class="pe-nfr-related" :data-nfr-source="nfrTargetKey(target)">
+  <section v-if="target.id" class="pe-nfr-related" :data-nfr-source="nfrTargetKey(target)">
     <div class="pe-backlog-actions pe:justify-between">
       <h3>{{ text.heading }}</h3>
       <UButton
@@ -91,7 +95,7 @@ async function openOrigin(origin: NfrOrigin, event: MouseEvent) {
         color="neutral"
         size="xs"
         data-testid="nfr-assign"
-        :data-pe-focus-key="'nfr-assign-' + itemId"
+        :data-pe-focus-key="'nfr-assign-' + target.id"
         :label="text.assign"
         @click="pick"
       />
@@ -101,6 +105,7 @@ async function openOrigin(origin: NfrOrigin, event: MouseEvent) {
       v-if="picking"
       :project="project"
       :target="target"
+      :label="label"
       :records="catalog.records"
       @dismiss="finishPick"
     />

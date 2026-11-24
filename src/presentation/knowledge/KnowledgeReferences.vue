@@ -6,10 +6,16 @@ import type { VaultLink } from "../shell";
 import KnowledgeVaultLinks from "./KnowledgeVaultLinks.vue";
 import KnowledgeLinkPicker from "./KnowledgeLinkPicker.vue";
 
-const { source, references, editable } = defineProps<{
+const {
+  source,
+  references,
+  editable,
+  explicitOnly = false,
+} = defineProps<{
   readonly source: string;
   readonly references: readonly string[];
   readonly editable: boolean;
+  readonly explicitOnly?: boolean;
 }>();
 const emit = defineEmits<{ change: [references: readonly string[]] }>();
 const host = useMarkdownHost();
@@ -69,11 +75,11 @@ function closePicker() {
         @remove="remove"
       />
     </section>
-    <section class="pe:grid pe:gap-2" data-testid="knowledge-inline-links">
+    <section v-if="!explicitOnly" class="pe:grid pe:gap-2" data-testid="knowledge-inline-links">
       <h2 class="pe:text-base pe:font-semibold">{{ text.inlineLinks }}</h2>
       <KnowledgeVaultLinks :source="source" :links="links.inline" />
     </section>
-    <section class="pe:grid pe:gap-2" data-testid="knowledge-vault-backlinks">
+    <section v-if="!explicitOnly" class="pe:grid pe:gap-2" data-testid="knowledge-vault-backlinks">
       <h2 class="pe:text-base pe:font-semibold">{{ text.vaultBacklinks }}</h2>
       <KnowledgeVaultLinks :source="source" :links="inbound" />
     </section>

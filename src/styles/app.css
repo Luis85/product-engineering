@@ -5,8 +5,8 @@
 @import "@nuxt/ui";
 @source not "../../node_modules/.nuxt-ui/ui";
 @source not "../../node_modules/@nuxt/ui/dist/runtime/components";
-@source "../../node_modules/.nuxt-ui/ui/{app,alert,button,form-field,input,modal,slideover,textarea}.ts";
-@source "../../node_modules/@nuxt/ui/dist/runtime/components/{App,Alert,Button,FormField,Icon,Input,LinkBase,Modal,OverlayProvider,Slideover,Textarea}.vue";
+@source "../../node_modules/.nuxt-ui/ui/{app,alert,button,form-field,input,modal,popover,slideover,textarea}.ts";
+@source "../../node_modules/@nuxt/ui/dist/runtime/components/{App,Alert,Button,FormField,Icon,Input,LinkBase,Modal,OverlayProvider,Popover,Slideover,Textarea}.vue";
 
 @theme {
   --color-old-neutral-*: initial;

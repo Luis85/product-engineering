@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Semaphore } from "effect";
+import { Effect } from "effect";
 import type { KnowledgeId } from "../../domain/knowledge";
 import { recordId } from "../../domain/notes";
 import {
@@ -15,6 +15,7 @@ import type { ProjectId, ProjectSettings } from "../projects";
 import { StoryMapError } from "./errors";
 import { storyMapFoundations } from "./foundations";
 import { decodeStoryMap } from "./records";
+import { StoryMapWrites } from "./write";
 
 type StoryMapCreation = {
   readonly projectId: ProjectId;
@@ -22,16 +23,6 @@ type StoryMapCreation = {
   readonly prdId?: KnowledgeId;
   readonly sourcePath?: string;
 };
-
-class StoryMapWrites extends Context.Service<
-  StoryMapWrites,
-  { readonly lock: Semaphore.Semaphore; readonly recent: Set<string> }
->()("product-engineering/application/StoryMapWrites") {}
-
-export const storyMapWritesLayer = Layer.effect(
-  StoryMapWrites,
-  Effect.map(Semaphore.make(1), (lock) => ({ lock, recent: new Set() })),
-);
 
 export const newStoryMapId = IdGenerator.use(({ nextId }) =>
   Effect.map(nextId, (uuid) => {

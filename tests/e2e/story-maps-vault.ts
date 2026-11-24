@@ -48,11 +48,46 @@ const slices = [
 ];
 
 const cardRows = [
-  ["CARD-01", "STEP-01", "SL-01", "Meine Fallübersicht sehen", "FE-01"],
-  ["CARD-02", "STEP-02", "SL-01", "Nur offene Servicefälle anzeigen", "UC-14"],
-  ["CARD-03", "STEP-04", "SL-01", "Alle passenden Fälle als CSV exportieren", "UC-09"],
-  ["CARD-04", "STEP-03", "SL-02", "Leere Trefferliste verstehen", "UC-12"],
-  ["CARD-05", "STEP-04", undefined, "Übergabeliste mit dem Team teilen", undefined],
+  [
+    "CARD-01",
+    "STEP-01",
+    "SL-01",
+    "Meine Fallübersicht sehen",
+    "FE-01",
+    "Die Koordinatorin sieht nur Fälle ihrer Organisation.",
+  ],
+  [
+    "CARD-02",
+    "STEP-02",
+    "SL-01",
+    "Nur offene Servicefälle anzeigen",
+    "UC-14",
+    "So kann die nächste Schicht offene Arbeit übernehmen.",
+  ],
+  [
+    "CARD-03",
+    "STEP-04",
+    "SL-01",
+    "Alle passenden Fälle als CSV exportieren",
+    "UC-09",
+    "Die Liste enthält die sichtbaren Fälle über alle Ergebnisseiten hinweg.",
+  ],
+  [
+    "CARD-04",
+    "STEP-03",
+    "SL-02",
+    "Leere Trefferliste verstehen",
+    "UC-12",
+    "Aktive Filter prüfen und bei Bedarf zurücksetzen.",
+  ],
+  [
+    "CARD-05",
+    "STEP-04",
+    undefined,
+    "Übergabeliste mit dem Team teilen",
+    undefined,
+    "Den passenden Übergabekanal im Workshop klären.",
+  ],
 ] as const;
 
 export const matchedMapLinks: readonly StoryMapCardLink[] = cardRows.flatMap(
@@ -61,12 +96,15 @@ export const matchedMapLinks: readonly StoryMapCardLink[] = cardRows.flatMap(
 );
 
 function customerMap() {
-  const cards: readonly StoryMapCard[] = cardRows.map(([id, stepId, sliceId, title]) => ({
-    id,
-    stepId,
-    ...(sliceId && { sliceId }),
-    title,
-  }));
+  const cards: readonly StoryMapCard[] = cardRows.map(
+    ([id, stepId, sliceId, title, , description]) => ({
+      id,
+      stepId,
+      ...(sliceId && { sliceId }),
+      title,
+      description,
+    }),
+  );
   return {
     schema: "product-engineering.story-map/v1",
     id: customerMapId,
@@ -105,10 +143,10 @@ function adminMap() {
 export async function seedStoryMapsVault() {
   await seedBacklogVault();
   const backlog = [
-    ["UC-09", "Gefilterte Servicefälle vollständig exportieren"],
-    ["UC-12", "Leere Trefferliste erläutern"],
-    ["UC-14", "Offene Servicefälle filtern"],
-  ].map(([id, title], index) => ({
+    ["UC-09", "Gefilterte Servicefälle exportieren", "Active"],
+    ["UC-12", "Leere Trefferliste erklären", "Open"],
+    ["UC-14", "Fallübersicht nach Status filtern", "Done"],
+  ].map(([id, title, status], index) => ({
     path: `${work}/${id}.md`,
     text: newNoteText(
       {
@@ -118,6 +156,7 @@ export async function seedStoryMapsVault() {
         project_id: customerProject,
         type: "PBI",
         title,
+        DeliveryState: status,
         parent: "[[Servicefälle verwalten]]",
       },
       "",

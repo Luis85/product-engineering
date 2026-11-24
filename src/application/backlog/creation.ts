@@ -36,6 +36,7 @@ type BacklogCreateDraft = BacklogDraft & {
   readonly epicTitle?: string;
   readonly featureTitle?: string;
   readonly epic?: string;
+  readonly preserveBlankState?: boolean;
 };
 
 export function newBacklogCreation(kind: BacklogKind) {
@@ -141,7 +142,7 @@ function planCreation(
     const properties = draftProperties(
       {
         ...draft,
-        state: draft.state || defaultState,
+        state: draft.preserveBlankState ? draft.state : draft.state || defaultState,
       },
       context.base,
       owner,

@@ -14,16 +14,17 @@ import { useRememberWorkspaceOrigin } from "../projects";
 import { useMessages, useNavigate, useStream } from "../shell";
 import { StoryMapCreateDialog } from "../story-maps";
 
-const { projectId, prdId, sourcePath, creating } = defineProps<{
+const { projectId, recordId, kind, sourcePath, creating } = defineProps<{
   readonly projectId: ProjectId;
-  readonly prdId: KnowledgeId;
+  readonly recordId: KnowledgeId;
+  readonly kind: "prd" | "jtbd";
   readonly sourcePath: string;
   readonly creating: boolean;
 }>();
 const emit = defineEmits<{ dismiss: [StoryMapId?] }>();
 const text = useMessages()["story-maps"];
 const maps = useStream(storyMapsSnapshot(projectId), storyMapsChanges(projectId));
-const backlinks = computed(() => storyMapBacklinks(projectId, prdId, maps.value.maps));
+const backlinks = computed(() => storyMapBacklinks(projectId, recordId, maps.value.maps, kind));
 const navigate = useNavigate();
 const remember = useRememberWorkspaceOrigin();
 
@@ -54,7 +55,7 @@ function open(id: StoryMapId, event: Event) {
   <StoryMapCreateDialog
     v-if="creating"
     :project-id="projectId"
-    :prd-id="prdId"
+    :prd-id="recordId"
     :source-path="sourcePath"
     @dismiss="emit('dismiss', $event)"
   />

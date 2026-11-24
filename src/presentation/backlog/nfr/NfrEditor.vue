@@ -7,14 +7,13 @@ import {
   PROJECT_BACKLOG,
   PROJECT_USE_CASE,
   backlogChanges,
-  backlogRoute,
   newNfrId,
   nfrTargets,
-  pbiDetailRoute,
   saveNfr,
 } from "../../../application/backlog";
 import type { BacklogSnapshot, NfrRecord } from "../../../application/backlog";
 import type { ProjectId, ProjectMember } from "../../../application/projects";
+import { PROJECT_STORY_MAPS, storyMapNfrContribution } from "../../../application/story-maps";
 import { checkNfrDraft } from "../../../domain/backlog";
 import type {
   NfrCategory,
@@ -29,6 +28,7 @@ import {
   ErrorNotice,
   useAsyncStream,
   useCommand,
+  useHistory,
   useMessages,
   useModal,
   useNavigate,
@@ -39,7 +39,7 @@ import {
 import NfrTargetFields from "./NfrTargetFields.vue";
 import NfrCategoryFields from "./NfrCategoryFields.vue";
 import NfrOwnerField from "./NfrOwnerField.vue";
-import { focusNfrLink } from "./focus";
+import { focusNfrLink, nfrTargetRoute } from "./focus";
 
 const {
   project,
@@ -59,14 +59,15 @@ const leave = ref(false);
 const formId = useId();
 const issues = ref<readonly NfrInputIssue[]>([]);
 const navigate = useNavigate();
-const { history } = useRouting();
+const { definition, history } = useRouting();
+const { back } = useHistory();
 const remember = useRememberWorkspaceOrigin();
 const identity = useQuery(() => newNfrId);
 const save = useCommand(
   (scope: ProjectId, id: NfrId, draft: NfrDraft, targets: readonly NfrTarget[], base?: NfrRecord) =>
-    saveNfr(scope, id, draft, targets, base),
+    saveNfr(scope, id, draft, targets, base, storyMapNfrContribution),
 );
-const choices = useQuery((scope: ProjectId) => nfrTargets(scope));
+const choices = useQuery((scope: ProjectId) => nfrTargets(scope, storyMapNfrContribution));
 const backlog = useAsyncStream<BacklogSnapshot, never>(
   { ready: false, items: [], duplicates: [] },
   backlogChanges(project),
@@ -82,13 +83,15 @@ const focusAfterChoices = ref<string>();
 
 function previousTarget() {
   const route = history.value.forward.at(-1);
-  if (route?.name === PROJECT_USE_CASE && route.projectId === project) return route.pbiId;
-  if (route?.name === PROJECT_BACKLOG && route.projectId === project) return route.item;
+  if (!route || !("projectId" in route) || route.projectId !== project) return;
+  if (route.name === PROJECT_USE_CASE) return "item:" + route.pbiId;
+  if (route.name === PROJECT_BACKLOG) return route.item && "item:" + route.item;
+  if (route.name === PROJECT_STORY_MAPS) return route.mapId && "map:" + route.mapId;
 }
 
 function focusEditor(event: Event) {
   const item = previousTarget();
-  const selector = item && `[data-nfr-open-target="item:${item}"]`;
+  const selector = item && `[data-nfr-open-target="${item}"]`;
   focusAfterChoices.value = selector;
   if (!focusNfrLink(event, selector)) modal.onOpenAutoFocus(event);
 }
@@ -198,10 +201,11 @@ function refocus() {
 }
 
 async function openTarget(target: NfrTarget, event: MouseEvent) {
+  const route = nfrTargetRoute(project, target);
+  if (!route) return;
   remember(event.currentTarget as HTMLElement);
-  const route = target.id.startsWith("UC-")
-    ? pbiDetailRoute(project, target.id)
-    : backlogRoute(project, target.id);
+  const previous = history.value.back.at(-1);
+  if (target.kind === "map" && previous && definition.equals(previous, route)) return back();
   if (!(await navigate(route))) remember(undefined);
 }
 </script>

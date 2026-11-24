@@ -7,7 +7,11 @@ import type { ProjectRecordScreens } from "./record-screens";
 import type { ProjectSearchSource } from "./search-sources";
 import type { ProjectTemplateFactory } from "./template-factories";
 
-export { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "./workspace-position";
+export {
+  useRememberWorkspaceOrigin,
+  useRestoreWorkspacePosition,
+  useWorkspaceOriginKey,
+} from "./workspace-position";
 export { leafModalUi } from "./overlay-ui";
 export type { ProjectRecordPart } from "./record-screens";
 export type { ProjectSearchPart } from "./search-sources";

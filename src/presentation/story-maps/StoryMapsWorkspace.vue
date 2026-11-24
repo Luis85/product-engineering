@@ -68,7 +68,13 @@ async function dismiss(id?: StoryMapId) {
 </script>
 
 <template>
-  <StoryMapDetail v-if="current" :map="current" />
+  <StoryMapDetail
+    v-if="current"
+    :key="current.id"
+    :map="current"
+    :backlog="backlog"
+    :card-id="scope.cardId"
+  />
   <section v-else class="pe-story-maps" data-testid="story-maps">
     <header class="pe-story-maps-heading">
       <div>

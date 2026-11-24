@@ -22,6 +22,7 @@ import type { KnowledgeRecord } from "../../application/knowledge";
 import { openNote } from "../../application/notes";
 import { projectAdministrationRoute } from "../../application/projects";
 import type { ProjectId } from "../../application/projects";
+import { PROJECT_STORY_MAPS } from "../../application/story-maps";
 import type { KnowledgeId } from "../../domain/knowledge";
 import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../projects";
 import {
@@ -55,7 +56,8 @@ const {
   readonly pbiId: string;
   readonly initialTab?: PbiTab | undefined;
 }>();
-const text = useMessages().backlog;
+const catalogs = useMessages();
+const text = catalogs.backlog;
 const navigate = useNavigate();
 const { history } = useRouting();
 const { back } = useHistory();
@@ -76,11 +78,27 @@ const nfrOrigin = computed(() => {
     previous.tab === "nfrs"
   );
 });
+const storyOrigin = computed(() => {
+  const previous = history.value.back.at(-1);
+  return (
+    previous?.name === PROJECT_STORY_MAPS &&
+    previous.projectId === projectId &&
+    previous.mapId !== undefined
+  );
+});
 const returnLabel = computed(() =>
-  nfrOrigin.value ? text.nfr.back : boardOrigin.value ? text.board.returnToBoard : text.pbiReturn,
+  storyOrigin.value
+    ? catalogs["story-maps"].backToMap
+    : nfrOrigin.value
+      ? text.nfr.back
+      : boardOrigin.value
+        ? text.board.returnToBoard
+        : text.pbiReturn,
 );
 function returnToBacklog() {
-  return boardOrigin.value || nfrOrigin.value ? back() : navigate(backlogRoute(projectId));
+  return storyOrigin.value || boardOrigin.value || nfrOrigin.value
+    ? back()
+    : navigate(backlogRoute(projectId));
 }
 const restore = useRestoreWorkspacePosition();
 const remember = useRememberWorkspaceOrigin();

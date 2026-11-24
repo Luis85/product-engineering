@@ -9,6 +9,8 @@ export const SHELL_ICONS: readonly string[] = [
   "lucide:book-open",
   "lucide:arrow-left",
   "lucide:arrow-right",
+  "lucide:arrow-down",
+  "lucide:arrow-up",
   "lucide:check",
   "lucide:circle",
   "lucide:circle-help",

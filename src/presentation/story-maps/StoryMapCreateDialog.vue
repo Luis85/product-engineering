@@ -7,7 +7,13 @@ import UTextarea from "@nuxt/ui/components/Textarea.vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed, nextTick, ref } from "vue";
 import type { ProjectId } from "../../application/projects";
-import { createStoryMap, newStoryMapId, storyMapPrefill } from "../../application/story-maps";
+import {
+  createStoryMap,
+  newStoryMapId,
+  saveStoryMapHeader,
+  storyMapPrefill,
+} from "../../application/story-maps";
+import type { StoryMapRecord } from "../../application/story-maps";
 import type { KnowledgeId } from "../../domain/knowledge";
 import { storyMapFieldInvalid, storyMapFields, storyMapLimits } from "../../domain/story-maps";
 import type { StoryMapField, StoryMapId } from "../../domain/story-maps";
@@ -26,27 +32,38 @@ const {
   projectId,
   prdId = undefined,
   sourcePath = undefined,
+  base = undefined,
 } = defineProps<{
   readonly projectId: ProjectId;
   readonly prdId?: KnowledgeId;
   readonly sourcePath?: string;
+  readonly base?: StoryMapRecord;
 }>();
 const emit = defineEmits<{ dismiss: [StoryMapId?] }>();
 const text = useMessages()["story-maps"];
-const id = useService(newStoryMapId);
+const editBase = base;
+const id = editBase?.id ?? useService(newStoryMapId);
 const command = useCommand(createStoryMap);
+const edit = useCommand(saveStoryMapHeader);
 const open = ref(true);
 const panel = ref<HTMLFormElement>();
 const issue = ref<StoryMapField>();
 let saved: StoryMapId | undefined;
-const busy = command.pending;
+const busy = computed(() => (editBase ? edit.pending.value : command.pending.value));
 const prefill = useQuery(storyMapPrefill);
+const error = computed(() => prefill.message.value ?? edit.message.value ?? command.message.value);
+const dialogTitle = editBase ? text.edit : text.create;
+const submitLabel = editBase ? text.journey.save : text.create;
 const canSubmit = computed(() => !busy.value && (!prdId || Boolean(prefill.value.value)));
 const modal = useModal(open, () => emit("dismiss", saved), close);
 useNavigationGuard(() => !busy.value);
 
 const form = useForm({
-  defaultValues: { title: "", persona: "", goal: "" },
+  defaultValues: {
+    title: editBase?.title ?? "",
+    persona: editBase?.persona ?? "",
+    goal: editBase?.goal ?? "",
+  },
   async onSubmit({ value }) {
     if (!canSubmit.value) return;
     issue.value = storyMapFields.find((field) => storyMapFieldInvalid(field, value[field]));
@@ -55,15 +72,13 @@ const form = useForm({
       panel.value?.querySelector<HTMLElement>(`[name="${issue.value}"]`)?.focus();
       return;
     }
-    if (
-      (
-        await command.run(
+    const result = editBase
+      ? await edit.run(editBase, value)
+      : await command.run(
           { projectId, id, ...(prdId && { prdId }), ...(sourcePath && { sourcePath }) },
           value,
-        )
-      )._tag !== "success"
-    )
-      return;
+        );
+    if (result._tag !== "success") return;
     saved = id;
     close();
   },
@@ -82,7 +97,7 @@ function close() {
 <template>
   <UModal
     :open="open"
-    :title="text.create"
+    :title="dialogTitle"
     :description="text.intro"
     :content="modal"
     :ui="leafModalUi"
@@ -121,8 +136,7 @@ function close() {
             />
           </UFormField>
         </form.Field>
-        <ErrorNotice v-if="prefill.message.value" :message="prefill.message.value" />
-        <ErrorNotice v-else-if="command.message.value" :message="command.message.value" />
+        <ErrorNotice v-if="error" :message="error" />
         <div class="pe:flex pe:flex-wrap pe:justify-end pe:gap-2">
           <UButton
             type="button"
@@ -137,7 +151,7 @@ function close() {
             type="submit"
             :loading="busy"
             :disabled="!canSubmit"
-            :label="text.create"
+            :label="submitLabel"
             data-testid="story-map-submit"
           />
         </div>

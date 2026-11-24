@@ -12,6 +12,7 @@ import type { NfrRecord } from "../../../application/backlog";
 import { openNote } from "../../../application/notes";
 import { projectChanges, projectMembers, projectSnapshot } from "../../../application/projects";
 import type { ProjectId } from "../../../application/projects";
+import { PROJECT_STORY_MAPS } from "../../../application/story-maps";
 import { nfrStandards } from "../../../domain/backlog";
 import type { NfrId } from "../../../domain/backlog";
 import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../../projects";
@@ -141,9 +142,12 @@ async function closeEditor(saved?: NfrId) {
 
 function hasScopedOrigin() {
   const previous = history.value.back.at(-1);
-  if (previous?.name === PROJECT_USE_CASE) return previous.projectId === project;
-  if (previous?.name !== PROJECT_BACKLOG || previous.projectId !== project) return false;
-  return previous.item || previous.tab === "nfrs" || fromItem;
+  if (!previous || !("projectId" in previous) || previous.projectId !== project) return false;
+  if (previous.name === PROJECT_STORY_MAPS) return previous.mapId !== undefined;
+  if (previous.name === PROJECT_USE_CASE) return true;
+  return (
+    previous.name === PROJECT_BACKLOG && (previous.item || previous.tab === "nfrs" || fromItem)
+  );
 }
 
 watch(

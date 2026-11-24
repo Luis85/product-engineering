@@ -1,12 +1,14 @@
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 import { isKnowledgeId } from "../../domain/knowledge";
 import type { KnowledgeId } from "../../domain/knowledge";
-import { storyMapFoundationDraft } from "../../domain/story-maps";
+import { storyMapFoundationDraft, storyMapType } from "../../domain/story-maps";
 import { readKnowledgeNote, resolveKnowledgeNote } from "../knowledge";
 import type { KnowledgeRecord } from "../knowledge";
 import { NoteStore } from "../notes";
 import type { ProjectId } from "../projects";
 import { StoryMapError } from "./errors";
+import type { StoryMapRecord } from "./records";
+import { freshStoryMap, withStoryMapWrite, writeStoryMap } from "./write";
 
 function freshKnowledge(projectId: ProjectId, id: KnowledgeId, kind: string) {
   return resolveKnowledgeNote(projectId, id).pipe(
@@ -78,4 +80,40 @@ export function storyMapPrefill(projectId: ProjectId, prdId: KnowledgeId, path?:
       draft: storyMapFoundationDraft(source.title, source.body, productVision?.body, soleJob?.body),
     };
   });
+}
+
+export type StoryMapFoundationEdit = {
+  readonly prdId: KnowledgeId | undefined;
+  readonly jobIds: readonly KnowledgeId[];
+  readonly references: readonly string[];
+};
+
+export function saveStoryMapFoundations(base: StoryMapRecord, draft: StoryMapFoundationEdit) {
+  return withStoryMapWrite(
+    Effect.gen(function* () {
+      const current = yield* freshStoryMap(base);
+      if (
+        draft.prdId &&
+        draft.prdId !== base.prdId &&
+        !(yield* resolvePrd(base.projectId, draft.prdId, undefined))
+      )
+        return yield* new StoryMapError({ reason: "source" });
+      const jobIds = [...new Set(draft.jobIds)];
+      const newJobs = jobIds.filter((id) => !base.jobIds.includes(id));
+      const jobs = yield* Effect.forEach(newJobs, (id) =>
+        freshKnowledge(base.projectId, id, "jtbd"),
+      );
+      const references = [...new Set(draft.references)];
+      if (
+        jobs.some((job) => !job) ||
+        Result.isFailure(storyMapType.fields.references.check(references))
+      )
+        return yield* new StoryMapError({ reason: "target" });
+      return yield* writeStoryMap(base, current, {
+        prd_id: draft.prdId,
+        job_ids: jobIds,
+        references,
+      });
+    }),
+  );
 }

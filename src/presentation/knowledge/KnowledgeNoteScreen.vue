@@ -249,9 +249,10 @@ if (autofocusDraft) {
       <DomainKnowledgeContribution v-if="hasDomain" :note="note" />
       <KnowledgeRelatedNotes :note="note" :can-create="canDerive" />
       <KnowledgeStoryMaps
-        v-if="note.kind === 'prd'"
+        v-if="note.kind === 'prd' || note.kind === 'jtbd'"
         :project-id="note.projectId"
-        :prd-id="note.id"
+        :record-id="note.id"
+        :kind="note.kind"
         :source-path="note.path"
         :creating="creatingMap"
         @dismiss="dismissMap"

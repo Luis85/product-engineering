@@ -11,8 +11,22 @@ import {
 } from "../notes";
 import { projectIdSchema } from "../projects";
 import { extractStoryMapFoundationDraft } from "./foundations";
-export { isStoryMapCard, isStoryMapCardLink } from "./cards";
-export type { StoryMapCard, StoryMapCardLink } from "./cards";
+export {
+  isStoryMapActivity,
+  isStoryMapCard,
+  isStoryMapCardLink,
+  isStoryMapSlice,
+  isStoryMapStep,
+  isStoryMapWork,
+} from "./cards";
+export type {
+  StoryMapActivity,
+  StoryMapCard,
+  StoryMapCardLink,
+  StoryMapSlice,
+  StoryMapStep,
+  StoryMapWork,
+} from "./cards";
 
 export const storyMapIdSchema = Schema.TemplateLiteral(["story-map-", Schema.String]).check(
   Schema.makeFilter((value) => recordIdIssue("story-map", value) === undefined),
@@ -49,11 +63,13 @@ export const storyMapType = defineNoteType({
     ),
     prd_id: text({ schema: knowledgeId, issue: "knowledge.invalid" }),
     job_ids: list({ schema: Schema.Array(knowledgeId), issue: "knowledge.invalid" }),
+    references: list({ schema: Schema.Array(lineOfText(1024)), issue: "reference.invalid" }),
     activities: required(recordList()),
     steps: required(recordList()),
     slices: required(recordList()),
     cards: required(recordList()),
     card_links: recordList(),
+    story_work: recordList(),
   },
   migrations: {},
 });

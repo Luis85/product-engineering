@@ -2,9 +2,13 @@ import { Effect, Stream } from "effect";
 import type { KnowledgeId } from "../../domain/knowledge";
 import type { NoteValues } from "../../domain/notes";
 import {
+  isStoryMapActivity,
   isStoryMapCard,
   isStoryMapCardLink,
   isStoryMapId,
+  isStoryMapSlice,
+  isStoryMapStep,
+  isStoryMapWork,
   storyMapType,
 } from "../../domain/story-maps";
 import { noteChanges, noteSnapshot } from "../notes";
@@ -26,6 +30,18 @@ function coreFields(values: NoteValues<typeof storyMapType.fields>) {
   };
 }
 
+function collectionFields(values: NoteValues<typeof storyMapType.fields>) {
+  return {
+    jobIds: values.job_ids ?? [],
+    references: values.references ?? [],
+    activities: (values.activities ?? []).filter(isStoryMapActivity),
+    steps: (values.steps ?? []).filter(isStoryMapStep),
+    slices: (values.slices ?? []).filter(isStoryMapSlice),
+    cardLinks: (values.card_links ?? []).filter(isStoryMapCardLink),
+    work: (values.story_work ?? []).filter(isStoryMapWork),
+  };
+}
+
 function recordOf(note: Decoded) {
   if (note.kind !== "editable" || note.issues.length || !isStoryMapId(note.id)) return;
   const fields = coreFields(note.values);
@@ -34,9 +50,9 @@ function recordOf(note: Decoded) {
     ...fields,
     id: note.id,
     path: note.path,
+    frontmatter: note.frontmatter,
     prdId: note.values.prd_id,
-    jobIds: note.values.job_ids ?? [],
-    cardLinks: (note.values.card_links ?? []).filter(isStoryMapCardLink),
+    ...collectionFields(note.values),
   };
 }
 
@@ -45,10 +61,15 @@ export const decodeStoryMap = (note: Note) => recordOf(storyMapType.decode(note)
 
 export function storyMapBacklinks(
   projectId: ProjectId,
-  prdId: KnowledgeId,
+  recordId: KnowledgeId,
   maps: readonly StoryMapRecord[],
+  kind: "prd" | "jtbd" = "prd",
 ) {
-  return maps.filter((map) => map.projectId === projectId && map.prdId === prdId);
+  return maps.filter(
+    (map) =>
+      map.projectId === projectId &&
+      (kind === "prd" ? map.prdId === recordId : map.jobIds.includes(recordId)),
+  );
 }
 
 function projectStoryMaps(

@@ -18,7 +18,8 @@ const missing = computed(() =>
 const choices = computed(() => [...options, ...missing.value]);
 
 function label(target: NfrTarget) {
-  return target.id + " · " + (lookup.value.get(nfrTargetKey(target))?.title ?? text.targetMissing);
+  const option = lookup.value.get(nfrTargetKey(target));
+  return (option?.displayId ?? target.id) + " · " + (option?.title ?? text.targetMissing);
 }
 
 function toggle(target: NfrTarget, event: Event) {
@@ -35,7 +36,7 @@ function toggle(target: NfrTarget, event: Event) {
     <ul v-if="targets.length" class="pe:grid pe:gap-1">
       <li v-for="target in targets" :key="nfrTargetKey(target)">
         <UButton
-          v-if="target.kind === 'item' && lookup.has(nfrTargetKey(target))"
+          v-if="lookup.has(nfrTargetKey(target))"
           type="button"
           variant="link"
           class="pe-nfr-link"

@@ -51,7 +51,7 @@ export function backlogDescendants(items: readonly BacklogItem[], source: Backlo
   return result;
 }
 
-function prdOrigins(project: ProjectId, items: readonly BacklogItem[]) {
+export function backlogPrdOrigins(project: ProjectId, items: readonly BacklogItem[]) {
   return Effect.forEach(
     items,
     (item) => {
@@ -73,7 +73,7 @@ function prdOrigins(project: ProjectId, items: readonly BacklogItem[]) {
 
 export const backlogDomainContribution: DomainScopeContributor<
   | Effect.Services<ReturnType<typeof backlogSnapshot>>
-  | Effect.Services<ReturnType<typeof prdOrigins>>
+  | Effect.Services<ReturnType<typeof backlogPrdOrigins>>
 > = (project, target) =>
   Effect.gen(function* () {
     if (target.kind !== "item") return;
@@ -83,7 +83,7 @@ export const backlogDomainContribution: DomainScopeContributor<
     );
     if (!source) return;
     const relatives = [...backlogAncestors(items, source), ...backlogDescendants(items, source)];
-    const prds = (yield* prdOrigins(project, [source, ...relatives])).filter(
+    const prds = (yield* backlogPrdOrigins(project, [source, ...relatives])).filter(
       (origin) => origin !== undefined,
     );
     return {

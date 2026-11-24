@@ -212,6 +212,7 @@ it("creates a real Job and PRD in an empty project, cancels and retries its link
   await el("story-map-row").click();
   await expect(el("story-map-detail").$("h1")).toHaveText(title);
   expect(await readViewRoute()).toEqual(mapRoute);
+  await el("story-map-context-foundations").click();
   await el("story-map-source-prd").click();
   await expect(el("knowledge-story-map-backlink")).toHaveText(`SM-01 · ${title}`);
   await el("knowledge-story-map-backlink").click();
@@ -229,4 +230,45 @@ it("creates a real Job and PRD in an empty project, cancels and retries its link
     folder,
   );
   expect(pbiCount).toBe(0);
+
+  await expect(el("story-map-detail")).toHaveText(
+    expect.stringContaining("Lege die erste Aktivität an."),
+  );
+  const addTitle = async (nodeTitle: string) => {
+    await field("title").setValue(nodeTitle);
+    await el("story-map-journey-save").click();
+  };
+  await el("story-map-add-activity").click();
+  await addTitle("Schicht vorbereiten");
+  await el("story-map-add-step").click();
+  await addTitle("Offene Fragen sichten");
+  await el("story-map-add-slice").click();
+  await addTitle("Erste Übergabe");
+  const addStory = browser.$(
+    `${ROOT} button[aria-label='Story für „Offene Fragen sichten“ in „Erste Übergabe“ hinzufügen']`,
+  );
+  await addStory.click();
+  await addTitle("Nachfragen zur Übergabe erkennen");
+  const card = browser.$(`${ROOT} article[aria-label="Nachfragen zur Übergabe erkennen"]`);
+  await addStory.click();
+  await addTitle("Antworten für die nächste Schicht sammeln");
+  await expect(
+    browser.$(`${ROOT} article[aria-label="Antworten für die nächste Schicht sammeln"]`),
+  ).toExist();
+  await card.$('[data-testid="story-map-work"]').click();
+  await el("story-map-work-add").click();
+  const workEditor = browser.$(`${ROOT} form:has([data-testid="story-map-work-save"])`);
+  await expect(workEditor.$('[name="destination"]')).toHaveValue("story");
+  await workEditor.$('[name="kind"]').selectByAttribute("value", "Q");
+  await workEditor.$('[name="title"]').setValue("Wer beantwortet offene Rückfragen?");
+  await el("story-map-work-save").click();
+  await expect(el("story-map-owned-work")).toHaveText(
+    expect.stringContaining("Wer beantwortet offene Rückfragen?"),
+  );
+  const authored = await stored(paths[0] ?? "");
+  expect(authored).toContain(job);
+  expect(authored).toContain("Nachfragen zur Übergabe erkennen");
+  expect(authored).toContain("Antworten für die nächste Schicht sammeln");
+  expect(authored).toContain("Wer beantwortet offene Rückfragen?");
+  expect(authored).toContain("card_links: []");
 });

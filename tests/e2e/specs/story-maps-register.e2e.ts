@@ -62,6 +62,7 @@ it("opens the matched Kundenportal map from Planning and isolates the second pro
   await expect(el("story-map-create")).toHaveText("Story Map erstellen");
   await keyboardActivate(await row());
   await expect(el("story-map-detail").$("h1")).toHaveText(matchedMapTitle);
+  await el("story-map-context-foundations").click();
   await expect(el("story-map-source-prd")).toHaveText(`PRD-03 · ${matchedPrdTitle}`);
   expect(await readViewRoute()).toEqual(storyMapsRoute(customerProject, customerMapId));
   await keyboardActivate(await goBack());

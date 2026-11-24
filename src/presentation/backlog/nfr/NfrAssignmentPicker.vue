@@ -6,14 +6,21 @@ import { computed, ref, useId } from "vue";
 import { directNfrs, setTargetNfrs } from "../../../application/backlog";
 import type { NfrRecord } from "../../../application/backlog";
 import type { ProjectId } from "../../../application/projects";
+import { storyMapNfrContribution } from "../../../application/story-maps";
 import type { NfrId, NfrTarget } from "../../../domain/backlog";
 import { leafModalUi } from "../../projects";
 import { ErrorNotice, useCommand, useMessages, useModal, useNavigationGuard } from "../../shell";
 
-const { project, target, records } = defineProps<{
+const {
+  project,
+  target,
+  records,
+  label = undefined,
+} = defineProps<{
   readonly project: ProjectId;
   readonly target: NfrTarget;
   readonly records: readonly NfrRecord[];
+  readonly label?: string | undefined;
 }>();
 const emit = defineEmits<{ dismiss: [] }>();
 const texts = useMessages().backlog;
@@ -25,7 +32,7 @@ const {
   message,
   run: save,
 } = useCommand((scope: ProjectId, assignment: NfrTarget, ids: readonly NfrId[]) =>
-  setTargetNfrs(scope, assignment, ids),
+  setTargetNfrs(scope, assignment, ids, storyMapNfrContribution),
 );
 const modal = useModal(open, () => emit("dismiss"), close);
 const form = useForm({
@@ -58,7 +65,7 @@ function close() {
   <UModal
     :open="open"
     :title="text.assign"
-    :description="target.id"
+    :description="label ?? target.id"
     :content="modal"
     :dismissible="!pending"
     :close="false"

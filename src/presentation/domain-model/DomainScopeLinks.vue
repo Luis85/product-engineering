@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { useForm } from "@tanstack/vue-form";
-import { computed } from "vue";
-import { backlogDomainContribution, backlogRoute, pbiDetailRoute } from "../../application/backlog";
+import { computed, watch } from "vue";
+import { backlogRoute, pbiDetailRoute } from "../../application/backlog";
 import { entityAssigned, setEntityScope } from "../../application/domain-model";
 import {
   knowledgeChanges,
@@ -12,46 +12,69 @@ import {
 } from "../../application/knowledge";
 import type { KnowledgeRecord } from "../../application/knowledge";
 import type { ProjectId } from "../../application/projects";
+import {
+  PROJECT_STORY_MAPS,
+  storyMapDomainContribution,
+  storyMapsChanges,
+  storyMapsRoute,
+  storyMapsSnapshot,
+} from "../../application/story-maps";
 import type { EntityScopeTarget } from "../../domain/knowledge";
+import { isStoryMapId } from "../../domain/story-maps";
+import type { StoryMapId } from "../../domain/story-maps";
 import {
   ErrorNotice,
   useCommand,
+  useHistory,
   useMessages,
   useNavigate,
   useNavigationGuard,
+  useRouting,
   useStream,
 } from "../shell";
-import { useProjectSearchSources, useRememberWorkspaceOrigin } from "../projects";
+import {
+  useProjectSearchSources,
+  useRememberWorkspaceOrigin,
+  useRestoreWorkspacePosition,
+} from "../projects";
 
 const {
   note = undefined,
   item = undefined,
+  map = undefined,
   fromModel = false,
   fromPbi = false,
 } = defineProps<{
   readonly note?: KnowledgeRecord;
   readonly item?: { readonly projectId: ProjectId; readonly id: string };
+  readonly map?: { readonly projectId: ProjectId; readonly id: StoryMapId };
   readonly fromModel?: boolean;
   readonly fromPbi?: boolean;
 }>();
 const text = useMessages()["domain-model"];
 const index = useStream(knowledgeSnapshot, knowledgeChanges);
 const contributors = useProjectSearchSources();
-const projectId = note?.projectId ?? item?.projectId;
+const projectId = note?.projectId ?? item?.projectId ?? map?.projectId;
+const storyMaps =
+  projectId && note?.kind === "entity"
+    ? useStream(storyMapsSnapshot(projectId), storyMapsChanges(projectId))
+    : undefined;
 const project = computed(() => (projectId ? projectKnowledge(projectId, index.value.records) : []));
 const current = computed(() => project.value.find(({ id }) => id === note?.id) ?? note);
 const isEntity = computed(() => note?.kind === "entity");
 const heading = computed(() => (isEntity.value ? text.productScope : text.assignedEntities));
 const chooser = computed(() =>
   isEntity.value
-    ? targets.value.some(({ target }) => target.kind === "item")
+    ? targets.value.some(({ target }) => target.kind !== "prd")
       ? text.assignScope
       : text.assignPrd
     : text.assignEntity,
 );
 const source: EntityScopeTarget | undefined = item
   ? { kind: "item", id: item.id }
-  : note && { kind: "prd", id: note.id };
+  : map
+    ? { kind: "map", id: map.id }
+    : note && { kind: "prd", id: note.id };
 type ScopePeer = {
   readonly id: string;
   readonly title: string;
@@ -82,7 +105,14 @@ const targets = computed<readonly ScopePeer[]>(() => {
       displayId,
       target: { kind: "prd", id } as const,
     }));
-  return [...prds, ...items];
+  const maps =
+    storyMaps?.value.maps.map(({ id, title, displayId }) => ({
+      id,
+      title,
+      displayId,
+      target: { kind: "map", id } as const,
+    })) ?? [];
+  return [...prds, ...maps, ...items];
 });
 
 type Link = {
@@ -119,7 +149,11 @@ const choices = computed(() => {
   );
 });
 const navigate = useNavigate();
+const { history } = useRouting();
+const { back } = useHistory();
 const rememberOrigin = useRememberWorkspaceOrigin();
+const restore = useRestoreWorkspacePosition();
+watch(related, () => restore(), { flush: "post" });
 const {
   pending,
   message,
@@ -130,7 +164,7 @@ const {
     entity: KnowledgeRecord["id"],
     target: EntityScopeTarget,
     assigned: boolean,
-  ) => setEntityScope(scopeProject, entity, target, assigned, backlogDomainContribution),
+  ) => setEntityScope(scopeProject, entity, target, assigned, storyMapDomainContribution),
 );
 useNavigationGuard(() => !pending.value);
 
@@ -146,6 +180,8 @@ function linkKey(link: Link) {
 function open(peer: KnowledgeRecord | ScopePeer, event: MouseEvent) {
   if (!projectId) return;
   rememberOrigin(event.currentTarget as HTMLElement);
+  if ("target" in peer && peer.target.kind === "map" && isStoryMapId(peer.id))
+    return openMap(peer.id);
   if ("target" in peer && peer.target.kind === "item")
     return navigate(
       peer.id.startsWith("UC-")
@@ -157,7 +193,20 @@ function open(peer: KnowledgeRecord | ScopePeer, event: MouseEvent) {
   return navigate(knowledgeDetailRoute(projectId, knowledge.id, scopeOrigin()));
 }
 
+function openMap(id: StoryMapId) {
+  if (!projectId) return;
+  const previous = history.value.back.at(-1);
+  return previous?.name === PROJECT_STORY_MAPS &&
+    previous.projectId === projectId &&
+    previous.mapId === id
+    ? back()
+    : navigate(storyMapsRoute(projectId, id));
+}
+
 function scopeOrigin() {
+  if (map) {
+    return { section: "storymaps", reference: { kind: "story-map", recordId: map.id } };
+  }
   if (item) {
     return {
       section: fromPbi ? "usecase" : "backlog",

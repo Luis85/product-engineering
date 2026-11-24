@@ -1,41 +1,79 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import { computed, onMounted, watch } from "vue";
-import {
-  knowledgeChanges,
-  knowledgeDetailRoute,
-  knowledgeSnapshot,
-} from "../../application/knowledge";
+import { computed, shallowRef } from "vue";
+import type { BacklogSnapshot } from "../../application/backlog";
+import { directNfrs, nfrChanges, nfrSnapshot } from "../../application/backlog";
+import { entityAssigned } from "../../application/domain-model";
+import { knowledgeChanges, knowledgeSnapshot, projectKnowledge } from "../../application/knowledge";
 import { openNote } from "../../application/notes";
-import { PROJECT_STORY_MAPS, storyMapsRoute } from "../../application/story-maps";
+import {
+  PROJECT_STORY_MAPS,
+  readStoryMapForEdit,
+  storyMapsRoute,
+} from "../../application/story-maps";
 import type { StoryMapRecord } from "../../application/story-maps";
-import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../projects";
+import type { StoryMapSlice } from "../../domain/story-maps";
+import { NfrSourceLinks } from "../backlog";
+import { useWorkspaceOriginKey } from "../projects";
 import {
   ErrorNotice,
   useCommand,
   useHistory,
   useMessages,
   useNavigate,
+  useQuery,
   useRouting,
   useStream,
 } from "../shell";
+import StoryMapJourney from "./StoryMapJourney.vue";
+import StoryMapContext from "./StoryMapContext.vue";
+import StoryMapCreateDialog from "./StoryMapCreateDialog.vue";
+import StoryMapEntityScope from "./StoryMapEntityScope.vue";
+import StoryMapFoundations from "./StoryMapFoundations.vue";
 
-const { map } = defineProps<{ readonly map: StoryMapRecord }>();
+const {
+  map,
+  backlog,
+  cardId = undefined,
+} = defineProps<{
+  readonly map: StoryMapRecord;
+  readonly backlog: BacklogSnapshot;
+  readonly cardId?: string | undefined;
+}>();
+defineSlots<{
+  "slice-review"?: (scope: {
+    readonly map: StoryMapRecord;
+    readonly slice: StoryMapSlice;
+  }) => unknown;
+}>();
 const text = useMessages()["story-maps"];
+const editing = shallowRef<StoryMapRecord>();
+const read = useQuery(readStoryMapForEdit);
+let editButton: HTMLElement | undefined;
 const navigate = useNavigate();
 const { history } = useRouting();
 const { back } = useHistory();
 const open = useCommand(openNote);
 const known = useStream(knowledgeSnapshot, knowledgeChanges);
-const sourcePrd = computed(() =>
-  known.value.records.find(
-    ({ id, kind, projectId }) => kind === "prd" && id === map.prdId && projectId === map.projectId,
-  ),
-);
-const rememberOrigin = useRememberWorkspaceOrigin();
-const restore = useRestoreWorkspacePosition();
-onMounted(() => restore());
-watch(known, () => restore(), { flush: "post" });
+const records = computed(() => projectKnowledge(map.projectId, known.value.records));
+const nfrs = useStream(nfrSnapshot(map.projectId), nfrChanges(map.projectId));
+const scope = { kind: "map" as const, id: map.id };
+const counts = computed(() => ({
+  foundations: Number(Boolean(map.prdId)) + map.jobIds.length + map.references.length,
+  prototypes: 0,
+  nfrs: directNfrs(nfrs.value.records, scope).length,
+  entities: records.value.filter((note) => note.kind === "entity" && entityAssigned(note, scope))
+    .length,
+}));
+const previousFocus = useWorkspaceOriginKey();
+const key = previousFocus() ?? "";
+const initial = key.startsWith("story-map-foundations-")
+  ? "foundations"
+  : key.startsWith("nfr-")
+    ? "nfrs"
+    : key.startsWith("domain-link-") || key.startsWith("story-entity-")
+      ? "entities"
+      : undefined;
 
 function goToMaps() {
   const previous = history.value.back.at(-1);
@@ -48,16 +86,15 @@ function goToMaps() {
   return navigate(storyMapsRoute(map.projectId));
 }
 
-function goToSource(event: Event) {
-  const source = sourcePrd.value;
-  if (!source) return;
-  rememberOrigin(event.currentTarget as HTMLElement);
-  return navigate(
-    knowledgeDetailRoute(map.projectId, source.id, {
-      section: "storymaps",
-      reference: { kind: "story-map", recordId: map.id },
-    }),
-  );
+async function startEdit(event: MouseEvent) {
+  editButton = event.currentTarget as HTMLElement;
+  const result = await read.run(map);
+  if (result._tag === "success") editing.value = result.value;
+}
+
+function finishEdit() {
+  editing.value = undefined;
+  editButton?.focus({ preventScroll: true });
 }
 </script>
 
@@ -72,38 +109,43 @@ function goToSource(event: Event) {
       :label="text.backToMaps"
       @click="goToMaps"
     />
-    <header class="pe:grid pe:min-w-0 pe:gap-1">
-      <h1 tabindex="-1" class="pe-story-map-title">{{ map.title }}</h1>
-      <p class="pe:text-sm pe:text-muted">
-        {{ map.displayId }} · {{ text.storyCount(map.cards.length) }}
-      </p>
+    <header class="pe-story-map-header">
+      <div class="pe:grid pe:min-w-0 pe:gap-1">
+        <p class="pe:text-xs pe:text-muted">{{ map.displayId }}</p>
+        <h1 tabindex="-1" class="pe-story-map-title">{{ map.title }}</h1>
+        <p class="pe-story-goal">{{ map.goal }}</p>
+        <p class="pe-story-persona">
+          <span>{{ text.fields.persona }}</span> <strong>{{ map.persona }}</strong>
+        </p>
+      </div>
+      <UButton
+        type="button"
+        color="neutral"
+        variant="soft"
+        :label="text.edit"
+        :loading="read.pending.value"
+        data-testid="story-map-edit"
+        @click="startEdit"
+      />
     </header>
-    <dl class="pe-story-map-details">
-      <div>
-        <dt>{{ text.fields.persona }}</dt>
-        <dd>{{ map.persona }}</dd>
-      </div>
-      <div>
-        <dt>{{ text.fields.goal }}</dt>
-        <dd>{{ map.goal }}</dd>
-      </div>
-      <div v-if="map.prdId && known.ready">
-        <dt>{{ text.source }}</dt>
-        <dd>
-          <UButton
-            v-if="sourcePrd"
-            type="button"
-            variant="link"
-            class="pe:wrap-anywhere pe:text-start"
-            data-testid="story-map-source-prd"
-            data-pe-focus-key="story-map-source-prd"
-            @click="goToSource"
-            >{{ sourcePrd.displayId }} · {{ sourcePrd.title }}</UButton
-          >
-          <span v-else>{{ text.errors.source }}</span>
-        </dd>
-      </div>
-    </dl>
+    <ErrorNotice v-if="read.message.value" :message="read.message.value" />
+    <StoryMapContext :initial="initial" :counts="counts">
+      <template #foundations><StoryMapFoundations :map="map" :records="records" /></template>
+      <template #prototypes
+        ><p>{{ text.context.noPrototypes }}</p></template
+      >
+      <template #nfrs
+        ><NfrSourceLinks :project="map.projectId" :map-id="map.id" :label="map.title" show-scope
+      /></template>
+      <template #entities
+        ><StoryMapEntityScope :map="map" :records="records" :backlog="backlog"
+      /></template>
+    </StoryMapContext>
+    <StoryMapJourney :map="map" :backlog="backlog" :card-id="cardId">
+      <template #slice-review="{ slice }"
+        ><slot name="slice-review" :map="map" :slice="slice"
+      /></template>
+    </StoryMapJourney>
     <UButton
       type="button"
       variant="soft"
@@ -114,5 +156,11 @@ function goToSource(event: Event) {
       @click="open.run(map.path)"
     />
     <ErrorNotice v-if="open.message.value" :message="open.message.value" />
+    <StoryMapCreateDialog
+      v-if="editing"
+      :project-id="map.projectId"
+      :base="editing"
+      @dismiss="finishEdit"
+    />
   </article>
 </template>

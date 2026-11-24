@@ -27,7 +27,14 @@ export { readBacklogItem, saveBacklogItem } from "./edit";
 export type { BacklogEdit } from "./edit";
 export { moveBacklogItem, rankingPeers, undoBacklogMove } from "./placement";
 export type { BacklogPlacement } from "./placement";
-export { backlogDomainContribution, backlogGitSource, resolveBacklogItem } from "./contributions";
+export {
+  backlogAncestors,
+  backlogDescendants,
+  backlogDomainContribution,
+  backlogGitSource,
+  backlogPrdOrigins,
+  resolveBacklogItem,
+} from "./contributions";
 export { companionKinds, pbiCompanions } from "./companions";
 export type { CompanionKind } from "./companions";
 export { newPbiCriterionIdentity, savePbiCriterion } from "./pbi-criteria";

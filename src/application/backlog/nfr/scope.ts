@@ -7,10 +7,15 @@ export type NfrMap = {
   readonly projectId: ProjectId;
   readonly id: string;
   readonly title: string;
+  readonly displayId?: string;
   readonly links: readonly { readonly projectId: ProjectId; readonly itemId: string }[];
 };
 export type NfrScopeSource = NfrTarget | { readonly kind: "nfr"; readonly id: NfrId };
-export type NfrOrigin = NfrScopeSource & { readonly title: string; readonly projectId: ProjectId };
+export type NfrOrigin = NfrScopeSource & {
+  readonly title: string;
+  readonly projectId: ProjectId;
+  readonly displayId?: string;
+};
 export type NfrScopeRecord = NfrDraft & {
   readonly id: NfrId;
   readonly projectId: ProjectId;
@@ -37,7 +42,13 @@ export function nfrTargetOptions(
       .map(({ id, title }) => ({ kind: "item" as const, id, title, projectId })),
     ...maps
       .filter((map) => map.projectId === projectId)
-      .map(({ id, title }) => ({ kind: "map" as const, id, title, projectId })),
+      .map(({ id, title, displayId }) => ({
+        kind: "map" as const,
+        id,
+        title,
+        projectId,
+        ...(displayId && { displayId }),
+      })),
   ];
 }
 

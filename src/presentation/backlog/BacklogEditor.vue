@@ -23,6 +23,7 @@ import type {
 import { openNote } from "../../application/notes";
 import { projectMemberChoices } from "../../application/projects";
 import type { BacklogBase, ProjectId } from "../../application/projects";
+import { PROJECT_STORY_MAPS } from "../../application/story-maps";
 import type { BacklogKind, NfrId } from "../../domain/backlog";
 import { ArtifactGitHistory, useArtifactGit } from "../git";
 import { KnowledgeLeaveDialog } from "../knowledge";
@@ -30,13 +31,16 @@ import { leafModalUi } from "../projects";
 import {
   ErrorNotice,
   useCommand,
+  useHistory,
   useMessages,
   useModal,
   useNavigationGuard,
   useQuery,
+  useRouting,
 } from "../shell";
 import BacklogEditorForm from "./BacklogEditorForm.vue";
 import NfrSourceLinks from "./nfr/NfrSourceLinks.vue";
+import StoryMapItemLinks from "./StoryMapItemLinks.vue";
 import { focusNfrLink } from "./nfr/focus";
 
 const {
@@ -63,7 +67,18 @@ const emit = defineEmits<{
   saved: [BacklogItem["key"], boolean, BacklogItem?];
   adopted: [BacklogItem];
 }>();
-const text = useMessages().backlog;
+const catalogs = useMessages();
+const text = catalogs.backlog;
+const { history: navigationHistory } = useRouting();
+const { back } = useHistory();
+const storyOrigin = computed(() => {
+  const previous = navigationHistory.value.back.at(-1);
+  return (
+    previous?.name === PROJECT_STORY_MAPS &&
+    previous.projectId === project &&
+    previous.mapId !== undefined
+  );
+});
 const edit = shallowRef(initialEdit);
 const assignedItem = computed(() => (edit.value?.item.adopted ? edit.value.item.id : undefined));
 const open = ref(true);
@@ -278,6 +293,7 @@ async function adoptItem(event: MouseEvent) {
           <section v-if="edit" :aria-label="text.related" class="pe-backlog-editor-section">
             <h3 class="pe:text-sm pe:font-semibold">{{ text.related }}</h3>
             <slot name="links" />
+            <StoryMapItemLinks :project="project" :item="assignedItem" />
             <NfrSourceLinks :project="project" :item-id="assignedItem" />
             <div class="pe-backlog-actions">
               <UButton
@@ -316,6 +332,16 @@ async function adoptItem(event: MouseEvent) {
       </div>
     </template>
     <template #footer>
+      <UButton
+        v-if="storyOrigin"
+        type="button"
+        variant="link"
+        color="neutral"
+        :label="catalogs['story-maps'].backToMap"
+        :disabled="busy"
+        data-testid="backlog-return-story-map"
+        @click="back()"
+      />
       <UButton
         v-if="history"
         type="button"

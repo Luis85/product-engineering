@@ -287,6 +287,10 @@ it("derives a PRD from a saved Job and creates, cancels and reopens its linked n
     click(root, "knowledge-story-map-backlink");
     await eventually(() => expect(navigation.current()).toEqual(map));
     await eventually(() =>
+      expect(root.querySelector(q("story-map-context-foundations"))).toBeTruthy(),
+    );
+    click(root, "story-map-context-foundations");
+    await eventually(() =>
       expect(find(root, q("story-map-source-prd")).textContent).toContain("Handover requirements"),
     );
     click(root, "story-map-source-prd");

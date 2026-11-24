@@ -13,6 +13,10 @@ type ScopeContribution = {
   readonly source: ScopeOrigin;
   readonly origins?: readonly ScopeOrigin[];
   readonly foundationEntities?: readonly KnowledgeId[];
+  readonly foundationOrigins?: readonly {
+    readonly entity: KnowledgeId;
+    readonly origin: ScopeOrigin;
+  }[];
 };
 
 export type DomainScopeContributor<R = never> = (
@@ -104,13 +108,28 @@ function scopeOrigins(
     for (const origin of contribution.origins ?? []) {
       if (origin.projectId === project) sources.set(scopeKey(origin), origin);
     }
-    for (const id of contribution.foundationEntities ?? []) {
-      const matches = foundations.get(id) ?? new Set<string>();
-      matches.add(key);
-      foundations.set(id, matches);
-    }
+    addFoundations(contribution, project, sources, foundations);
   }
   return { sources, foundations };
+}
+
+function addFoundations(
+  contribution: ScopeContribution,
+  project: ProjectId,
+  sources: ReadonlyMap<string, ScopeOrigin>,
+  foundations: Map<KnowledgeId, Set<string>>,
+) {
+  const fromSource = (contribution.foundationEntities ?? []).map((entity) => ({
+    entity,
+    origin: contribution.source,
+  }));
+  for (const { entity, origin } of [...fromSource, ...(contribution.foundationOrigins ?? [])]) {
+    const key = scopeKey(origin);
+    if (origin.projectId !== project || !sources.has(key)) continue;
+    const matches = foundations.get(entity) ?? new Set<string>();
+    matches.add(key);
+    foundations.set(entity, matches);
+  }
 }
 
 function endpoint({ id, title, displayId }: KnowledgeRecord) {

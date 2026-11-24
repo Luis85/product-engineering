@@ -6,6 +6,7 @@ import type { PbiDetail } from "../../application/backlog";
 import { DomainScopeLinks } from "../domain-model";
 import { KnowledgeReferences } from "../knowledge";
 import { ErrorNotice, useCommand, useMessages, useNavigationGuard } from "../shell";
+import StoryMapItemLinks from "./StoryMapItemLinks.vue";
 
 const { detail } = defineProps<{ readonly detail: PbiDetail }>();
 const emit = defineEmits<{
@@ -70,6 +71,7 @@ async function update(references: readonly string[]) {
         </li>
       </ul>
     </section>
+    <StoryMapItemLinks :project="detail.projectId" :item="detail.pbiId" />
     <DomainScopeLinks :item="{ id: detail.pbiId, projectId: detail.projectId }" from-pbi />
     <KnowledgeReferences
       :source="detail.edit.item.path"

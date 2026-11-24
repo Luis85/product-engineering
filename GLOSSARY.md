@@ -24,6 +24,13 @@
 | PRD requirement ID | `requirement_id` |
 | Related product vision | `vision_id` |
 | Related Jobs to Be Done | `job_ids` |
+| Story Map | `storyMap` |
+| Activity | `activity` |
+| User step | `step` |
+| Delivery slice | `slice` |
+| Story card | `card` |
+| Story backlog link | `card_links` |
+| Story-owned companion work | `story_work` |
 | Originating deliverable | `deliverable_id` |
 | Deliverable | `deliverable` |
 | Expected deliverable outcome | `outcome` |
