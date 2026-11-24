@@ -15,6 +15,7 @@ import type { ProjectRecordPart, ProjectSearchPart, ProjectTemplatePart } from "
 import type { ModuleScreens, SurfaceDefinition, SurfaceSection } from "./shell/host";
 import type { ScreenLoader, SettingsSectionPart } from "./shell/host";
 import { shellScreens } from "./shell/screens";
+import { storyMapsScreens } from "./story-maps/screens";
 
 const MODULE_SCREENS: {
   readonly [Name in AppModuleName]: ModuleScreens<Name> &
@@ -31,6 +32,7 @@ const MODULE_SCREENS: {
   "domain-model": domainModelScreens,
   git: gitScreens,
   backlog: backlogScreens,
+  "story-maps": storyMapsScreens,
 };
 
 const modules = APP_MODULES.map(({ name }) => MODULE_SCREENS[name]);

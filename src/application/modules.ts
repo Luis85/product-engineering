@@ -7,6 +7,7 @@ import { knowledgeModule } from "./knowledge";
 import { notesModule } from "./notes";
 import { projectsModule } from "./projects";
 import { shellModule } from "./shell";
+import { storyMapsModule } from "./story-maps";
 
 export const APP_MODULES = [
   shellModule,
@@ -18,6 +19,7 @@ export const APP_MODULES = [
   domainModelModule,
   artifactGitModule,
   backlogModule,
+  storyMapsModule,
 ] as const;
 
 export type AppModule = (typeof APP_MODULES)[number];

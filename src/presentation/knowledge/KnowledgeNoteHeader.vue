@@ -6,13 +6,14 @@ import { projectChanges, projectMembers, projectSnapshot } from "../../applicati
 import { useMessages, useStream } from "../shell";
 import KnowledgeNoteActions from "./KnowledgeNoteActions.vue";
 
-const { title, note, gitStatus, persistedApproval } = defineProps<{
+const { title, note, gitStatus, persistedApproval, canCreateMap } = defineProps<{
   readonly gitStatus: string;
   readonly title: string;
   readonly note: KnowledgeNote | undefined;
   readonly persistedApproval: KnowledgeNote["values"]["approval"];
+  readonly canCreateMap: boolean;
 }>();
-const emit = defineEmits<{ edit: []; history: [] }>();
+const emit = defineEmits<{ edit: []; history: []; createMap: [HTMLElement | undefined] }>();
 const text = useMessages().knowledge;
 const projects = useStream(projectSnapshot, projectChanges);
 const approval = computed(() =>
@@ -40,7 +41,11 @@ const assignment = computed(() => {
           @click="emit('edit')"
           :label="text.note.edit"
         />
-        <KnowledgeNoteActions :note="note" />
+        <KnowledgeNoteActions
+          :note="note"
+          :can-create-map="canCreateMap"
+          @create-map="emit('createMap', $event)"
+        />
       </div>
     </div>
     <div v-if="note" class="pe-note-meta">

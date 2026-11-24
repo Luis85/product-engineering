@@ -25,7 +25,9 @@ import type {
   ProjectSearchRecord,
 } from "../../../application/projects";
 import type { Route } from "../../../application/routes";
+import { PROJECT_STORY_MAPS, storyMapsRoute } from "../../../application/story-maps";
 import { isDeliverableId } from "../../../domain/backlog";
+import { isStoryMapId } from "../../../domain/story-maps";
 import { useCommand, useHistory, useMessages, useNavigate, useRouting } from "../../shell";
 
 const {
@@ -43,7 +45,7 @@ const {
 const texts = useMessages();
 const text = texts.projects;
 const navigate = useNavigate();
-const { history } = useRouting();
+const { definition, history } = useRouting();
 const { back } = useHistory();
 const { pending: filePending, message: fileMessage, run: openFile } = useCommand(openKnowledgeNote);
 const destination = computed(() => {
@@ -73,6 +75,12 @@ function sectionOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"
   }
 }
 
+function storyMapOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
+  if (origin?.section !== "storymaps") return;
+  const id = origin.reference?.recordId;
+  return storyMapsRoute(projectId, isStoryMapId(id) ? id : undefined);
+}
+
 function deliverableOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
   if (origin?.section !== "deliverables") return;
   const id = origin.reference?.recordId;
@@ -92,6 +100,8 @@ function templateOrigin(projectId: ProjectId, id: string | undefined) {
 
 function returnToSection(section: Route) {
   const last = history.value.back.at(-1);
+  if (section.name === PROJECT_STORY_MAPS && last && definition.equals(last, section))
+    return back();
   if (returnsToPbi(last, section)) return back();
   if (record.origin?.section === "board-git" && returnsToBoard(last)) return back();
   return navigate(section);
@@ -118,7 +128,9 @@ function returnsToBoard(last: Route | undefined) {
 function leave() {
   const { projectId, reference } = record;
   const section =
-    deliverableOrigin(projectId, record.origin) ?? sectionOrigin(projectId, record.origin);
+    storyMapOrigin(projectId, record.origin) ??
+    deliverableOrigin(projectId, record.origin) ??
+    sectionOrigin(projectId, record.origin);
   if (section) return returnToSection(section);
   const { section: previousSection, reference: previous } = record.origin ?? {};
   if (previous && !sameReference(reference, previous)) {

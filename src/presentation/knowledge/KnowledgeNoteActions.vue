@@ -6,8 +6,13 @@ import type { KnowledgeNote } from "../../application/knowledge";
 import { openProjectIntegrationSettings } from "../../application/projects";
 import { useCommand, useMessages, useQuery } from "../shell";
 
-const { note } = defineProps<{ readonly note: KnowledgeNote }>();
-const text = useMessages().knowledge.note;
+const { note, canCreateMap } = defineProps<{
+  readonly note: KnowledgeNote;
+  readonly canCreateMap: boolean;
+}>();
+const emit = defineEmits<{ createMap: [HTMLElement | undefined] }>();
+const catalog = useMessages();
+const text = catalog.knowledge.note;
 const open = ref(false);
 const id = useId();
 const actionGroup = ref<HTMLElement>();
@@ -33,6 +38,11 @@ function checkFocus(event: FocusEvent) {
   if (!event.relatedTarget || !actionGroup.value?.contains(event.relatedTarget as Node)) {
     open.value = false;
   }
+}
+
+function createMap() {
+  close();
+  emit("createMap", trigger.value?.$el);
 }
 
 async function exportNote() {
@@ -72,6 +82,7 @@ async function reviewSettings() {
       color="neutral"
       variant="outline"
       data-testid="knowledge-note-actions"
+      data-pe-focus-key="knowledge-note-actions"
       :aria-expanded="open"
       :aria-controls="id"
       @click="toggle"
@@ -93,6 +104,16 @@ async function reviewSettings() {
         :loading="query.pending.value"
         @click="exportNote"
         :label="text.export"
+      />
+      <UButton
+        v-if="note.kind === 'prd'"
+        type="button"
+        variant="ghost"
+        color="neutral"
+        :disabled="!canCreateMap"
+        data-testid="knowledge-create-story-map"
+        @click="createMap"
+        :label="catalog['story-maps'].createFromPrd"
       />
       <UButton
         type="button"

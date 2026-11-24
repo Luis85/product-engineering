@@ -103,7 +103,8 @@
           "domain/items",
           "domain/projects",
           "domain/knowledge",
-          "domain/backlog"
+          "domain/backlog",
+          "domain/story-maps"
         ]
       },
       { "from": "domain/shell", "allow": [] },
@@ -120,6 +121,7 @@
           "application/domain-model",
           "application/git",
           "application/backlog",
+          "application/story-maps",
           "application-module",
           "application-composition"
         ]
@@ -213,6 +215,7 @@
           "presentation/domain-model",
           "presentation/git",
           "presentation/backlog",
+          "presentation/story-maps",
           "presentation/shell",
           "application",
           "application-composition",
@@ -249,6 +252,7 @@
           "presentation/domain-model",
           "presentation/git",
           "presentation/backlog",
+          "presentation/story-maps",
           "application",
           "application-composition",
           "domain"

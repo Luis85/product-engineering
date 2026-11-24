@@ -8,9 +8,11 @@ import type {
   ProjectSearchRecord,
 } from "../../application/projects";
 import type { Route } from "../../application/routes";
-import { useRestoreWorkspacePosition } from "../projects";
+import { storyMapsRoute } from "../../application/story-maps";
+import type { StoryMapId } from "../../domain/story-maps";
+import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../projects";
 import { DomainKnowledgeContribution } from "../domain-model";
-import { useMessages, useNavigationGuard } from "../shell";
+import { useMessages, useNavigate, useNavigationGuard } from "../shell";
 import KnowledgeDraftStatus from "./KnowledgeDraftStatus.vue";
 import KnowledgeDeliverables from "./KnowledgeDeliverables.vue";
 import KnowledgeLeaveDialog from "./KnowledgeLeaveDialog.vue";
@@ -21,6 +23,7 @@ import KnowledgeNoteMetadata from "./KnowledgeNoteMetadata.vue";
 import KnowledgeNoteTabs from "./KnowledgeNoteTabs.vue";
 import KnowledgeReferences from "./KnowledgeReferences.vue";
 import KnowledgeRelatedNotes from "./KnowledgeRelatedNotes.vue";
+import KnowledgeStoryMaps from "./KnowledgeStoryMaps.vue";
 import { useKnowledgeDraftNavigation } from "./draft-navigation";
 import { useKnowledgeDraft } from "./note-draft";
 
@@ -71,6 +74,10 @@ const canEditReferences = computed(() => Boolean(note.value?.editable) && !savin
 const canDerive = computed(() => !dirty.value && !saving.value);
 const showSave = computed(() => pane.value === "editing" || dirty.value);
 const hasDomain = computed(() => note.value?.kind === "entity" || note.value?.kind === "prd");
+const navigate = useNavigate();
+const rememberOrigin = useRememberWorkspaceOrigin();
+const creatingMap = ref(false);
+let mapTrigger: HTMLElement | undefined;
 const git = useArtifactGit(() => knowledgeGitSource(record));
 let gitTrigger: HTMLElement | undefined;
 
@@ -81,6 +88,19 @@ function showWorkingChanges() {
 
 function openGitCommit(event: Event) {
   if (git.beginCommit()) gitTrigger = event.currentTarget as HTMLElement;
+}
+
+function startMap(trigger: HTMLElement | undefined) {
+  mapTrigger = trigger;
+  creatingMap.value = true;
+}
+
+async function dismissMap(id?: StoryMapId) {
+  creatingMap.value = false;
+  if (id) {
+    rememberOrigin(mapTrigger);
+    await navigate(storyMapsRoute(record.projectId, id));
+  } else await nextTick(() => mapTrigger?.focus({ preventScroll: true }));
 }
 
 async function saveThenCommit(event: Event) {
@@ -174,8 +194,10 @@ if (autofocusDraft) {
       :note="note"
       :persisted-approval="persistedApproval"
       :git-status="git.status.value"
+      :can-create-map="canDerive"
       @edit="edit"
       @history="showWorkingChanges"
+      @create-map="startMap"
     />
     <template v-if="note">
       <KnowledgeNoteTabs :pane="pane" :editable="note.editable" @select="selectPane" />
@@ -226,6 +248,14 @@ if (autofocusDraft) {
       />
       <DomainKnowledgeContribution v-if="hasDomain" :note="note" />
       <KnowledgeRelatedNotes :note="note" :can-create="canDerive" />
+      <KnowledgeStoryMaps
+        v-if="note.kind === 'prd'"
+        :project-id="note.projectId"
+        :prd-id="note.id"
+        :source-path="note.path"
+        :creating="creatingMap"
+        @dismiss="dismissMap"
+      />
     </template>
     <p v-else-if="loading" role="status">{{ text.loading }}</p>
     <p v-else-if="loadingError" role="alert">{{ loadingError.title }}</p>

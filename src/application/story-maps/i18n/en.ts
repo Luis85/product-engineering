@@ -1,0 +1,32 @@
+export const en = {
+  title: "Story Maps",
+  intro: "Plan user journeys and delivery slices.",
+  empty: "No story maps in this project yet.",
+  loading: "Loading story maps…",
+  missing: "This story map is unavailable in this project.",
+  create: "Create Story Map",
+  createFromPrd: "Create Story Map from PRD",
+  source: "Source PRD",
+  sourceLabel: (title: string, id: string) => `From PRD ${title} · ${id}`,
+  cancel: "Cancel",
+  fields: {
+    title: "Story Map name",
+    persona: "Target audience",
+    goal: "User goal",
+  },
+  invalid: {
+    title: "Enter a Story Map name with at most 160 characters.",
+    persona: "Enter a target audience with at most 100 characters.",
+    goal: "Enter a user goal with at most 300 characters.",
+  },
+  storyCount: (count: number) => (count === 1 ? "1 story" : `${count} stories`),
+  linkedStoryCount: (count: number) => `${count} with backlog link`,
+  openNote: "Open Story Map note",
+  backToMaps: "Back to Story Maps",
+  errors: {
+    scope: "The project is unavailable.",
+    identity: "This Story Map identity is already in use.",
+    fields: "Check the Story Map name, target audience and user goal.",
+    source: "The source PRD is unavailable in this project.",
+  },
+};

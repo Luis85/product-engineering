@@ -5,6 +5,7 @@ import type { Catalog } from "../../application/messages";
 import { projectAdministrationRoute, projectOverviewRoute } from "../../application/projects";
 import type { ProjectId } from "../../application/projects";
 import type { Route } from "../../application/routes";
+import { storyMapsRoute } from "../../application/story-maps";
 
 type Section = {
   readonly label: string;
@@ -43,7 +44,14 @@ export function projectGroups(
         ]
       : [],
     planning: id
-      ? [{ label: catalog.backlog.title, route: backlogBoardRoute(id), icon: "i-lucide-list-tree" }]
+      ? [
+          { label: catalog["story-maps"].title, route: storyMapsRoute(id), icon: "i-lucide-map" },
+          {
+            label: catalog.backlog.title,
+            route: backlogBoardRoute(id),
+            icon: "i-lucide-list-tree",
+          },
+        ]
       : [],
     delivery: [],
     administration: [

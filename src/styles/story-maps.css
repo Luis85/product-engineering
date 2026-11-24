@@ -1,0 +1,113 @@
+.pe-story-maps {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  container-type: inline-size;
+}
+
+.pe-story-maps-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.pe-story-map-title {
+  font-size: var(--pe-text-2xl);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+:is(.pe-story-map-list, .pe-story-maps-empty, .pe-story-map-details) {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-bg);
+  margin: 0;
+  min-width: 0;
+}
+
+.pe-story-map-list {
+  list-style: none;
+  padding: 0;
+}
+
+.pe-story-map-list li + li {
+  border-top: 1px solid var(--ui-border);
+}
+
+.pe-story-map-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 1rem;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: auto;
+  padding: 0.875rem 1rem;
+  border: 0;
+  text-align: start;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ui-text);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.pe-story-map-row:hover {
+  background: var(--ui-bg-elevated);
+}
+
+.pe-story-map-row:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: -2px;
+}
+
+:is(.pe-story-map-row-copy, .pe-story-map-row-meta) {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+  color: var(--ui-text-muted);
+  font-size: var(--pe-text-sm);
+}
+
+.pe-story-map-row strong {
+  font-size: var(--pe-text-base);
+  color: var(--ui-text);
+}
+
+.pe-story-map-details {
+  display: grid;
+  gap: 1rem;
+  overflow-wrap: anywhere;
+}
+
+:is(.pe-story-map-details, .pe-story-maps-empty) {
+  padding: 1rem;
+}
+
+.pe-story-map-details dt {
+  font-size: var(--pe-text-sm);
+  color: var(--ui-text-muted);
+}
+
+.pe-story-map-details dd {
+  margin: 0.25rem 0 0;
+  white-space: pre-wrap;
+}
+
+@container (max-width: 34rem) {
+  .pe-story-map-row {
+    grid-template-columns: minmax(0, 1fr) 1rem;
+    row-gap: 0.5rem;
+  }
+
+  .pe-story-map-row-meta {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .pe-story-map-row > :last-child {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
