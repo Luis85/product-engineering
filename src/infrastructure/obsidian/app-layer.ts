@@ -1,6 +1,7 @@
 import type { Plugin } from "obsidian";
 import { appServicesLayer } from "../../application/app-services-layer";
 import type { AppAdapters, AppServiceOptions } from "../../application/app-services-layer";
+import { localFactoryFixture } from "../local-factory";
 import { artifactGitLayer } from "./git";
 import { projectFilesLayer } from "./projects";
 import { notesAdapters } from "./notes";
@@ -17,6 +18,7 @@ export function appLayer(
       ...shellAdapters(plugin),
       ...notesAdapters(plugin),
       artifactGit: artifactGitLayer(plugin.app.vault),
+      requestDelivery: localFactoryFixture,
       projectFiles: projectFilesLayer(
         plugin.app.vault,
         plugin.app.workspace,

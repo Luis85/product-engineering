@@ -7,7 +7,8 @@ import {
   normalizeRequestScope,
 } from "../../domain/feature-requests";
 import type { FeatureRequestId } from "../../domain/feature-requests";
-import { parseSchemaMarker, recordId } from "../../domain/notes";
+import { parseSchemaMarker, recordId, sameFrontmatter } from "../../domain/notes";
+import type { Frontmatter } from "../../domain/notes";
 import { readPbiDetail } from "../backlog";
 import { IdGenerator, NoteStore, recordFolder, recordFrontmatter } from "../notes";
 import type { Note } from "../notes";
@@ -216,6 +217,55 @@ export function createFeatureRequest(
           );
           recent.add(created.path);
           return id;
+        }),
+      ),
+    ),
+  );
+}
+
+type RequestIdentity = Pick<FeatureRequest, "projectId" | "id">;
+
+function uniqueRequest(identity: RequestIdentity, notes: readonly Note[]) {
+  const matches = notes.filter(({ frontmatter }) => frontmatter.id === identity.id);
+  const note = matches[0];
+  const record = note && decodeFeatureRequest(note);
+  if (matches.length !== 1 || !record || record.projectId !== identity.projectId) return;
+  return { note, record };
+}
+
+export const freshFeatureRequest = (identity: RequestIdentity) =>
+  FeatureRequestWrites.use(({ recent }) =>
+    NoteStore.use((store) =>
+      Effect.map(freshRequests(store, recent), (notes) => uniqueRequest(identity, notes)?.record),
+    ),
+  );
+
+function requestChange(store: NoteStore["Service"], note: Note, values: Frontmatter) {
+  const fields = Object.entries(values);
+  const set = Object.fromEntries(fields.filter(([, value]) => value !== undefined));
+  const remove = fields.flatMap(([key, value]) => (value === undefined ? [key] : []));
+  return store.update(note.path, (current) =>
+    sameFrontmatter(current, note.frontmatter)
+      ? Result.succeed({ set, remove })
+      : Result.fail(new FeatureRequestError({ reason: "conflict" })),
+  );
+}
+
+export function changeFeatureRequest<A, E, R>(
+  expected: RequestIdentity,
+  change: (
+    current: FeatureRequest,
+    persist: (set: Frontmatter) => ReturnType<typeof requestChange>,
+  ) => Effect.Effect<A, E, R>,
+) {
+  return FeatureRequestWrites.use(({ lock, recent }) =>
+    lock.withPermit(
+      Effect.uninterruptible(
+        Effect.gen(function* () {
+          const store = yield* NoteStore;
+          const found = uniqueRequest(expected, yield* freshRequests(store, recent));
+          if (!found) return yield* new FeatureRequestError({ reason: "identity" });
+          return yield* change(found.record, (set) => requestChange(store, found.note, set));
         }),
       ),
     ),

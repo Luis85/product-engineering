@@ -1,38 +1,74 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { pbiDetailRoute } from "../../application/backlog";
-import type { BacklogSnapshot, PbiPreparationGap, PbiTab } from "../../application/backlog";
-import type { FeatureRequest } from "../../application/feature-requests";
-import type { ProjectBaseCheck } from "../../domain/projects";
-import { projectGatePhases } from "../../domain/projects";
-import { useRememberWorkspaceOrigin } from "../projects";
-import { ErrorNotice, useMessages, useNavigate } from "../shell";
-import { useRequestGates } from "./request-gates";
+import type { PbiPreparationGap, PbiTab } from "../../application/backlog";
+import {
+  confirmRequestReady,
+  featureRequestNoteOrigin,
+  releaseFeatureRequest,
+} from "../../application/feature-requests";
+import type {
+  FeatureRequest,
+  FeatureRequestRevision,
+  RequestPackagePreview,
+} from "../../application/feature-requests";
+import { knowledgeDetailRoute, projectKnowledgeRoute } from "../../application/knowledge";
+import { projectAdministrationRoute } from "../../application/projects";
+import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../projects";
+import { ErrorNotice, useCommand, useMessages, useNavigate } from "../shell";
+import FeatureRequestGatePhase from "./FeatureRequestGatePhase.vue";
 
-const { record, backlog } = defineProps<{
+const { record, revision, preview, pending } = defineProps<{
   readonly record: FeatureRequest;
-  readonly backlog: BacklogSnapshot;
+  readonly revision: FeatureRequestRevision | undefined;
+  readonly preview: RequestPackagePreview | undefined;
+  readonly pending: boolean;
 }>();
 const messages = useMessages();
 const text = messages["feature-requests"];
-const { evidence, current, progress, pending, error } = useRequestGates(
-  () => record,
-  () => backlog,
+const draft = computed(() => revision?.isCurrent && record.state === "draft");
+const current = computed(() => (draft.value ? preview?.gates : undefined));
+const evidence = computed(() => ({
+  ready: draft.value ? current.value?.ready : revision?.readyGates,
+  done: draft.value ? current.value?.done : revision?.doneGates,
+}));
+const {
+  pending: confirming,
+  message: confirmationError,
+  run: confirm,
+} = useCommand(confirmRequestReady);
+const {
+  pending: releasing,
+  message: releaseError,
+  run: release,
+} = useCommand(releaseFeatureRequest);
+const busy = computed(() => confirming.value || releasing.value || pending);
+const error = computed(() => releaseError.value ?? confirmationError.value);
+const manual = computed(
+  () =>
+    new Set<string>(
+      current.value?.rules?.ready.filter(({ type }) => type === "manual").map(({ id }) => id),
+    ),
 );
-const titleFor = (id: string, title: string | undefined) =>
-  title ?? messages.projects.definitions.baseChecks[id as ProjectBaseCheck] ?? id;
+const noManual = new Set<string>();
 const navigate = useNavigate();
 const remember = useRememberWorkspaceOrigin();
-const gap = computed(() => current.value?.gaps[0]);
+const restore = useRestoreWorkspacePosition();
+const gaps = computed(() =>
+  (current.value?.gaps ?? []).map((gap, index) => ({
+    gap,
+    key: gap.reason + (gap.record?.id ?? ""),
+    test: index === 0 ? "request-prepare" : "request-repair",
+    label: preparationLabel(gap),
+  })),
+);
 const notice = computed(() => {
-  if (pending.value) return text.loadingGates;
+  if (pending) return text.loadingGates;
   return current.value?.rulesAvailable === false ? text.gatesUnavailable : undefined;
 });
-const preparationLabel = computed(
-  () => gap.value && messages.backlog.pbiGates.reasons[gap.value.reason],
-);
-const showPreparation = (phase: string) => phase === "ready" && Boolean(preparationLabel.value);
+const preparationLabel = ({ reason, record: input }: PbiPreparationGap) =>
+  messages.backlog.pbiGates.reasons[reason] + (input ? ` · ${input.displayId}` : "");
 const tabs: Partial<Record<PbiPreparationGap["reason"], PbiTab>> = {
   prd: "edit",
   research: "edit",
@@ -43,16 +79,29 @@ const tabs: Partial<Record<PbiPreparationGap["reason"], PbiTab>> = {
   gitUnavailable: "git",
 };
 
-async function prepare(event: MouseEvent) {
-  if (!gap.value) return;
-  remember(event.currentTarget as HTMLElement);
-  if (
-    !(await navigate(
-      pbiDetailRoute(record.projectId, record.pbiId, tabs[gap.value.reason] ?? "usecase"),
-    ))
-  )
-    remember(undefined);
+async function toggle(id: string, checked: boolean) {
+  if (!current.value?.rules) return;
+  await confirm(record, id, current.value.rules.version, checked);
 }
+
+const releaseDisabled = computed(() => !preview?.ready || busy.value);
+function publish() {
+  if (preview) return release(record, preview.basis);
+}
+
+async function prepare(gap: PbiPreparationGap, event: MouseEvent) {
+  remember(event.currentTarget as HTMLElement);
+  const target = gap.record
+    ? knowledgeDetailRoute(record.projectId, gap.record.id, featureRequestNoteOrigin(record.id))
+    : gap.reason === "repository"
+      ? projectAdministrationRoute(record.projectId, "project")
+      : gap.reason === "vision"
+        ? projectKnowledgeRoute(record.projectId)
+        : pbiDetailRoute(record.projectId, record.pbiId, tabs[gap.reason] ?? "usecase");
+  if (!(await navigate(target))) remember(undefined);
+}
+
+watch(gaps, () => restore("available"), { flush: "post" });
 </script>
 
 <template>
@@ -60,26 +109,42 @@ async function prepare(event: MouseEvent) {
     <h2 class="pe:font-semibold">{{ text.gates }}</h2>
     <p v-if="notice" role="status">{{ notice }}</p>
     <ErrorNotice v-if="error" :message="error" />
-    <div v-for="phase in projectGatePhases" :key="phase" class="pe-request-gate-phase">
-      <h3 class="pe:font-semibold">
-        {{ messages.projects.definitions.phases[phase] }} · {{ progress(evidence[phase]) }}
-      </h3>
-      <ul v-if="evidence[phase]?.length" class="pe:grid pe:gap-1">
-        <li v-for="gate in evidence[phase]" :key="gate.id" class="pe-request-gate-row">
-          <span>{{ titleFor(gate.id, gate.title) }}</span>
-          <span class="pe-request-state">{{ text.gateStatus[gate.status] }}</span>
+    <FeatureRequestGatePhase
+      phase="ready"
+      :gates="evidence.ready"
+      :manual="manual"
+      :pending="busy"
+      @toggle="toggle"
+    >
+      <ul class="pe:grid pe:gap-1">
+        <li v-for="{ gap, key, test, label } in gaps" :key="key">
+          <UButton
+            type="button"
+            variant="link"
+            class="pe:p-0 pe:text-start pe:whitespace-normal pe:wrap-anywhere"
+            :data-testid="test"
+            :data-pe-focus-key="'request-prepare-' + key"
+            :label="label"
+            @click="prepare(gap, $event)"
+          />
         </li>
       </ul>
-      <UButton
-        v-if="showPreparation(phase)"
-        type="button"
-        variant="link"
-        class="pe:justify-self-start pe:p-0 pe:text-start pe:wrap-anywhere"
-        data-testid="request-prepare"
-        data-pe-focus-key="request-prepare"
-        :label="preparationLabel ?? ''"
-        @click="prepare"
-      />
-    </div>
+    </FeatureRequestGatePhase>
+    <FeatureRequestGatePhase
+      phase="done"
+      :gates="evidence.done"
+      :manual="noManual"
+      :pending="busy"
+    />
+    <UButton
+      v-if="draft"
+      type="button"
+      class="pe:justify-self-start"
+      :label="text.release"
+      data-testid="request-release"
+      :disabled="releaseDisabled"
+      :loading="releasing"
+      @click="publish"
+    />
   </section>
 </template>

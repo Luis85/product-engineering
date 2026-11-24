@@ -8,7 +8,36 @@ export {
 } from "./records";
 export type { FeatureRequest } from "./records";
 export { readDraftRequestGates, requestGateProgress } from "./gates";
-export { featureRequestsRoute, PROJECT_FEATURE_REQUESTS } from "./routes";
+export {
+  featureRequestsRoute,
+  featureRequestNoteOrigin,
+  featureRequestOriginRoute,
+  PROJECT_FEATURE_REQUESTS,
+} from "./routes";
 export type { FeatureRequestOrigin, FeatureRequestsRoute } from "./routes";
 export { activeFeatureRequest, createFeatureRequest, newFeatureRequestId } from "./write";
 export type { FeatureRequestDraft } from "./write";
+export { confirmRequestReady, editRequestScope } from "./draft";
+export { canonicalRequestJson, verifyRequestPackage } from "./delivery-package";
+export type { RequestPackage, StoredRequestPackage } from "./delivery-package";
+export { readRequestPackagePreview } from "./package-inputs";
+export type { RequestPackagePreview } from "./package-inputs";
+export { readFeatureRequestBaseline, releaseFeatureRequest, requestInputChanges } from "./release";
+export {
+  canPrepareFollowup,
+  featureRequestRevision,
+  featureRequestRevisions,
+  prepareRequestFollowup,
+  readFeatureRequestRevision,
+} from "./revisions";
+export type { FeatureRequestRevision } from "./revisions";
+export { FeatureRequestDelivery, unavailableRequestDelivery } from "./factory-port";
+export type { FactoryAcknowledgement, FactoryCallback, FactoryFixtureAction } from "./factory-port";
+export {
+  dispatchFeatureRequest,
+  recordFactoryEvent,
+  replayFactoryEvent,
+  replyToFactory,
+  retryFeatureRequest,
+  simulateFactoryEvent,
+} from "./factory";

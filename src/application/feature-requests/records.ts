@@ -19,6 +19,8 @@ export type FeatureRequest = BoardRequest & {
   readonly blocker: Values["blocker"];
   readonly readyGates: readonly RequestGate[] | undefined;
   readonly doneGates: readonly RequestGate[] | undefined;
+  readonly manualChecks?: { readonly version: number; readonly ids: readonly string[] };
+  readonly deliveryData?: string;
 };
 
 function coreValues(values: Values) {
@@ -27,10 +29,21 @@ function coreValues(values: Values) {
   return { projectId, pbiId, displayId, scope, title };
 }
 
+function storedDelivery(values: Values) {
+  const { run_id, ready_checks, ready_check_version, delivery_data, dispatch_recorded } = values;
+  return {
+    ...(run_id && { runId: run_id }),
+    ...(ready_checks &&
+      ready_check_version && { manualChecks: { version: ready_check_version, ids: ready_checks } }),
+    ...(delivery_data && { deliveryData: delivery_data }),
+    ...(dispatch_recorded && { acknowledgedDispatch: true }),
+  };
+}
+
 function recordOf(note: Decoded): FeatureRequest | undefined {
   if (note.kind !== "editable" || note.issues.length || !isFeatureRequestId(note.id)) return;
   const core = coreValues(note.values);
-  const { revision, state, sequence, run_id } = note.values;
+  const { revision, state, sequence } = note.values;
   if (!core || !revision || !state || !sequence) return;
   return {
     id: note.id,
@@ -42,7 +55,7 @@ function recordOf(note: Decoded): FeatureRequest | undefined {
     blocker: note.values.blocker,
     readyGates: note.values.ready_gates,
     doneGates: note.values.done_gates,
-    ...(run_id && { runId: run_id }),
+    ...storedDelivery(note.values),
   };
 }
 

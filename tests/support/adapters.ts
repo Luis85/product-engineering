@@ -83,6 +83,7 @@ function inMemoryStore(initial?: unknown, { uncancellableSaves = false }: StoreO
 export type TestAdapterOptions = StoreOptions & {
   readonly initialSettings?: unknown;
   readonly artifactGit?: AppAdapters["artifactGit"];
+  readonly requestDelivery?: AppAdapters["requestDelivery"];
   readonly agentChat?: AppAdapters["agentChat"];
   readonly hostEvents?: AppAdapters["hostEvents"];
 };
@@ -105,6 +106,7 @@ export function testAdapters(options: TestAdapterOptions = {}) {
 
   const adapters: AppAdapters = {
     ...(options.artifactGit ? { artifactGit: options.artifactGit } : {}),
+    ...(options.requestDelivery ? { requestDelivery: options.requestDelivery } : {}),
     ...(options.agentChat ? { agentChat: options.agentChat } : {}),
     settingsStore: store.layer,
     notifier: Layer.succeed(Notifier, {

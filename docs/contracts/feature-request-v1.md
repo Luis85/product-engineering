@@ -1,0 +1,17 @@
+# Feature Request release and run evidence
+
+The project's `product-engineering.feature-request/v1` record keeps the stable request ID and the current revision. It stores release and run evidence with that revision. Preparing a follow-up moves the previous package, gate results, run journal and any business decision to the same note's history. The next draft reads current inputs. A revision read resolves the stored package using the project, stable request ID and revision number.
+
+## Package bytes
+
+The JSON export contains `package` and, for a newly released revision, `checksum`. The latter specifies `algorithm` as `SHA-256`, `serialization` as `sorted-json-utf8-v1`, and `value` as a lowercase hexadecimal SHA-256 digest. The hash input is the UTF-8 encoding of the `package` value serialized as compact ECMAScript JSON. Object keys are sorted using the default JavaScript UTF-16 sort order before JSON serialization, array order is preserved, and the bytes have no BOM or trailing newline. The export sends the stored envelope bytes. For example, SHA-256 can be independently computed on the UTF-8 bytes of the compact `package` property within that export. An envelope with a recorded checksum must match the canonical bytes of its decoded fields before the package is exposed for export or verified for dispatch.
+
+Package fields include the reviewed destination and classification, the PBI and its criteria, the requirement anchor, scoped work IDs, approved attachment Markdown, Gherkin, resolved NFR and domain provenance, configured definitions and Ready evidence. Markdown is preserved from reviewed Git bytes. A local wikilink can identify an approved, committed Knowledge record in the same project. The package stores that record's stable ID and Git revision alongside the original link target, anchor, and alias. Selecting a document as an attachment includes its text. A reference with no `artifact` property identifies an unresolved link occurrence. Git source SHAs, the package checksum and the separately recorded tested implementation SHA have distinct meanings.
+
+Legacy packages can have an absent NFR or domain field. The view displays that field as unknown. Current releases record a captured empty list or empty domain scope explicitly. A legacy package without a checksum remains readable and exportable. Factory dispatch requires verified package integrity and a current eligible Git baseline.
+
+## Run evidence
+
+The local Factory adapter acknowledges a project, request, revision, checksum, run and attempt. Request mutations serialize through the request write permit and recheck the current note before persisting. Duplicate events are idempotent. Events for another revision, run or attempt cannot change the current revision. The tested commit, technical review and each criterion/scenario result must agree before the request enters Review. The fixture is identified in the journal and UI. It uses no remote worker, Git hosting, PR creation or CI service.
+
+The application entry exports `readFeatureRequestRevision`, `featureRequestRevision`, `featureRequestRevisions` and `verifyRequestPackage` for consumers. Review displays technical verification and the recorded business decision separately. The V20 review owns business decisions. An acknowledged dispatch projects the board card into In Development. The configured manual stage remains available to the team.

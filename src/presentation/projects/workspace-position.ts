@@ -16,7 +16,9 @@ type Position = {
 
 const focusSelector = "[data-pe-focus-key]";
 const scrollSelector = "[data-pe-scroll-key]";
-const restoreKey: InjectionKey<(phase?: "settled") => void> = Symbol("workspace-position-restore");
+const restoreKey: InjectionKey<(phase?: "settled" | "available") => void> = Symbol(
+  "workspace-position-restore",
+);
 const originKey: InjectionKey<(control: HTMLElement | undefined) => void> = Symbol(
   "workspace-position-origin",
 );
@@ -95,6 +97,7 @@ export function useWorkspacePosition(
   let origin: HTMLElement | undefined;
   const positions: Position[] = [];
   let restoredControl: HTMLElement | undefined;
+  let fallbackControl: HTMLElement | undefined;
 
   function heading() {
     return content.value?.querySelector<HTMLElement>("h1[tabindex]") ?? content.value;
@@ -117,7 +120,8 @@ export function useWorkspacePosition(
     const target = currentPosition();
     const focused = positionControl(workspace, target);
     if (!focused && !fallback) return;
-    (focused ?? heading())?.focus({ preventScroll: true });
+    if (!focused) fallbackControl = heading();
+    (focused ?? fallbackControl)?.focus({ preventScroll: true });
     restoreScroll(workspace, target);
     restoredControl = focused;
   }
@@ -131,7 +135,7 @@ export function useWorkspacePosition(
   }
   provide(restoreKey, (phase) => {
     if (phase === "settled") restoreSettledScroll();
-    else restore();
+    else if (phase !== "available" || fallbackControl?.matches(":focus")) restore();
   });
   function rememberOrigin(control: HTMLElement | undefined) {
     origin = control;
@@ -157,6 +161,7 @@ export function useWorkspacePosition(
       if (positions.length > HISTORY_LIMIT) positions.shift();
       origin = undefined;
       restoredControl = undefined;
+      fallbackControl = undefined;
       const sectionChange = keepsWorkspacePosition(previous, route);
       previous = route;
       if (sectionChange) return;

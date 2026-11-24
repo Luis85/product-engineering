@@ -1,3 +1,4 @@
+import { Result } from "effect";
 import { expect, it } from "vitest";
 import {
   activeFeatureRequest,
@@ -214,6 +215,23 @@ it("computes draft gates from the configured active rules, PBI and scope", async
     expect(requestGateProgress(gates.ready)).toEqual({ met: 3, total: 6 });
     expect(requestGateProgress(gates.done)).toEqual({ met: 0, total: 2 });
     expect(requestGateProgress(undefined)).toBeUndefined();
+    await run(
+      store.update(record.path, () =>
+        Result.succeed({
+          set: {
+            ready_checks: ["project-criterion-33333333-3333-4333-8333-000000000752"],
+            ready_check_version: 2,
+          },
+        }),
+      ),
+    );
+    await run(rebuildNoteIndex);
+    const checked = (await run(featureRequestsSnapshot(project))).records[0];
+    if (!checked) throw new Error("Missing checked draft");
+    expect((await run(readDraftRequestGates(checked))).ready[3]).toMatchObject({
+      title: "Manual check",
+      status: "passed",
+    });
     const unavailable = await run(readDraftRequestGates({ ...record, pbiId: "UC-88" }));
     expect(unavailable.ready.map(({ status }) => status)).toEqual([
       "unavailable",

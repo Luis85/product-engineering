@@ -4,6 +4,7 @@ import type { ProjectBaseCheck, ProjectCriterion } from "../../domain/projects";
 import { backlogSnapshot, inspectPbiPreparation, pbiCompanions, readPbiDetail } from "../backlog";
 import type { BacklogItem, PbiDetail, PbiPreparation, PbiPreparationGap } from "../backlog";
 import { captureProjectReleaseRules } from "../projects";
+import type { ProjectReleaseRuleSnapshot } from "../projects";
 import type { FeatureRequest } from "./records";
 
 const gateStatus = (condition: boolean) => (condition ? "passed" : "open");
@@ -15,8 +16,9 @@ function readyCriterion(
   source: PbiDetail | undefined,
   items: readonly BacklogItem[] | undefined,
   scope: string,
+  manual: readonly string[],
 ): RequestGate {
-  if (type === "manual") return { id, title, status: "open" };
+  if (type === "manual") return { id, title, status: gateStatus(manual.includes(id)) };
   if (type === "scope") return { id, title, status: gateStatus(Boolean(scope.trim())) };
   if (!source || !items) return { id, title, status: "unavailable" };
   const candidates =
@@ -33,8 +35,29 @@ function preparationGates(preparation: PbiPreparation | undefined, approved: boo
   return [base("base-ready", gateStatus(criteriaMet)), base("base-git", gateStatus(committed))];
 }
 
+function manualChecks(record: FeatureRequest, rules: ProjectReleaseRuleSnapshot | undefined) {
+  if (record.manualChecks?.version === rules?.version) return record.manualChecks?.ids ?? [];
+  return [];
+}
+
+function configuredGates(
+  record: FeatureRequest,
+  rules: ProjectReleaseRuleSnapshot | undefined,
+  source: PbiDetail | undefined,
+  items: readonly BacklogItem[] | undefined,
+) {
+  const manual = manualChecks(record, rules);
+  return {
+    ready:
+      rules?.ready.map((criterion) =>
+        readyCriterion(criterion, source, items, record.scope, manual),
+      ) ?? [],
+    done: rules?.done.map(({ id, title }) => ({ id, title, status: "unavailable" as const })) ?? [],
+  };
+}
+
 export function readDraftRequestGates(record: FeatureRequest) {
-  const { projectId, pbiId, scope } = record;
+  const { projectId, pbiId } = record;
   return Effect.gen(function* () {
     const rules = yield* captureProjectReleaseRules(projectId);
     const pbi = yield* Effect.result(readPbiDetail(projectId, pbiId));
@@ -42,18 +65,27 @@ export function readDraftRequestGates(record: FeatureRequest) {
     const preparation = source ? yield* inspectPbiPreparation(source) : undefined;
     const backlog = yield* backlogSnapshot(projectId);
     const items = backlog.base && backlog.items;
+    const configured = configuredGates(record, rules, source, items);
     const ready = [
       ...preparationGates(preparation, source?.approval === "approved"),
-      ...(rules?.ready.map((criterion) => readyCriterion(criterion, source, items, scope)) ?? []),
+      ...configured.ready,
     ];
     const done = [
       base("base-done", "unavailable"),
       base("base-review", "unavailable"),
-      ...(rules?.done.map(({ id, title }) => ({ id, title, status: "unavailable" as const })) ??
-        []),
+      ...configured.done,
     ];
     const gaps: readonly PbiPreparationGap[] = preparation?.gaps ?? [];
-    return { ready, done, gaps, rulesAvailable: rules !== undefined };
+    return {
+      ready,
+      done,
+      gaps,
+      rulesAvailable: rules !== undefined,
+      rules,
+      source,
+      preparation,
+      items,
+    };
   });
 }
 

@@ -5,6 +5,7 @@ import {
   pbiDetailRoute,
 } from "../../../../src/application/backlog";
 import {
+  canonicalRequestJson,
   featureRequestsRoute,
   featureRequestsSnapshot,
 } from "../../../../src/application/feature-requests";
@@ -17,6 +18,15 @@ type Fixture = Parameters<Parameters<typeof withProject>[0]>[0];
 const pbi = "UC-09";
 const pbiTitle = "Export service cases";
 const requestId = "feature-request-33333333-3333-4333-8333-000000000024";
+const packagedCase = {
+  id: "AC-01",
+  text: "Only requested cases",
+  scenario_id: "SC-01",
+  scenario_name: "Export",
+  given: "The selection is ready",
+  when: "Export starts",
+  then_step: "Only selected data is written",
+};
 const acceptedId = "feature-request-33333333-3333-4333-8333-000000000030";
 const missingId = "feature-request-33333333-3333-4333-8333-000000000031";
 const el = (id: string) => `[data-testid="${id}"]`;
@@ -167,12 +177,155 @@ it("opens the canonical PBI editor from an empty register and validates, retries
     const records = (await host.runtime.runPromise(featureRequestsSnapshot(first))).records;
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({ title: pbiTitle, pbiId: pbi, state: "draft" });
+    press(root, el("request-edit-scope"));
+    const selector = el("request-scope-form") + " textarea";
+    const editor = await eventually(() => find<HTMLTextAreaElement>(root, selector));
+    expect(document.activeElement).toBe(editor);
+    editor.value = " ";
+    editor.dispatchEvent(new Event("input", { bubbles: true }));
+    press(root, el("request-save-scope"));
+    await text(root, el("request-scope-form"), "Enter a delivery scope");
+    expect(document.activeElement).toBe(editor);
+    editor.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await eventually(() =>
+      expect(document.activeElement).toBe(find(root, el("request-edit-scope"))),
+    );
+    press(root, el("request-edit-scope"));
+    const replacement = await eventually(() => find<HTMLTextAreaElement>(root, selector));
+    replacement.value = "Only the confirmed CSV rows";
+    replacement.dispatchEvent(new Event("input", { bubbles: true }));
+    press(root, el("request-save-scope"));
+    await text(root, el("request-scope"), "Only the confirmed CSV rows");
     press(root, el("request-toggle-gates"));
     await text(root, el("request-gates"), "0/2 met");
     expect(find(root, el("request-prepare")).textContent).toContain("Link a PRD requirement");
     press(root, el("request-prepare"));
     await text(root, el("pbi-tab-edit"), "Edit");
     expect(navigation.current()).toEqual(pbiDetailRoute(first, pbi, "edit"));
+  });
+});
+
+it("reads recorded empty scope and associated technical and business evidence from a mounted historical revision", async () => {
+  await withProject(async (context) => {
+    const { root, host, navigation } = context;
+    await seed(context);
+    const commit = "a".repeat(40);
+    const identity = {
+      projectId: first,
+      requestId,
+      revision: 2,
+      checksum: "b".repeat(64),
+      runId: "LOCAL-TEST",
+      attempt: 2,
+      provider: "local-fixture",
+    };
+    const packagePayload = {
+      schemaVersion: 1,
+      request: {
+        projectId: first,
+        id: requestId,
+        displayId: "FR-024",
+        title: "Frozen export",
+        revision: 2,
+      },
+      scope: "Frozen scope",
+      useCase: {
+        id: pbi,
+        displayId: pbi,
+        title: pbiTitle,
+        markdown: "## Old content",
+        criteria: [packagedCase],
+      },
+      attachments: [
+        {
+          id: "knowledge-33333333-3333-4333-8333-000000000010",
+          displayId: "PRD-03",
+          title: "Reviewed export",
+          kind: "prd",
+          markdown: "Pinned note Markdown",
+          commit,
+        },
+      ],
+      nfrs: [],
+      domain: { entities: [], edges: [], neighbors: [] },
+      gherkin: "Scenario: Export",
+    };
+    const data = {
+      current: { events: [] },
+      history: [
+        {
+          revision: 2,
+          title: "Frozen export",
+          scope: "Frozen scope",
+          state: "accepted",
+          runId: "LOCAL-TEST",
+          run: identity,
+          exportJson: canonicalRequestJson({ package: packagePayload }),
+          events: [
+            {
+              ...identity,
+              id: "verified-test",
+              kind: "verified",
+              result: {
+                pullRequest: "LOCAL-PR",
+                commit,
+                technicalReview: { verdict: "approved", commit },
+                evidence: [
+                  {
+                    criterionId: "AC-01",
+                    scenarioId: "SC-01",
+                    commit,
+                    outcome: "passed",
+                    checkId: "check-1",
+                  },
+                ],
+              },
+            },
+          ],
+          decision: {
+            decision: "accepted",
+            runId: "LOCAL-TEST",
+            attempt: 2,
+            commit,
+            explanation: "Verified selection",
+          },
+        },
+      ],
+    };
+    await host.runtime.runPromise(
+      host.notes.seed("Projects/Kundenportal/FR-024.md", {
+        schema: "product-engineering.feature-request/v1",
+        id: requestId,
+        project_id: first,
+        display_id: "FR-024",
+        title: "Live draft",
+        state: "draft",
+        pbi_id: pbi,
+        scope: "Live scope",
+        sequence: 24,
+        revision: 3,
+        delivery_data: canonicalRequestJson(data),
+      }),
+    );
+    await host.runtime.runPromise(rebuildNoteIndex);
+    await navigation.navigate(featureRequestsRoute(first, { requestId }));
+    await text(root, el("request-state"), "Draft");
+    press(root, '[data-history-revision="2"]');
+    await text(root, el("request-state"), "Accepted");
+    await text(root, el("request-scope"), "Frozen scope");
+    await text(root, el("request-nfrs"), "No entries in this scope");
+    await text(root, el("request-domain"), "No entries in this scope");
+    await text(root, '[data-attachment="PRD-03"]', "Pinned note Markdown");
+    press(root, el("request-tab-run"));
+    await text(root, el("request-run"), "Attempt 2");
+    await text(root, el("request-run"), "Local Factory simulation");
+    await text(root, el("request-technical-result"), "LOCAL-PR");
+    press(root, el("request-tab-evidence"));
+    await text(root, el("request-evidence"), "Verified selection");
+    expect(find(root, el("request-evidence")).textContent).toContain("Technically approved");
+    await text(root, '[data-evidence-criterion="AC-01"]', "SC-01");
+    press(root, el("request-current-revision"));
+    await text(root, el("request-scope"), "Live scope");
   });
 });
 

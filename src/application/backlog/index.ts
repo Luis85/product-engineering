@@ -38,7 +38,7 @@ export {
   backlogPrdOrigins,
   resolveBacklogItem,
 } from "./contributions";
-export { companionKinds, pbiCompanions } from "./companions";
+export { companionKinds, pbiCompanions, pbiWorkIsOpen } from "./companions";
 export type { CompanionKind } from "./companions";
 export { newPbiCriterionIdentity, savePbiCriterion } from "./pbi-criteria";
 export type { PbiCriterionIdentity } from "./pbi-criteria";

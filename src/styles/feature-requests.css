@@ -121,6 +121,51 @@
   margin: 0;
 }
 
+.product-engineering-root .pe-request-package,
+.product-engineering-root .pe-request-panel {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  align-content: start;
+}
+
+.product-engineering-root .pe-request-panel {
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius);
+  padding: 0.85rem;
+}
+
+.product-engineering-root .pe-request-panel h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.product-engineering-root .pe-request-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.product-engineering-root .pe-request-disclosure {
+  min-width: 0;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--pe-radius);
+  background: var(--pe-bg-secondary);
+}
+
+.product-engineering-root .pe-request-disclosure > summary {
+  cursor: pointer;
+}
+
+.product-engineering-root .pe-request-markdown {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--font-ui-small);
+}
+
 @container pe-feature-requests (width < 35rem) {
   .product-engineering-root .pe-request-register,
   .product-engineering-root .pe-request-register tbody,

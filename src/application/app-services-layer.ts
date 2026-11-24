@@ -1,5 +1,7 @@
 import { Layer } from "effect";
 import type { NoteType } from "../domain/notes";
+import { unavailableRequestDelivery } from "./feature-requests";
+import type { FeatureRequestDelivery } from "./feature-requests";
 import { unavailableArtifactGit } from "./git";
 import type { ArtifactGit } from "./git";
 import { unavailableAgentChat } from "./integrations";
@@ -28,6 +30,7 @@ import type {
 
 export type AppAdapters = {
   readonly artifactGit?: Layer.Layer<ArtifactGit>;
+  readonly requestDelivery?: Layer.Layer<FeatureRequestDelivery>;
   readonly settingsStore: Layer.Layer<SettingsStore>;
   readonly notifier: Layer.Layer<Notifier>;
   readonly clipboard: Layer.Layer<Clipboard>;
@@ -55,6 +58,7 @@ export function appServicesLayer(
 ): Layer.Layer<AppServices> {
   const ports = Layer.mergeAll(
     adapters.artifactGit ?? unavailableArtifactGit,
+    adapters.requestDelivery ?? unavailableRequestDelivery,
     adapters.settingsStore,
     adapters.notifier,
     adapters.clipboard,

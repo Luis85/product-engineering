@@ -1,4 +1,5 @@
 import type { ManagedRuntime } from "effect";
+import type { FeatureRequestDelivery } from "./feature-requests";
 import type { ArtifactGit } from "./git";
 import type { AgentChat } from "./integrations";
 import type { ServicesOf } from "./module";
@@ -12,6 +13,7 @@ export type AppServices = [
   NotesServices,
   AgentChat,
   ArtifactGit,
+  FeatureRequestDelivery,
   ProjectFiles,
   ProjectIntegrationHost,
   ServicesOf<AppModule>,

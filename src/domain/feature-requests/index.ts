@@ -2,7 +2,9 @@ import { Result, Schema } from "effect";
 import { backlogIdSchema } from "../backlog";
 import {
   defineNoteType,
+  checkbox,
   lineOfText,
+  list,
   number,
   recordIdIssue,
   recordList,
@@ -20,7 +22,7 @@ export type FeatureRequestId = typeof featureRequestIdSchema.Type;
 
 export const pbiIdSchema = backlogIdSchema.check(Schema.isPattern(/^UC-/));
 export const isRequestPbiId = Schema.is(pbiIdSchema);
-const requestStates = [
+export const featureRequestStates = [
   "draft",
   "released",
   "queued",
@@ -82,7 +84,9 @@ export const featureRequestType = defineNoteType({
     ),
     sequence: required(positive),
     revision: required(positive),
-    state: required(text({ schema: Schema.Literals(requestStates), issue: "state.invalid" })),
+    state: required(
+      text({ schema: Schema.Literals(featureRequestStates), issue: "state.invalid" }),
+    ),
     run_id: text({ schema: lineOfText(160).check(nonBlank), issue: "run.invalid" }),
     blocker: text({
       schema: Schema.Literals(["stale-inputs", "dispatch-evidence", "review-evidence"]),
@@ -90,6 +94,10 @@ export const featureRequestType = defineNoteType({
     }),
     ready_gates: gateEvidence,
     done_gates: gateEvidence,
+    ready_checks: list(),
+    ready_check_version: positive,
+    delivery_data: text(),
+    dispatch_recorded: checkbox(),
   },
   migrations: {},
 });

@@ -10,6 +10,10 @@ import {
   pbiDetailRoute,
 } from "../../../application/backlog";
 import { domainModelRoute } from "../../../application/domain-model";
+import {
+  featureRequestOriginRoute,
+  PROJECT_FEATURE_REQUESTS,
+} from "../../../application/feature-requests";
 import { openKnowledgeNote, projectKnowledgeRoute } from "../../../application/knowledge";
 import {
   PROJECT_RECORD,
@@ -91,6 +95,7 @@ function deliverableOrigin(projectId: ProjectId, origin: ProjectRecordRoute["ori
 function returnSection(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
   return (
     prototypeOriginRoute(projectId, origin) ??
+    featureRequestOriginRoute(projectId, origin) ??
     storyMapOrigin(projectId, origin) ??
     deliverableOrigin(projectId, origin) ??
     sectionOrigin(projectId, origin)
@@ -110,15 +115,28 @@ function templateOrigin(projectId: ProjectId, id: string | undefined) {
 
 function returnToSection(section: Route) {
   const last = history.value.back.at(-1);
-  if (
+  if (sameProductOrigin(last, section)) return back();
+  if (returnsToPbi(last, section)) return back();
+  if (returnsToRequest(last, section)) return back();
+  if (record.origin?.section === "board-git" && returnsToBoard(last)) return back();
+  return navigate(section);
+}
+
+function sameProductOrigin(last: Route | undefined, section: Route) {
+  return (
     (section.name === PROJECT_STORY_MAPS || section.name === PROJECT_PROTOTYPES) &&
     last &&
     definition.equals(last, section)
-  )
-    return back();
-  if (returnsToPbi(last, section)) return back();
-  if (record.origin?.section === "board-git" && returnsToBoard(last)) return back();
-  return navigate(section);
+  );
+}
+
+function returnsToRequest(last: Route | undefined, section: Route) {
+  return (
+    section.name === PROJECT_FEATURE_REQUESTS &&
+    last?.name === PROJECT_FEATURE_REQUESTS &&
+    last.projectId === section.projectId &&
+    last.requestId === section.requestId
+  );
 }
 
 function returnsToPbi(last: Route | undefined, section: Route) {

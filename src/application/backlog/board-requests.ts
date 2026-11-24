@@ -23,6 +23,7 @@ export type BoardRequest = {
   readonly state: BoardRequestState;
   readonly sequence: number;
   readonly runId?: string;
+  readonly acknowledgedDispatch?: boolean;
 };
 
 export type BoardRequestHandoff<Request extends BoardRequest = BoardRequest> = {
@@ -60,8 +61,9 @@ export function pbiBoardStage(
   return handoff?.development ? "In Development" : stage;
 }
 
-function projectsDevelopment({ state, runId }: BoardRequest) {
+function projectsDevelopment({ state, runId, acknowledgedDispatch }: BoardRequest) {
   return (
+    acknowledgedDispatch === true ||
     state === "queued" ||
     state === "running" ||
     state === "clarification" ||
