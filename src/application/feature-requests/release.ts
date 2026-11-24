@@ -47,7 +47,7 @@ export function readFeatureRequestBaseline(record: FeatureRequest) {
   });
 }
 
-const rawInputChanges = (requestPath: string) =>
+const rawInputChanges = (requestPath: string | undefined) =>
   Stream.unwrap(
     EventBus.use(({ subscribe }) =>
       Effect.map(subscribe, (events) =>
@@ -60,7 +60,7 @@ const rawInputChanges = (requestPath: string) =>
     ),
   );
 
-export function requestInputChanges(project: ProjectId, requestPath: string) {
+export function requestInputChanges(project: ProjectId, requestPath?: string) {
   const signal = Stream.map(() => Symbol());
   const indexed = Stream.mergeAll(
     [

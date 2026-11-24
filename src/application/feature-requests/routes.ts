@@ -8,8 +8,10 @@ import type { DeliveryStage, FeatureRequestId } from "../../domain/feature-reque
 import { backlogBoardContextSchema } from "../backlog";
 import { projectIdSchema } from "../projects";
 import type { ProjectId, ProjectOrigin } from "../projects";
+import { requestRevisionNumber } from "./delivery-package";
 
 export const PROJECT_FEATURE_REQUESTS = "project-feature-requests";
+export const PROJECT_REVIEWS = "project-reviews";
 const requestOriginSchema = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("board"), context: backlogBoardContextSchema }),
   Schema.Struct({ kind: Schema.Literals(["list", "pbi"]) }),
@@ -24,6 +26,24 @@ export const projectFeatureRequestsSchema = Schema.Struct({
   origin: Schema.optionalKey(requestOriginSchema),
 });
 export type FeatureRequestsRoute = typeof projectFeatureRequestsSchema.Type;
+
+const reviewSelection = Schema.Struct({
+  requestId: featureRequestIdSchema,
+  revision: requestRevisionNumber,
+});
+export const projectReviewsSchema = Schema.Struct({
+  name: Schema.Literal(PROJECT_REVIEWS),
+  projectId: projectIdSchema,
+  selection: Schema.optionalKey(reviewSelection),
+});
+export type ReviewsRoute = typeof projectReviewsSchema.Type;
+
+export function reviewsRoute(
+  projectId: ProjectId,
+  selection?: ReviewsRoute["selection"],
+): ReviewsRoute {
+  return { name: PROJECT_REVIEWS, projectId, ...(selection && { selection }) };
+}
 
 export function featureRequestsRoute(
   projectId: ProjectId,

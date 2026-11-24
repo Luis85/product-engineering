@@ -95,6 +95,10 @@
   font-size: var(--font-ui-small);
 }
 
+.product-engineering-root .pe-review-stale {
+  color: var(--pe-warn-fg);
+}
+
 .product-engineering-root .pe-request-links,
 .product-engineering-root .pe-request-link {
   display: grid;

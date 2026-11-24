@@ -7,7 +7,12 @@ import type { ProjectCriterion, ProjectId } from "../projects";
 import { canonicalRequestJson, verifyRequestPackage } from "./delivery-package";
 import type { RequestPackage } from "./delivery-package";
 import { FeatureRequestError } from "./errors";
-import { factoryEventSchema, FeatureRequestDelivery } from "./factory-port";
+import {
+  factoryEventSchema,
+  FeatureRequestDelivery,
+  matchesRun,
+  requestCiPassed,
+} from "./factory-port";
 import type {
   FactoryAcknowledgement,
   FactoryCallback,
@@ -27,19 +32,6 @@ function originalAcknowledgement(events: readonly FactoryJournalEvent[]) {
     const { id: _id, kind: _kind, ...ack } = first;
     return ack;
   }
-}
-
-function matchesRun(
-  run: Omit<FactoryAcknowledgement, "provider" | "runId">,
-  candidate: FactoryAcknowledgement,
-) {
-  return (
-    run.projectId === candidate.projectId &&
-    run.requestId === candidate.requestId &&
-    run.revision === candidate.revision &&
-    run.attempt === candidate.attempt &&
-    run.checksum === candidate.checksum
-  );
 }
 
 function releasedPackage(record: FeatureRequest) {
@@ -146,21 +138,10 @@ function verifyTechnicalResult(
   payload: RequestPackage,
   result: Extract<FactoryCallback, { kind: "verified" }>["result"],
 ) {
-  if (!result.pullRequest.trim() || result.technicalReview.commit !== result.commit) return false;
-  const criteria = payload.useCase?.criteria ?? [];
-  const checks = result.evidence;
   return (
-    criteria.length > 0 &&
-    checks.length === criteria.length &&
-    new Set(checks.map(({ checkId }) => checkId)).size === checks.length &&
-    checks.every(
-      (check) => check.checkId && check.commit === result.commit && check.outcome === "passed",
-    ) &&
-    criteria.every(
-      ({ id, scenario_id }) =>
-        checks.filter((check) => check.criterionId === id && check.scenarioId === scenario_id)
-          .length === 1,
-    )
+    Boolean(result.pullRequest.trim()) &&
+    result.technicalReview.commit === result.commit &&
+    requestCiPassed(payload, result)
   );
 }
 

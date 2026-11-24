@@ -3,13 +3,13 @@ import { defineModule } from "../module";
 import type { FeatureRequestError } from "./errors";
 import { de } from "./i18n/de";
 import { en } from "./i18n/en";
-import { projectFeatureRequestsSchema } from "./routes";
+import { projectFeatureRequestsSchema, projectReviewsSchema } from "./routes";
 import { featureRequestWritesLayer } from "./write";
 
 export const featureRequestsModule = defineModule({
   name: "feature-requests",
   catalog: { en, de },
-  routes: [projectFeatureRequestsSchema],
+  routes: [projectFeatureRequestsSchema, projectReviewsSchema],
   noteTypes: [featureRequestType],
   services: featureRequestWritesLayer,
   errors: {

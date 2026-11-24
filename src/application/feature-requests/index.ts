@@ -13,8 +13,12 @@ export {
   featureRequestNoteOrigin,
   featureRequestOriginRoute,
   PROJECT_FEATURE_REQUESTS,
+  PROJECT_REVIEWS,
+  reviewsRoute,
 } from "./routes";
-export type { FeatureRequestOrigin, FeatureRequestsRoute } from "./routes";
+export type { FeatureRequestOrigin, FeatureRequestsRoute, ReviewsRoute } from "./routes";
+export { featureRequestReview, reviewRegisterChanges, reviewRegisterSnapshot } from "./reviews";
+export type { ReviewRegisterRow, ReviewRegisterSnapshot } from "./reviews";
 export { activeFeatureRequest, createFeatureRequest, newFeatureRequestId } from "./write";
 export type { FeatureRequestDraft } from "./write";
 export { confirmRequestReady, editRequestScope } from "./draft";

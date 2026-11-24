@@ -56,6 +56,36 @@ export type FactoryJournalEvent = typeof factoryJournalEvent.Type;
 export type FactoryFixtureAction = "pickup" | "question" | "fail" | "verify";
 type DeliveryCommand = Omit<FactoryAcknowledgement, "provider" | "runId">;
 
+export function matchesRun(expected: DeliveryCommand, actual: FactoryAcknowledgement) {
+  return (
+    expected.projectId === actual.projectId &&
+    expected.requestId === actual.requestId &&
+    expected.revision === actual.revision &&
+    expected.attempt === actual.attempt &&
+    expected.checksum === actual.checksum
+  );
+}
+
+export function requestCiPassed(
+  payload: RequestPackage,
+  { commit, evidence }: Extract<FactoryCallback, { kind: "verified" }>["result"],
+) {
+  const criteria = payload.useCase?.criteria ?? [];
+  return (
+    criteria.length > 0 &&
+    evidence.length === criteria.length &&
+    new Set(evidence.map(({ checkId }) => checkId)).size === evidence.length &&
+    evidence.every(
+      (check) => check.checkId && check.commit === commit && check.outcome === "passed",
+    ) &&
+    criteria.every(
+      ({ id, scenario_id }) =>
+        evidence.filter((check) => check.criterionId === id && check.scenarioId === scenario_id)
+          .length === 1,
+    )
+  );
+}
+
 export class FeatureRequestDelivery extends Context.Service<
   FeatureRequestDelivery,
   {
