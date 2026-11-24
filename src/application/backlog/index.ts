@@ -3,6 +3,9 @@ export {
   PROJECT_BACKLOG,
   PROJECT_USE_CASE,
   backlogBoardRoute,
+  backlogBoardContextSchema,
+  backlogBoardReturnRoute,
+  backlogCreatePbiRoute,
   backlogRoute,
   backlogTabs,
   deliverablesRoute,
@@ -10,7 +13,7 @@ export {
   pbiDetailRoute,
   pbiTabs,
 } from "./routes";
-export type { BacklogTab, PbiTab } from "./routes";
+export type { BacklogBoardContext, BacklogBoardReturn, BacklogTab, PbiTab } from "./routes";
 export {
   backlogChanges,
   backlogInputs,

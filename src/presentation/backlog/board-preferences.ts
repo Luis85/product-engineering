@@ -1,7 +1,10 @@
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import type { Ref } from "vue";
+import type { BacklogBoardContext, BacklogBoardReturn } from "../../application/backlog";
 import type { ProjectId } from "../../application/projects";
 import type { BoardStage } from "../../domain/backlog";
+import { useWorkspaceOriginKey } from "../projects";
+import type { BacklogFilters } from "./preferences";
 
 export const boardEdges = ["Backlog", "Done"] as const;
 type Edge = (typeof boardEdges)[number];
@@ -36,4 +39,27 @@ export function useBoardFolds(project: ProjectId, panel: Ref<HTMLElement | undef
     }
   }
   return { folded: states, toggle };
+}
+
+export function useBoardRequestContext(
+  resumed: () => BacklogBoardReturn | undefined,
+  preferences: BacklogFilters & { boardScroll: number },
+  scroll: Ref<HTMLElement | undefined>,
+) {
+  const origin = useWorkspaceOriginKey();
+  watch(
+    resumed,
+    (resume) => {
+      if (!resume || origin()) return;
+      const { query, status, priority, scroll: left } = resume.context;
+      Object.assign(preferences, { query, status, priority, boardScroll: left });
+      if (scroll.value) scroll.value.scrollLeft = left;
+    },
+    { immediate: true },
+  );
+
+  return (pbiId: string): BacklogBoardContext => {
+    const { query, status, priority, boardScroll } = preferences;
+    return { pbiId, query, status, priority, scroll: scroll.value?.scrollLeft ?? boardScroll };
+  };
 }

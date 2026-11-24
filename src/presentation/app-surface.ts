@@ -5,6 +5,7 @@ import type { Route } from "../application/routes";
 import { SETTINGS } from "../application/shell";
 import { backlogScreens } from "./backlog/screens";
 import { domainModelScreens } from "./domain-model/screens";
+import { featureRequestsScreens } from "./feature-requests/screens";
 import { gitScreens } from "./git/screens";
 import { integrationsScreens } from "./integrations/screens";
 import { itemsScreens } from "./items/screens";
@@ -35,6 +36,7 @@ const MODULE_SCREENS: {
   backlog: backlogScreens,
   "story-maps": storyMapsScreens,
   prototypes: prototypesScreens,
+  "feature-requests": featureRequestsScreens,
 };
 
 const modules = APP_MODULES.map(({ name }) => MODULE_SCREENS[name]);

@@ -25,21 +25,21 @@ export type BoardRequest = {
   readonly runId?: string;
 };
 
-export type BoardRequestHandoff = {
-  readonly active?: BoardRequest;
-  readonly previous: readonly BoardRequest[];
-  readonly development?: BoardRequest;
+export type BoardRequestHandoff<Request extends BoardRequest = BoardRequest> = {
+  readonly active?: Request;
+  readonly previous: readonly Request[];
+  readonly development?: Request;
 };
 
-export function boardRequestHandoff(
+export function boardRequestHandoff<Request extends BoardRequest>(
   projectId: ProjectId,
   pbiId: string,
-  requests: readonly BoardRequest[],
-): BoardRequestHandoff {
+  requests: readonly Request[],
+): BoardRequestHandoff<Request> {
   const linked = requests
     .filter((entry) => entry.projectId === projectId && entry.pbiId === pbiId)
     .toSorted((a, b) => b.sequence - a.sequence || a.id.localeCompare(b.id));
-  const unique = new Map<string, BoardRequest>();
+  const unique = new Map<string, Request>();
   for (const entry of linked) if (!unique.has(entry.id)) unique.set(entry.id, entry);
   const current = [...unique.values()];
   const active = current.find(({ state }) => state !== "accepted" && state !== "closed");

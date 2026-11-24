@@ -29,6 +29,11 @@ const route = useRoute();
       :key="route.projectId"
       :route="route"
     />
-    <BacklogBoard v-else :key="route.projectId" :project="route.projectId" />
+    <BacklogBoard
+      v-else
+      :key="route.projectId"
+      :project="route.projectId"
+      :resumed="route.boardReturn"
+    />
   </template>
 </template>

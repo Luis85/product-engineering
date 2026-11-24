@@ -17,6 +17,7 @@ import type {
   BacklogPlacement,
   BacklogSnapshot,
 } from "../../application/backlog";
+import { PROJECT_FEATURE_REQUESTS } from "../../application/feature-requests";
 import { openNote } from "../../application/notes";
 import { projectAdministrationRoute } from "../../application/projects";
 import { backlogKinds, parentKind } from "../../domain/backlog";
@@ -104,6 +105,7 @@ let trigger: HTMLElement | undefined;
 let focusAfterClose: string | undefined;
 let nextKind: BacklogKind | undefined;
 let sawRouteItem: string | undefined;
+let sawCreation = false;
 const chooser = useModal(
   choice,
   () => {
@@ -172,6 +174,19 @@ watch(
   { immediate: true },
 );
 watch(rows, () => restorePosition(), { flush: "post" });
+watch(
+  [() => route.createPbi, () => snapshot.value.base],
+  ([requested, configuredBase]) => {
+    if (!requested) {
+      sawCreation = false;
+    } else if (configuredBase && !sawCreation) {
+      sawCreation = true;
+      entry.value = undefined;
+      editor.value = "UC";
+    }
+  },
+  { immediate: true },
+);
 
 function rowControl(key: string) {
   return [...(panel.value?.querySelectorAll<HTMLElement>("[data-pe-focus-key]") ?? [])].find(
@@ -210,6 +225,7 @@ async function dismiss(reason?: "native-note") {
 }
 
 async function closeRoutedEditor(handoff: boolean) {
+  if (route.createPbi) return closeRoutedCreation(handoff);
   if (!route.item) return false;
   const previous = history.value.back.at(-1);
   if (
@@ -218,6 +234,16 @@ async function closeRoutedEditor(handoff: boolean) {
     previous.projectId === project &&
     previous.tab === "nfrs"
   ) {
+    await back();
+    return true;
+  }
+  await navigate(backlogRoute(project));
+  return false;
+}
+
+async function closeRoutedCreation(handoff: boolean) {
+  const previous = history.value.back.at(-1);
+  if (!handoff && previous?.name === PROJECT_FEATURE_REQUESTS && previous.projectId === project) {
     await back();
     return true;
   }

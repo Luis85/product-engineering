@@ -2,14 +2,20 @@
 import { ref } from "vue";
 import { ownerName } from "../../application/backlog";
 import type { BacklogItem, BacklogPlacement } from "../../application/backlog";
+import {
+  featureRequestsChanges,
+  featureRequestsForPbi,
+  featureRequestsSnapshot,
+} from "../../application/feature-requests";
 import type { ProjectId } from "../../application/projects";
 import { parentKind } from "../../domain/backlog";
 import type { BacklogKind } from "../../domain/backlog";
-import { useMessages } from "../shell";
+import { FeatureRequestLinks } from "../feature-requests";
+import { useMessages, useStream } from "../shell";
 import type { BacklogRow } from "./preferences";
 import BacklogRowName from "./BacklogRowName.vue";
 
-const { rows, level } = defineProps<{
+const { rows, level, project } = defineProps<{
   readonly rows: readonly BacklogRow[];
   readonly level: BacklogKind | "";
   readonly project: ProjectId;
@@ -20,6 +26,7 @@ const emit = defineEmits<{
   move: [string, BacklogPlacement];
 }>();
 const text = useMessages().backlog;
+const requests = useStream(featureRequestsSnapshot(project), featureRequestsChanges(project));
 const dragged = ref<BacklogItem>();
 const target = ref<BacklogPlacement>();
 
@@ -75,6 +82,9 @@ function metadata(item: BacklogItem) {
     { id: "priority", label: text.priority, value: item.priority },
   ];
 }
+
+const hasRequestLinks = ({ kind, adopted, conflict, id }: BacklogItem) =>
+  kind === "UC" && adopted && !conflict && Boolean(id);
 </script>
 
 <template>
@@ -106,7 +116,15 @@ function metadata(item: BacklogItem) {
         :project="project"
         @open="(control, edit) => emit('open', row.item, control, edit)"
         @toggle="emit('toggle', row.item.key)"
-      />
+      >
+        <FeatureRequestLinks
+          v-if="hasRequestLinks(row.item)"
+          :project="project"
+          :handoff="featureRequestsForPbi(project, row.item.key, requests.records)"
+          :focus-key="'list-request-' + row.item.key"
+          :from="() => ({ kind: 'list' })"
+        />
+      </BacklogRowName>
       <div
         v-for="{ id, label, value } in metadata(row.item)"
         :key="id"

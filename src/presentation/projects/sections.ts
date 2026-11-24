@@ -1,5 +1,6 @@
 import { domainModelRoute } from "../../application/domain-model";
 import { backlogBoardRoute } from "../../application/backlog";
+import { featureRequestsRoute } from "../../application/feature-requests";
 import { projectKnowledgeRoute } from "../../application/knowledge";
 import type { Catalog } from "../../application/messages";
 import { projectAdministrationRoute, projectOverviewRoute } from "../../application/projects";
@@ -59,7 +60,15 @@ export function projectGroups(
           },
         ]
       : [],
-    delivery: [],
+    delivery: id
+      ? [
+          {
+            label: catalog["feature-requests"].title,
+            route: featureRequestsRoute(id),
+            icon: "i-lucide-clipboard-list",
+          },
+        ]
+      : [],
     administration: [
       ...(id
         ? [

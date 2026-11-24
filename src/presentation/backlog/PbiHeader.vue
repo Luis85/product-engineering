@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import type { BacklogItem, PbiDetail } from "../../application/backlog";
+import type { FeatureRequest } from "../../application/feature-requests";
 import { useMessages } from "../shell";
 
-const { detail, parent, nativePending } = defineProps<{
+const { detail, parent, nativePending, delivery } = defineProps<{
   readonly detail: PbiDetail;
   readonly parent: BacklogItem | undefined;
   readonly nativePending: boolean;
+  readonly delivery: FeatureRequest | undefined;
 }>();
 const emit = defineEmits<{ open: [MouseEvent]; parent: [BacklogItem, MouseEvent] }>();
-const text = useMessages().backlog;
+const messages = useMessages();
+const text = messages.backlog;
 </script>
 
 <template>
@@ -52,7 +55,10 @@ const text = useMessages().backlog;
         >{{ text.pbiStatus.business }} · {{ text.pbiStatus[detail.approval] }}</span
       >
       <span class="pe-backlog-badge" data-testid="pbi-factory-status"
-        >{{ text.pbiStatus.factory }} · {{ text.pbiStatus.noRequest }}</span
+        >{{ text.pbiStatus.factory }} ·
+        {{
+          delivery ? messages["feature-requests"].states[delivery.state] : text.pbiStatus.noRequest
+        }}</span
       >
       <span class="pe:text-xs pe:text-muted">{{ text.pbiStatus.revision(detail.revision) }}</span>
     </div>

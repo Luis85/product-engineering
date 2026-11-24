@@ -105,7 +105,8 @@
           "domain/knowledge",
           "domain/backlog",
           "domain/story-maps",
-          "domain/prototypes"
+          "domain/prototypes",
+          "domain/feature-requests"
         ]
       },
       { "from": "domain/shell", "allow": [] },
@@ -124,6 +125,7 @@
           "application/backlog",
           "application/story-maps",
           "application/prototypes",
+          "application/feature-requests",
           "application-module",
           "application-composition"
         ]
@@ -219,6 +221,7 @@
           "presentation/backlog",
           "presentation/story-maps",
           "presentation/prototypes",
+          "presentation/feature-requests",
           "presentation/shell",
           "application",
           "application-composition",
@@ -257,6 +260,7 @@
           "presentation/backlog",
           "presentation/story-maps",
           "presentation/prototypes",
+          "presentation/feature-requests",
           "application",
           "application-composition",
           "domain"

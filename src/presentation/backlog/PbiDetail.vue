@@ -9,6 +9,12 @@ import {
   inspectPbiPreparation,
   readPbiDetail,
 } from "../../application/backlog";
+import {
+  featureRequestsChanges,
+  featureRequestsForPbi,
+  featureRequestsSnapshot,
+  PROJECT_FEATURE_REQUESTS,
+} from "../../application/feature-requests";
 import type {
   BacklogItem,
   BacklogSnapshot,
@@ -34,6 +40,7 @@ import {
   useNavigate,
   useQuery,
   useRouting,
+  useStream,
 } from "../shell";
 import PbiCompanions from "./PbiCompanions.vue";
 import PbiContext from "./PbiContext.vue";
@@ -61,6 +68,10 @@ const text = catalogs.backlog;
 const navigate = useNavigate();
 const { history } = useRouting();
 const { back } = useHistory();
+const requestOrigin = computed(() => {
+  const previous = history.value.back.at(-1);
+  return previous?.name === PROJECT_FEATURE_REQUESTS && previous.projectId === projectId;
+});
 const boardOrigin = computed(() => {
   const previous = history.value.back.at(-1);
   return (
@@ -87,18 +98,20 @@ const storyOrigin = computed(() => {
     : undefined;
 });
 const returnLabel = computed(() =>
-  storyOrigin.value
-    ? storyOrigin.value.sliceId
-      ? catalogs["story-maps"].handoff.back
-      : catalogs["story-maps"].backToMap
-    : nfrOrigin.value
-      ? text.nfr.back
-      : boardOrigin.value
-        ? text.board.returnToBoard
-        : text.pbiReturn,
+  requestOrigin.value
+    ? catalogs["feature-requests"].back
+    : storyOrigin.value
+      ? storyOrigin.value.sliceId
+        ? catalogs["story-maps"].handoff.back
+        : catalogs["story-maps"].backToMap
+      : nfrOrigin.value
+        ? text.nfr.back
+        : boardOrigin.value
+          ? text.board.returnToBoard
+          : text.pbiReturn,
 );
 function returnToBacklog() {
-  return storyOrigin.value || boardOrigin.value || nfrOrigin.value
+  return requestOrigin.value || storyOrigin.value || boardOrigin.value || nfrOrigin.value
     ? back()
     : navigate(backlogRoute(projectId));
 }
@@ -110,6 +123,8 @@ const snapshot = useAsyncStream<BacklogSnapshot, never>(
   { ready: false, items: [], duplicates: [] },
   backlogChanges(projectId),
 );
+const requests = useStream(featureRequestsSnapshot(projectId), featureRequestsChanges(projectId));
+const handoff = computed(() => featureRequestsForPbi(projectId, pbiId, requests.value.records));
 const read = useQuery(readPbiDetail);
 const native = useCommand(openNote);
 const approve = useCommand(approvePbi);
@@ -244,6 +259,7 @@ async function openFile(event: MouseEvent) {
       :detail="detail"
       :parent="parent"
       :native-pending="native.pending.value"
+      :delivery="handoff.active ?? handoff.previous[0]"
       @open="openFile"
       @parent="openParent"
     />
@@ -277,7 +293,14 @@ async function openFile(event: MouseEvent) {
         <PbiCriteria :project="projectId" :entry="detail.edit" @saved="refresh" />
       </template>
       <template #links>
-        <PbiLinks :detail="detail" @open="openSource" @edit="chooseTab('edit')" @saved="refresh" />
+        <PbiLinks
+          :detail="detail"
+          :handoff="handoff"
+          :ready="Boolean(preparation?.ready)"
+          @open="openSource"
+          @edit="chooseTab('edit')"
+          @saved="refresh"
+        />
       </template>
       <template #edit>
         <PbiEditForm

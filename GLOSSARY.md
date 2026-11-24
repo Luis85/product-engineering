@@ -36,6 +36,11 @@
 | Prototype HTML source | `output_html` |
 | Prototype output input fingerprint | `output_input_fingerprint` |
 | Prototype output provenance | `output_provenance` |
+| Feature Request | `feature-request` |
+| Request's linked PBI | `pbi_id` |
+| Delivery scope | `scope` |
+| Delivery stage | `deliveryStage` |
+| Recorded Ready/Done checks | `ready_gates`, `done_gates` |
 | Originating deliverable | `deliverable_id` |
 | Deliverable | `deliverable` |
 | Expected deliverable outcome | `outcome` |

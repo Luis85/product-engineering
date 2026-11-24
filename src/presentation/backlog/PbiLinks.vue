@@ -2,21 +2,29 @@
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
 import { pbiSourceDraft, savePbiReferences } from "../../application/backlog";
-import type { PbiDetail } from "../../application/backlog";
+import type { BoardRequestHandoff, PbiDetail } from "../../application/backlog";
+import type { FeatureRequest } from "../../application/feature-requests";
 import { backlogPrototypeSource } from "../../application/prototypes";
 import { DomainScopeLinks } from "../domain-model";
+import { FeatureRequestCreate, FeatureRequestLinks } from "../feature-requests";
 import { KnowledgeReferences } from "../knowledge";
 import { PrototypeSourceLinks } from "../prototypes";
 import { ErrorNotice, useCommand, useMessages, useNavigationGuard } from "../shell";
 import StoryMapItemLinks from "./StoryMapItemLinks.vue";
 
-const { detail } = defineProps<{ readonly detail: PbiDetail }>();
+const { detail, handoff, ready } = defineProps<{
+  readonly detail: PbiDetail;
+  readonly handoff: BoardRequestHandoff<FeatureRequest>;
+  readonly ready: boolean;
+}>();
 const emit = defineEmits<{
   edit: [];
   saved: [];
   open: [NonNullable<PbiDetail["sources"][number]["record"]>, MouseEvent];
 }>();
-const text = useMessages().backlog;
+const messages = useMessages();
+const text = messages.backlog;
+const requestFocus = computed(() => "pbi-request-" + detail.pbiId);
 const prototypeSource = computed(() => backlogPrototypeSource(detail.projectId, detail.edit.item));
 const requirement = computed(() => pbiSourceDraft(detail.edit.item.fields).pbi_requirement_id);
 const links = computed(() =>
@@ -73,6 +81,23 @@ async function update(references: readonly string[]) {
           </p>
         </li>
       </ul>
+    </section>
+    <section class="pe:grid pe:min-w-0 pe:gap-2">
+      <h2 class="pe:font-semibold">{{ messages["feature-requests"].title }}</h2>
+      <FeatureRequestLinks
+        :project="detail.projectId"
+        :handoff="handoff"
+        :focus-key="requestFocus"
+        :from="() => ({ kind: 'pbi' })"
+      />
+      <FeatureRequestCreate
+        v-if="!handoff.active && ready"
+        class="pe:justify-self-start"
+        :project="detail.projectId"
+        :source="{ id: detail.pbiId, title: detail.edit.item.title }"
+        :focus-key="requestFocus"
+        :from="() => ({ kind: 'pbi' })"
+      />
     </section>
     <PrototypeSourceLinks v-if="prototypeSource" :source="prototypeSource" />
     <StoryMapItemLinks :project="detail.projectId" :item="detail.pbiId" />

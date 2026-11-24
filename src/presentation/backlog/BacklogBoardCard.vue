@@ -3,7 +3,14 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import UIcon from "@nuxt/ui/components/Icon.vue";
 import { computed } from "vue";
 import { ownerName } from "../../application/backlog";
-import type { BacklogItem, BacklogSnapshot, PbiPreparationGap } from "../../application/backlog";
+import type {
+  BacklogBoardContext,
+  BacklogItem,
+  BacklogSnapshot,
+  BoardRequestHandoff,
+  PbiPreparationGap,
+} from "../../application/backlog";
+import type { FeatureRequest } from "../../application/feature-requests";
 import type { KnowledgeRecord } from "../../application/knowledge";
 import type { ProjectId } from "../../application/projects";
 import { backlogPrototypeSource } from "../../application/prototypes";
@@ -14,7 +21,18 @@ import { useMessages } from "../shell";
 import BacklogBoardHandoff from "./BacklogBoardHandoff.vue";
 import PbiCompanions from "./PbiCompanions.vue";
 
-const { item, feature, project, snapshot, bodyChange, stage, busy } = defineProps<{
+const {
+  item,
+  feature,
+  project,
+  snapshot,
+  bodyChange,
+  stage,
+  busy,
+  handoff,
+  requestOrigin,
+  resumedRequest,
+} = defineProps<{
   readonly item: BacklogItem;
   readonly feature: string | undefined;
   readonly project: ProjectId;
@@ -22,6 +40,9 @@ const { item, feature, project, snapshot, bodyChange, stage, busy } = defineProp
   readonly bodyChange: { readonly path: string } | undefined;
   readonly stage: BoardStage;
   readonly busy: boolean;
+  readonly handoff: BoardRequestHandoff<FeatureRequest>;
+  readonly requestOrigin: (pbiId: string) => BacklogBoardContext;
+  readonly resumedRequest: string | undefined;
 }>();
 const emit = defineEmits<{
   open: [HTMLElement];
@@ -108,6 +129,9 @@ function change(event: Event) {
       :item="item"
       :snapshot="snapshot"
       :body-change="bodyChange"
+      :handoff="handoff"
+      :request-origin="requestOrigin"
+      :resumed-request="resumedRequest"
       @prepare="(control, gap) => emit('prepare', control, gap)"
       @git="(control, record) => emit('git', control, record)"
     />

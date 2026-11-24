@@ -83,6 +83,7 @@ function disclose(expanded: boolean) {
         :class="row.item.conflict ? 'pe:text-error' : 'pe:text-muted'"
         >{{ issue }}</span
       >
+      <slot />
     </div>
   </div>
 </template>

@@ -12,9 +12,15 @@ import type {
   BacklogEdit,
   BacklogItem,
   BacklogSnapshot,
+  BacklogBoardReturn,
   PbiPreparationGap,
   PbiTab,
 } from "../../application/backlog";
+import {
+  featureRequestsChanges,
+  featureRequestsForPbi,
+  featureRequestsSnapshot,
+} from "../../application/feature-requests";
 import {
   knowledgeBodyChanges,
   knowledgeBodySnapshot,
@@ -40,10 +46,13 @@ import BacklogBoardLane from "./BacklogBoardLane.vue";
 import BacklogResults from "./BacklogResults.vue";
 import BacklogEditor from "./BacklogEditor.vue";
 import BacklogToolbar from "./BacklogToolbar.vue";
-import { boardEdges, useBoardFolds } from "./board-preferences";
+import { boardEdges, useBoardFolds, useBoardRequestContext } from "./board-preferences";
 import { resetBacklogFilters, useBacklogPreferences } from "./preferences";
 
-const { project } = defineProps<{ readonly project: ProjectId }>();
+const { project, resumed } = defineProps<{
+  readonly project: ProjectId;
+  readonly resumed: BacklogBoardReturn | undefined;
+}>();
 const text = useMessages().backlog;
 const navigate = useNavigate();
 const remember = useRememberWorkspaceOrigin();
@@ -51,12 +60,14 @@ const restore = useRestoreWorkspacePosition();
 const panel = ref<HTMLElement>();
 const scroll = ref<HTMLElement>();
 const preferences = useBacklogPreferences(project);
+const requestOrigin = useBoardRequestContext(() => resumed, preferences, scroll);
 const { folded, toggle } = useBoardFolds(project, panel);
 const snapshot = useAsyncStream<BacklogSnapshot, never>(
   { ready: false, items: [], duplicates: [] },
   backlogChanges(project),
 );
 const bodyChange = useStream(knowledgeBodySnapshot, knowledgeBodyChanges);
+const requests = useStream(featureRequestsSnapshot(project), featureRequestsChanges(project));
 const base = useCommand(openBacklogBase);
 const moveCommand = useCommand(moveBoardCard);
 const read = useQuery(readBacklogItem);
@@ -75,6 +86,17 @@ const items = computed(() => new Map(snapshot.value.items.map((item) => [item.ke
 const pbis = computed(() =>
   snapshot.value.items.filter(({ kind, conflict }) => kind === "UC" && !conflict),
 );
+const handoffs = computed(
+  () =>
+    new Map(
+      pbis.value.map(({ key, id }) => [
+        key,
+        featureRequestsForPbi(project, id ?? "", requests.value.records),
+      ]),
+    ),
+);
+const handoffFor = (item: BacklogItem) => handoffs.value.get(item.key) ?? { previous: [] };
+const stageFor = (item: BacklogItem) => pbiBoardStage(item, handoffFor(item));
 const statusLabels = computed(() =>
   Object.fromEntries(
     boardStages.map((stage) => [
@@ -93,7 +115,7 @@ const columns = computed(() =>
   boardStages.map((stage) => ({
     stage,
     cards: visible.value
-      .filter((item) => pbiBoardStage(item) === stage)
+      .filter((item) => stageFor(item) === stage)
       .map((item) => ({ item, feature: parentOf(item)?.title })),
     foldable: boardEdges.some((edge) => stage === edge),
   })),
@@ -109,7 +131,7 @@ function parentOf(item: BacklogItem | undefined) {
 function matchesStage(item: BacklogItem) {
   if (!preferences.status) return true;
   const stage = normalizedBoardStage(preferences.status);
-  return stage ? pbiBoardStage(item) === stage : item.state === preferences.status;
+  return stage ? stageFor(item) === stage : item.state === preferences.status;
 }
 
 function matchesFilters(item: BacklogItem) {
@@ -159,7 +181,7 @@ function restoreMoveFocus() {
   const moved = focusMove.value;
   if (!moved) return;
   const item = items.value.get(moved.id);
-  if (!item || pbiBoardStage(item) !== moved.stage) return;
+  if (!item || stageFor(item) !== moved.stage) return;
   const key = folded.value.has(moved.stage)
     ? "board-fold-" + moved.stage
     : "board-move-" + moved.id;
@@ -194,7 +216,7 @@ async function closeEditor(reason?: "native-note") {
 function saved(id: string, _moved: boolean, item?: BacklogItem) {
   if (!item) return;
   if (!matchesFilters(item)) reset();
-  const stage = pbiBoardStage(item);
+  const stage = stageFor(item);
   if (folded.value.has(stage)) toggle(stage);
   focusCreated.value = id;
 }
@@ -239,7 +261,7 @@ async function git(item: BacklogItem, origin: HTMLElement, record?: KnowledgeRec
 }
 
 async function move(item: BacklogItem, stage: BoardStage) {
-  if (pbiBoardStage(item) === stage || moveCommand.pending.value) return;
+  if (stageFor(item) === stage || moveCommand.pending.value) return;
   const outcome = await moveCommand.run(project, item.key, item.state, stage);
   if (outcome._tag === "success") {
     status.value = text.board.moved(item.key, text.board.stages[stage]);
@@ -337,6 +359,9 @@ function drop(stage: BoardStage, event: DragEvent) {
               :feature="feature"
               :snapshot="snapshot"
               :body-change="bodyChange"
+              :handoff="handoffFor(item)"
+              :request-origin="requestOrigin"
+              :resumed-request="resumed?.context.pbiId === item.id ? resumed?.requestId : undefined"
               :stage="stage"
               :busy="moveCommand.pending.value"
               @open="open(item, $event)"

@@ -15,6 +15,7 @@ export const SHELL_ICONS: readonly string[] = [
   "lucide:circle",
   "lucide:circle-help",
   "lucide:clock",
+  "lucide:clipboard-list",
   "lucide:code",
   "lucide:eye",
   "lucide:plus",
