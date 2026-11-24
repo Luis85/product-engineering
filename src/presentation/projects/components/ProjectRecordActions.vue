@@ -17,6 +17,7 @@ import {
 import { openKnowledgeNote, projectKnowledgeRoute } from "../../../application/knowledge";
 import {
   PROJECT_RECORD,
+  PROJECT_OVERVIEW,
   projectAdministrationRoute,
   projectOverviewRoute,
   projectRecordRoute,
@@ -94,6 +95,7 @@ function deliverableOrigin(projectId: ProjectId, origin: ProjectRecordRoute["ori
 }
 
 function returnSection(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
+  if (origin?.section === "overview") return projectOverviewRoute(projectId);
   if (origin?.section === "trace") return traceRoute(projectId);
   return (
     prototypeOriginRoute(projectId, origin) ??
@@ -125,8 +127,8 @@ function returnToSection(section: Route) {
 }
 
 function sameProductOrigin(last: Route | undefined, section: Route) {
-  if (section.name === PROJECT_TRACE)
-    return last?.name === PROJECT_TRACE && last.projectId === section.projectId;
+  if (section.name === PROJECT_TRACE || section.name === PROJECT_OVERVIEW)
+    return last?.name === section.name && last.projectId === section.projectId;
   return (
     (section.name === PROJECT_STORY_MAPS || section.name === PROJECT_PROTOTYPES) &&
     last &&

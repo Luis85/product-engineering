@@ -4,7 +4,6 @@ export {
   featureRequestsChanges,
   featureRequestsForPbi,
   featureRequestsSnapshot,
-  requestDeliveryStage,
 } from "./records";
 export type { FeatureRequest } from "./records";
 export { readDraftRequestGates, requestGateProgress } from "./gates";
@@ -53,3 +52,5 @@ export {
 } from "./review-decision";
 export { reviewChangeExplanation } from "../../domain/feature-requests";
 export type { ReviewTarget, ReviewWorkspace } from "./review-decision";
+export { initialRequestStages, requestStageChanges } from "./stage-projection";
+export type { RequestStageEntry, RequestStageProjection } from "./stage-projection";

@@ -25,7 +25,7 @@ export function readPbiDetail(projectId: ProjectId, pbiId: string) {
       sources: yield* resolvePbiSources(projectId, fields),
       criteria: pbiCriteria(fields.pbi_criteria),
       revision: pbiRevision(fields),
-      approval: pbiApproval(edit),
+      approval: pbiApproval(fields, edit.draft.body, edit.draft.title),
       references: isReferenceList(fields.pbi_references) ? fields.pbi_references : [],
     };
   });

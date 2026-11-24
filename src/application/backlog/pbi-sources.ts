@@ -61,6 +61,19 @@ export function resolvePbiSources(project: ProjectId, fields: Frontmatter) {
   );
 }
 
+export function indexedPbiSources(
+  project: ProjectId,
+  fields: Frontmatter,
+  records: ReadonlyMap<string, KnowledgeRecord>,
+): readonly PbiSourceReference[] {
+  const draft = pbiSourceDraft(fields);
+  return pbiSourceKinds.map((kind) => {
+    const id = draft[pbiSourceFields[kind]];
+    const record = records.get(id);
+    return { kind, id, ...(record?.projectId === project && record.kind === kind && { record }) };
+  });
+}
+
 export function newPbiSourceFields(project: ProjectId, draft: Partial<PbiSourceDraft>) {
   return Effect.gen(function* () {
     const sources = pbiSourceDraft(draft);

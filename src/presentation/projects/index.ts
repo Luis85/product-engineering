@@ -1,7 +1,6 @@
 import { defineComponent, h } from "vue";
 import type { Component } from "vue";
 import ProjectFrame from "./components/ProjectFrame.vue";
-import ProjectWorkspace from "./components/ProjectWorkspace.vue";
 import { provideProjectRecordScreens } from "./record-screens";
 import type { ProjectRecordScreens } from "./record-screens";
 import type { ProjectSearchSource } from "./search-sources";
@@ -22,7 +21,6 @@ export type {
   ProjectTemplatePart,
   ProjectTemplateRequest,
 } from "./template-factories";
-export const workspaceScreen: Component = ProjectWorkspace;
 
 export function workspaceFrame(
   sources: readonly ProjectSearchSource[],

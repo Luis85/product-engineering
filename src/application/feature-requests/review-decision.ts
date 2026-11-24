@@ -161,6 +161,12 @@ function readReviewStatus(record: FeatureRequest, entry: ReviewRevision) {
   });
 }
 
+export function readReviewActionBlocker(record: FeatureRequest) {
+  const entry = featureRequestRevision(record, record.revision);
+  if (!entry) return Effect.succeed("receipt" as const);
+  return Effect.map(readReviewStatus(record, entry), (status) => activeBlocker(entry, status));
+}
+
 const readReviewers = (projectId: ProjectId) =>
   Effect.map(readFreshProject(projectId), (project) => {
     const members = project && projectMembers(project);

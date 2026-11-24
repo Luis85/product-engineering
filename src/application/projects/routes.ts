@@ -31,7 +31,10 @@ function scoped<const Name extends string>(name: Name) {
   return { name: Schema.Literal(name), projectId: projectIdSchema };
 }
 
-export const projectOverviewSchema = Schema.Struct(scoped(PROJECT_OVERVIEW));
+export const projectOverviewSchema = Schema.Struct({
+  ...scoped(PROJECT_OVERVIEW),
+  context: Schema.optionalKey(lineOfText(160).check(Schema.isMinLength(1))),
+});
 export const projectAdministrationSections = [
   "project",
   "team",
@@ -57,9 +60,13 @@ export type ProjectOrigin = typeof projectOriginSchema.Type;
 export type ProjectReference = typeof reference.Type & { readonly projectId: ProjectId };
 export type ProjectRecordRoute = typeof projectRecordSchema.Type;
 
-export const projectOverviewRoute = (projectId: ProjectId): typeof projectOverviewSchema.Type => ({
+export const projectOverviewRoute = (
+  projectId: ProjectId,
+  context?: string,
+): typeof projectOverviewSchema.Type => ({
   name: PROJECT_OVERVIEW,
   projectId,
+  ...(context && { context }),
 });
 export const projectAdministrationRoute = (
   projectId: ProjectId,

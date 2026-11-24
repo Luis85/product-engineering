@@ -8,6 +8,8 @@ import type {
 import type { ProjectArtifactRuleId } from "../artifact-policy";
 import type { ProjectMcpProbe } from "../../integrations";
 import type { ProjectTemplateId } from "../templates";
+import type { overviewDeliveryEn } from "./overview-delivery";
+import type { overviewEn } from "./overview";
 
 export type ProjectsCatalog = {
   readonly title: string;
@@ -32,6 +34,8 @@ export type ProjectsCatalog = {
   readonly branch: string;
   readonly base: string;
   readonly overview: string;
+  readonly overviewPlanning: typeof overviewEn;
+  readonly overviewDelivery: typeof overviewDeliveryEn;
   readonly administration: string;
   readonly navigation: string;
   readonly openNavigation: string;

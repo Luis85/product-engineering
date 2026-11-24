@@ -20,6 +20,7 @@ import {
   requestGateProgress,
   requestInputChanges,
 } from "../../application/feature-requests";
+import { PROJECT_OVERVIEW, projectOverviewRoute } from "../../application/projects";
 import type {
   FeatureRequest,
   FeatureRequestOrigin,
@@ -46,14 +47,16 @@ import FeatureRequestScope from "./FeatureRequestScope.vue";
 import FeatureRequestTabs from "./FeatureRequestTabs.vue";
 import { useRequestDetailState } from "./request-detail-state";
 
-const { record, backlog, selectedGates, stage, origin } = defineProps<{
+const { record, backlog, selectedTab, selectedRevision, stage, origin } = defineProps<{
   readonly record: FeatureRequest;
   readonly backlog: BacklogSnapshot;
-  readonly selectedGates: boolean;
+  readonly selectedTab: "gates" | "run" | undefined;
+  readonly selectedRevision: number | undefined;
   readonly stage: DeliveryStage | undefined;
   readonly origin: FeatureRequestOrigin | undefined;
 }>();
-const text = useMessages()["feature-requests"];
+const catalog = useMessages();
+const text = catalog["feature-requests"];
 const { history } = useRouting();
 const { back } = useHistory();
 const navigate = useNavigate();
@@ -128,9 +131,9 @@ async function refreshDraft(recordToRead: FeatureRequest) {
   if (result._tag === "success") settledPreview.value = result.value;
 }
 watch(
-  () => selectedGates,
+  () => selectedTab,
   (selected) => {
-    if (selected && !restoredOrigin()?.startsWith("request-")) tab.value = "gates";
+    if (selected && !restoredOrigin()?.startsWith("request-")) tab.value = selected;
   },
   { immediate: true },
 );
@@ -153,12 +156,15 @@ watch(changes, () => {
   else if (checksum.value) void baseline.run(record);
 });
 watch(
-  () => record.revision,
-  () => {
-    historicalRevision.value = undefined;
-    tab.value = "package";
+  [() => record.revision, () => selectedRevision],
+  ([revision, selection], previous) => {
+    if (selection !== undefined || previous.length > 0) {
+      historicalRevision.value = selection === revision ? undefined : selection;
+      tab.value = selectedTab ?? "package";
+    }
     settledPreview.value = undefined;
   },
+  { immediate: true },
 );
 
 async function showRevision(number?: number) {
@@ -180,6 +186,7 @@ const returnMatches = {
   register: (route: Route) => route.name === PROJECT_FEATURE_REQUESTS && !route.requestId,
   review: (route: Route) =>
     route.name === PROJECT_REVIEWS && route.selection?.requestId === record.id,
+  overview: (route: Route) => route.name === PROJECT_OVERVIEW,
 };
 const previous = computed(() => {
   const route = history.value.back.at(-1);
@@ -187,20 +194,35 @@ const previous = computed(() => {
   const kind = route.name === PROJECT_REVIEWS ? "review" : (origin?.kind ?? "register");
   return returnMatches[kind](route) ? route : undefined;
 });
-const returnLabels = { board: text.boardBack, list: text.listBack, pbi: text.pbiBack };
+const returnLabels = {
+  board: text.boardBack,
+  list: text.listBack,
+  pbi: text.pbiBack,
+  overview: catalog.projects.overview,
+};
 const returnLabel = computed(() => {
   if (previous.value?.name === PROJECT_REVIEWS) return text.review.back;
   return origin ? returnLabels[origin.kind] : text.back;
 });
 
-function close() {
-  if (previous.value) return back();
+function fallback() {
   const { projectId, pbiId, id } = record;
-  if (origin?.kind === "board")
-    return navigate(backlogBoardReturnRoute(projectId, { context: origin.context, requestId: id }));
-  if (origin?.kind === "list") return navigate(backlogRoute(projectId));
-  if (origin?.kind === "pbi") return navigate(pbiDetailRoute(projectId, pbiId, "links"));
-  return navigate(featureRequestsRoute(projectId, stage ? { stage } : {}));
+  switch (origin?.kind) {
+    case "board":
+      return backlogBoardReturnRoute(projectId, { context: origin.context, requestId: id });
+    case "list":
+      return backlogRoute(projectId);
+    case "pbi":
+      return pbiDetailRoute(projectId, pbiId, "links");
+    case "overview":
+      return projectOverviewRoute(projectId);
+    case undefined:
+      return featureRequestsRoute(projectId, stage ? { stage } : {});
+  }
+}
+
+function close() {
+  return previous.value ? back() : navigate(fallback());
 }
 
 async function openPbi(event: MouseEvent) {

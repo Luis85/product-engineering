@@ -14,15 +14,16 @@ export const PROJECT_FEATURE_REQUESTS = "project-feature-requests";
 export const PROJECT_REVIEWS = "project-reviews";
 const requestOriginSchema = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("board"), context: backlogBoardContextSchema }),
-  Schema.Struct({ kind: Schema.Literals(["list", "pbi"]) }),
+  Schema.Struct({ kind: Schema.Literals(["list", "pbi", "overview"]) }),
 ]);
 export type FeatureRequestOrigin = typeof requestOriginSchema.Type;
 export const projectFeatureRequestsSchema = Schema.Struct({
   name: Schema.Literal(PROJECT_FEATURE_REQUESTS),
   projectId: projectIdSchema,
   requestId: Schema.optionalKey(featureRequestIdSchema),
+  revision: Schema.optionalKey(requestRevisionNumber),
   stage: Schema.optionalKey(Schema.Literals(deliveryStages)),
-  tab: Schema.optionalKey(Schema.Literal("gates")),
+  tab: Schema.optionalKey(Schema.Literals(["gates", "run"])),
   origin: Schema.optionalKey(requestOriginSchema),
 });
 export type FeatureRequestsRoute = typeof projectFeatureRequestsSchema.Type;
@@ -50,7 +51,8 @@ export function featureRequestsRoute(
   selection: {
     readonly stage?: DeliveryStage;
     readonly requestId?: FeatureRequestId;
-    readonly tab?: "gates";
+    readonly revision?: number;
+    readonly tab?: "gates" | "run";
     readonly origin?: FeatureRequestOrigin;
   } = {},
 ): FeatureRequestsRoute {

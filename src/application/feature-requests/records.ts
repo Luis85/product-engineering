@@ -110,10 +110,13 @@ export const requestDeliveryStage = ({
 }: Pick<FeatureRequest, "blocker" | "state">) =>
   blocker && (state === "released" || state === "review") ? "blocked" : stagesByState[state];
 
-export function featureRequestStageCounts(records: readonly FeatureRequest[]) {
+export function featureRequestStageCounts(
+  records: readonly FeatureRequest[],
+  stageFor: (record: FeatureRequest) => DeliveryStage = requestDeliveryStage,
+) {
   const stages = new Map<DeliveryStage, number>(deliveryStages.map((stage) => [stage, 0]));
   for (const record of records) {
-    const stage = requestDeliveryStage(record);
+    const stage = stageFor(record);
     stages.set(stage, (stages.get(stage) ?? 0) + 1);
   }
   return stages;

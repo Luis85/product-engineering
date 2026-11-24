@@ -1,6 +1,7 @@
 import { inject, nextTick, onScopeDispose, provide } from "vue";
 import type { InjectionKey, Ref } from "vue";
 import { PROJECT_DOMAIN_MODEL } from "../../application/domain-model";
+import { PROJECT_OVERVIEW } from "../../application/projects";
 import { HISTORY_LIMIT } from "../../application/shell";
 import type { Route } from "../../application/routes";
 import { PROJECT_TRACE } from "../../application/trace";
@@ -82,8 +83,8 @@ function restoreScroll(workspace: HTMLElement, target: Position | undefined) {
 
 function keepsWorkspacePosition(previous: Route, next: Route) {
   if (previous.name === "settings") return next.name === "settings";
-  if (previous.name === PROJECT_TRACE)
-    return next.name === PROJECT_TRACE && next.projectId === previous.projectId;
+  if (previous.name === PROJECT_TRACE || previous.name === PROJECT_OVERVIEW)
+    return next.name === previous.name && next.projectId === previous.projectId;
   return (
     previous.name === PROJECT_DOMAIN_MODEL &&
     next.name === PROJECT_DOMAIN_MODEL &&

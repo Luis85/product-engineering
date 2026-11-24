@@ -9,7 +9,8 @@ import type { ProjectRecordScreens } from "./record-screens";
 import type { ProjectSearchLoader } from "./search-sources";
 import type { ProjectTemplateFactory } from "./template-factories";
 
-const workspace = () => import("./index").then((module) => module.workspaceScreen);
+const workspace = () =>
+  import("./components/ProjectWorkspace.vue").then((module) => module.default);
 export async function projectFrame(
   loaders: readonly ProjectSearchLoader[] = [],
   templates: readonly ProjectTemplateFactory[] = [],

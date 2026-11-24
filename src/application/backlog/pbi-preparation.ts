@@ -1,5 +1,6 @@
 import { Effect, Result } from "effect";
-import { completePbiCriterion, pbiCriterionDraft } from "../../domain/backlog";
+import { completePbiCriterion, pbiCriteria, pbiCriterionDraft } from "../../domain/backlog";
+import type { Frontmatter } from "../../domain/notes";
 import { isKnowledgeId } from "../../domain/knowledge";
 import { inspectArtifactGit } from "../git";
 import {
@@ -9,14 +10,16 @@ import {
   resolveKnowledgeNote,
 } from "../knowledge";
 import type { KnowledgeRecord } from "../knowledge";
+import { NoteStore } from "../notes";
 import { projectArtifactRules, projectIntegrationPolicy, readFreshProject } from "../projects";
 import type { ProjectId, ProjectSettings } from "../projects";
 import { backlogGitSource } from "./contributions";
 import { BacklogError } from "./model";
+import type { BacklogItem } from "./model";
 import { readPbiDetail } from "./pbi-detail";
 import type { PbiDetail } from "./pbi-detail";
 import { pbiSourceDraft } from "./pbi-sources";
-import { savePbiContent } from "./pbi-storage";
+import { pbiApproval, savePbiContent } from "./pbi-storage";
 
 export type PbiPreparationReason =
   | "prd"
@@ -37,8 +40,10 @@ export type PbiPreparationGap = {
   readonly record?: KnowledgeRecord;
 };
 
-function linked(detail: PbiDetail, kind: PbiDetail["sources"][number]["kind"]) {
-  return detail.sources.find((entry) => entry.kind === kind);
+type PbiSources = Readonly<PbiDetail["sources"]>;
+
+function linked(sources: PbiSources, kind: PbiSources[number]["kind"]) {
+  return sources.find((entry) => entry.kind === kind);
 }
 
 function selectedVision(project: ProjectId, prd: KnowledgeRecord | undefined) {
@@ -72,14 +77,14 @@ function visionGap(vision: KnowledgeRecord | undefined): PbiPreparationGap | und
   if (vision.values.approval !== "approved") return { reason: "vision", record: vision };
 }
 
-function researchGap(detail: PbiDetail): PbiPreparationGap | undefined {
-  if (!linked(detail, "jtbd")?.record || !linked(detail, "research")?.record)
+function researchGap(sources: PbiSources): PbiPreparationGap | undefined {
+  if (!linked(sources, "jtbd")?.record || !linked(sources, "research")?.record)
     return { reason: "research" };
 }
 
-function adrGap(detail: PbiDetail): PbiPreparationGap | undefined {
-  const adr = linked(detail, "adr");
-  if (!adr?.id && detail.edit.item.fields.pbi_integration_change !== true) return;
+function adrGap(sources: PbiSources, fields: Frontmatter): PbiPreparationGap | undefined {
+  const adr = linked(sources, "adr");
+  if (!adr?.id && fields.pbi_integration_change !== true) return;
   if (!adr?.record) return { reason: "adr" };
   if (adr.record.values.approval !== "approved")
     return { reason: "adrApproval", record: adr.record };
@@ -99,25 +104,85 @@ function deliveryDestination(project: ProjectSettings | undefined) {
     return { ...policy, repository: project.repository, branch: project.branch };
 }
 
+function artifactGaps(
+  sources: PbiSources,
+  fields: Frontmatter,
+  vision: KnowledgeRecord | undefined,
+  project: ProjectSettings | undefined,
+  delivery: ReturnType<typeof deliveryDestination>,
+) {
+  const rules = project ? projectArtifactRules(project) : [];
+  const enabled = (id: "research-jtbd" | "integration-adr") =>
+    rules.find((rule) => rule.id === id)?.required !== false;
+  return [
+    requirementGap(linked(sources, "prd")?.record, pbiSourceDraft(fields).pbi_requirement_id),
+    visionGap(vision),
+    enabled("research-jtbd") ? researchGap(sources) : undefined,
+    enabled("integration-adr") ? adrGap(sources, fields) : undefined,
+    scenarioGap(pbiCriteria(fields.pbi_criteria)),
+    delivery ? undefined : { reason: "repository" as const },
+  ].filter((gap) => gap !== undefined);
+}
+
+export function inspectIndexedPbiPreparation(
+  item: BacklogItem,
+  sources: PbiSources,
+  records: ReadonlyMap<string, KnowledgeRecord>,
+  fallbackVision: KnowledgeRecord | undefined,
+  project: ProjectSettings | undefined,
+) {
+  return Effect.gen(function* (): Effect.fn.Return<
+    PbiPreparationReason | "unavailable" | undefined,
+    never,
+    NoteStore
+  > {
+    const id = linked(sources, "prd")?.record?.values.vision_id;
+    const vision = id ? indexedVision(records, id) : fallbackVision;
+    const gap = artifactGaps(
+      sources,
+      item.fields,
+      vision,
+      project,
+      deliveryDestination(project),
+    )[0];
+    if (gap) return gap.reason;
+    if (!item.fields.pbi_approved_revision) return "approval";
+    return yield* indexedApprovalGap(item);
+  });
+}
+
+function indexedVision(records: ReadonlyMap<string, KnowledgeRecord>, id: string) {
+  const record = records.get(id);
+  return record?.kind === "vision" ? record : undefined;
+}
+
+function indexedApprovalGap(item: BacklogItem) {
+  return Effect.gen(function* () {
+    const store = yield* NoteStore;
+    const result = yield* Effect.result(store.readContent(item.path));
+    if (Result.isFailure(result)) return "unavailable" as const;
+    const { frontmatter, body } = result.success;
+    if (
+      frontmatter.id !== item.fields.id ||
+      frontmatter.project_id !== item.fields.project_id ||
+      frontmatter["pe-id"] !== item.id
+    )
+      return "unavailable" as const;
+    const title =
+      typeof frontmatter.title === "string" && frontmatter.title ? frontmatter.title : item.title;
+    if (pbiApproval(frontmatter, body, title) !== "approved") return "approval" as const;
+  });
+}
+
 function requiredArtifacts(detail: PbiDetail) {
   return Effect.gen(function* () {
-    const { projectId, edit, criteria } = detail;
+    const { projectId, edit, sources } = detail;
     const project = yield* readFreshProject(projectId);
-    const rules = project ? projectArtifactRules(project) : [];
-    const prd = linked(detail, "prd")?.record;
+    const prd = linked(sources, "prd")?.record;
     const requirement = pbiSourceDraft(edit.item.fields).pbi_requirement_id;
     const vision = yield* selectedVision(projectId, prd);
     const delivery = deliveryDestination(project);
-    const enabled = (id: "research-jtbd" | "integration-adr") =>
-      rules.find((rule) => rule.id === id)?.required !== false;
-    const gaps = [
-      requirementGap(prd, requirement),
-      visionGap(vision),
-      enabled("research-jtbd") ? researchGap(detail) : undefined,
-      enabled("integration-adr") ? adrGap(detail) : undefined,
-      scenarioGap(criteria),
-      delivery ? undefined : { reason: "repository" as const },
-    ].filter((gap) => gap !== undefined);
+    const gaps = artifactGaps(sources, edit.item.fields, vision, project, delivery);
     return { gaps, vision, delivery, requirement };
   });
 }

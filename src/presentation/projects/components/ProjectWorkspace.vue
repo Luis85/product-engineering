@@ -15,6 +15,7 @@ import { useProjectRecordScreens } from "../record-screens";
 import { useProjectSearchSources } from "../search-sources";
 import ProjectAdministration from "./ProjectAdministration.vue";
 import ProjectChooser from "./ProjectChooser.vue";
+import ProjectOverview from "./ProjectOverview.vue";
 import ProjectRecordActions from "./ProjectRecordActions.vue";
 
 const catalog = useMessages();
@@ -74,17 +75,19 @@ const description = computed(() => {
         {{ title }}
       </h1>
       <p v-if="description">{{ description }}</p>
-      <UButton
-        v-if="route.name === PROJECT_OVERVIEW"
-        type="button"
-        variant="soft"
-        icon="i-lucide-book-open"
-        class="pe:justify-self-start"
-        data-testid="project-knowledge-entry"
-        data-pe-focus-key="project-knowledge-entry"
-        @click="navigate(projectKnowledgeRoute(project.id))"
-        >{{ catalog.knowledge.title }}</UButton
-      >
+      <template v-if="route.name === PROJECT_OVERVIEW">
+        <ProjectOverview :key="project.id" :project="project" />
+        <UButton
+          type="button"
+          variant="soft"
+          icon="i-lucide-book-open"
+          class="pe:justify-self-start"
+          data-testid="project-knowledge-entry"
+          data-pe-focus-key="project-knowledge-entry"
+          @click="navigate(projectKnowledgeRoute(project.id))"
+          >{{ catalog.knowledge.title }}</UButton
+        >
+      </template>
       <ProjectAdministration v-if="administration" :key="project.id" :project="project" />
       <ProjectRecordActions
         v-if="record"

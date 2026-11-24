@@ -28,6 +28,14 @@ export function fields(raw: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function openReviewFromMap() {
+  return browser.$(ROOT).$("button=Fürs Backlog prüfen").click();
+}
+
+function openReview(open?: () => Promise<void>) {
+  return open ? open() : openReviewFromMap();
+}
+
 export async function handoffBlankProject(input: {
   readonly projectId: ProjectId;
   readonly id: StoryMapId;
@@ -37,9 +45,11 @@ export async function handoffBlankProject(input: {
   readonly job: string;
   readonly prdId: string;
   readonly requirementId: unknown;
+  readonly openReview?: () => Promise<void>;
+  readonly checkDeferred?: () => Promise<void>;
 }) {
   const { projectId, id, folder, mapFile, authored, job, prdId, requirementId } = input;
-  await browser.$(ROOT).$("button=Fürs Backlog prüfen").click();
+  await openReview(input.openReview);
   const active = await readViewRoute();
   const sliceId = active && typeof active === "object" && "sliceId" in active && active.sliceId;
   if (typeof sliceId !== "string") throw new Error("No typed native slice route");
@@ -149,6 +159,7 @@ export async function handoffBlankProject(input: {
   await expect(second()).toHaveText(expect.stringContaining("Bestehendes PBI"));
   await expect(third()).toHaveText(expect.stringContaining("Zurückgestellt"));
   expect(await stored(mapFile)).toBe(deferred);
+  await input.checkDeferred?.();
   await third().$("button=Wieder aufnehmen").click();
   await expect(third()).toHaveText(expect.stringContaining("PBI offen"));
   await expect(third()).toBeFocused();

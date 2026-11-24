@@ -1,4 +1,6 @@
 import type { ProjectsCatalog } from "./catalog";
+import { overviewEn } from "./overview";
+import { overviewDeliveryEn } from "./overview-delivery";
 
 export const en: ProjectsCatalog = {
   title: "Product projects",
@@ -23,6 +25,8 @@ export const en: ProjectsCatalog = {
   branch: "Branch",
   base: "Backlog Base",
   overview: "Overview",
+  overviewPlanning: overviewEn,
+  overviewDelivery: overviewDeliveryEn,
   administration: "Project administration",
   navigation: "Project sections",
   openNavigation: "Open project navigation",

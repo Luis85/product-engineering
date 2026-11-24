@@ -33,11 +33,22 @@ function pbiSources(detail: PbiDetail | undefined) {
   const job = detail?.sources.find(({ kind }) => kind === "jtbd")?.record;
   const prd = detail?.sources.find(({ kind }) => kind === "prd")?.record;
   const requirementId = detail && pbiSourceDraft(detail.edit.item.fields).pbi_requirement_id;
-  const requirement =
-    requirementId && prd?.values.requirement_id === requirementId
-      ? { prd, id: requirementId }
-      : undefined;
+  const requirement = traceRequirement(prd, requirementId);
   return { research, job, prd, requirement };
+}
+
+export function traceRequirement(
+  prd: KnowledgeRecord | undefined,
+  requirementId: string | undefined,
+) {
+  if (requirementId && prd?.values.requirement_id === requirementId)
+    return { prd, id: requirementId };
+}
+
+export function tracePbiDestination(projectId: ProjectId, item: BacklogItem, pbiId?: string) {
+  return pbiId
+    ? pbiDetailRoute(projectId, pbiId)
+    : backlogRoute(projectId, item.conflict ? undefined : item.id);
 }
 
 function linkedVision(projectId: ProjectId, prd: KnowledgeRecord | undefined) {
@@ -111,9 +122,7 @@ export function readTraceSources(projectId: ProjectId, pbiKey: string) {
       requirement: requirement && links.requirement && { ...requirement, id: links.requirement.id },
       maps,
       gaps: sourceGaps(detail, research, job, vision, requirement, maps),
-      pbiRoute: detail
-        ? pbiDetailRoute(projectId, detail.pbiId)
-        : backlogRoute(projectId, item.conflict ? undefined : item.id),
+      pbiRoute: tracePbiDestination(projectId, item, detail?.pbiId),
     };
   });
 }

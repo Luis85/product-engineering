@@ -79,12 +79,14 @@ function approvalPatch(
   });
 }
 
-export function pbiApproval(before: BacklogEdit): "draft" | "approved" {
-  const fields = before.item.fields;
+export function pbiApproval(
+  fields: Frontmatter,
+  body: string,
+  title: string,
+): "draft" | "approved" {
   const revision = pbiRevision(fields);
   return fields.pbi_approved_revision === revision &&
-    fields.pbi_approval_fingerprint ===
-      pbiFingerprint(fields, before.draft.body, before.draft.title)
+    fields.pbi_approval_fingerprint === pbiFingerprint(fields, body, title)
     ? "approved"
     : "draft";
 }

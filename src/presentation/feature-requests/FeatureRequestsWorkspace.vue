@@ -7,7 +7,8 @@ import {
   featureRequestsChanges,
   featureRequestsRoute,
   featureRequestsSnapshot,
-  requestDeliveryStage,
+  initialRequestStages,
+  requestStageChanges,
 } from "../../application/feature-requests";
 import type { FeatureRequestsRoute } from "../../application/feature-requests";
 import { projectChanges, projectSnapshot } from "../../application/projects";
@@ -24,6 +25,7 @@ const navigate = useNavigate();
 const projects = useStream(projectSnapshot, projectChanges);
 const registered = computed(() => projects.value.projects.some(({ id }) => id === project));
 const requests = useStream(featureRequestsSnapshot(project), featureRequestsChanges(project));
+const stages = useAsyncStream(initialRequestStages, requestStageChanges(project));
 const backlog = useAsyncStream<BacklogSnapshot, never>(
   { ready: false, items: [], duplicates: [] },
   backlogChanges(project),
@@ -31,13 +33,15 @@ const backlog = useAsyncStream<BacklogSnapshot, never>(
 const visible = computed(() => {
   const stage = route.stage;
   return stage
-    ? requests.value.records.filter((record) => requestDeliveryStage(record) === stage)
+    ? stages.value.entries.filter((entry) => entry.stage === stage).map(({ record }) => record)
     : requests.value.records;
 });
 const current = computed(
   () => registered.value && requests.value.records.find(({ id }) => id === route.requestId),
 );
-const pending = computed(() => !requests.value.ready || !projects.value.ready);
+const pending = computed(
+  () => !requests.value.ready || !projects.value.ready || (route.stage && !stages.value.ready),
+);
 const canCreate = computed(() => registered.value && !route.requestId);
 const activeFilter = computed(() => (canCreate.value && !pending.value ? route.stage : undefined));
 const status = computed(() => {
@@ -50,7 +54,7 @@ const status = computed(() => {
 });
 const restore = useRestoreWorkspacePosition();
 onMounted(() => restore());
-watch([requests, backlog, () => route.requestId, () => route.stage], () => restore(), {
+watch([requests, stages, backlog, () => route.requestId, () => route.stage], () => restore(), {
   flush: "post",
 });
 </script>
@@ -63,7 +67,8 @@ watch([requests, backlog, () => route.requestId, () => route.stage], () => resto
     :backlog="backlog"
     :stage="route.stage"
     :origin="route.origin"
-    :selected-gates="route.tab === 'gates'"
+    :selected-tab="route.tab"
+    :selected-revision="route.revision"
   />
   <section v-else class="pe-feature-requests" data-testid="request-register">
     <header class="pe-request-header">
