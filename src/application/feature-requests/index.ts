@@ -45,3 +45,11 @@ export {
   retryFeatureRequest,
   simulateFactoryEvent,
 } from "./factory";
+export {
+  acceptReview,
+  confirmReviewCheck,
+  readReviewWorkspace,
+  requestReviewChange,
+} from "./review-decision";
+export { reviewChangeExplanation } from "../../domain/feature-requests";
+export type { ReviewTarget, ReviewWorkspace } from "./review-decision";

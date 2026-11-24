@@ -106,6 +106,10 @@ export function normalizeRequestScope(value: string) {
   return value.replace(/\r\n?/g, "\n").trim();
 }
 
+export function reviewChangeExplanation(value: string) {
+  return normalizeRequestScope(value) || undefined;
+}
+
 export function invalidRequestField(field: "title" | "scope", value: string) {
   return Result.isFailure(featureRequestType.fields[field].check(value));
 }

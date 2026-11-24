@@ -139,6 +139,6 @@ const controls = computed<Action[]>(() => {
       @click="replay.run(record, replayVersion)"
     />
     <FeatureRequestClarification v-if="question" :record="record" :question="question" />
-    <FeatureRequestRunHistory :events="events" />
+    <FeatureRequestRunHistory :events="events" :decision="revision?.decision" />
   </section>
 </template>

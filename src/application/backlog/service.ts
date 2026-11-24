@@ -5,6 +5,7 @@ import { recordId, sameFrontmatterValue, schemaMarker } from "../../domain/notes
 import type { Frontmatter, FrontmatterPatch } from "../../domain/notes";
 import { IdGenerator, NoteIndex, NoteStore } from "../notes";
 import type { Note } from "../notes";
+import { isInFolder } from "../notes";
 import { ProjectFiles, projectChanges, projectSnapshot } from "../projects";
 import type { BacklogBase, Project, ProjectId } from "../projects";
 import { EventBus } from "../shell";
@@ -83,6 +84,27 @@ export const backlogSnapshot = (project: ProjectId) =>
     }
     const { project: current, base, others } = context.success;
     return { ready, base, ...backlogItems(current, base, notes, others) };
+  });
+
+export const readCurrentBacklogItems = (project: ProjectId) =>
+  Effect.gen(function* () {
+    const { project: current, base, others } = yield* scopedBacklog(project);
+    const store = yield* NoteStore;
+    const sources = yield* store.sources;
+    const notes = yield* Effect.forEach(
+      sources.filter(({ path }) => isInFolder(path, base.folder)),
+      ({ path }) =>
+        store
+          .readFresh(path)
+          .pipe(Effect.catchTag("NoteNotFoundError", () => Effect.succeed(undefined))),
+      { concurrency: 4 },
+    );
+    return backlogItems(
+      current,
+      base,
+      notes.filter((note) => note !== undefined),
+      others,
+    ).items;
   });
 
 export const backlogInputs = Stream.unwrap(

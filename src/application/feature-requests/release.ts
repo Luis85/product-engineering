@@ -38,9 +38,9 @@ export function releaseFeatureRequest(expected: FeatureRequest, basis: string) {
   );
 }
 
-export function readFeatureRequestBaseline(record: FeatureRequest) {
+export function readFeatureRequestBaseline(record: FeatureRequest, revision = record.revision) {
   return Effect.gen(function* () {
-    const history = featureRequestRevision(record, record.revision);
+    const history = featureRequestRevision(record, revision);
     if (!history?.package?.checksum) return;
     const live = yield* readRequestPackagePreview(record);
     return requestPackageChanges(history.package.package, live.package);

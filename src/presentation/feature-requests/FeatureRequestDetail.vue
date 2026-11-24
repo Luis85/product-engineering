@@ -14,6 +14,7 @@ import {
   featureRequestRevisions,
   featureRequestsRoute,
   PROJECT_FEATURE_REQUESTS,
+  PROJECT_REVIEWS,
   readFeatureRequestBaseline,
   readRequestPackagePreview,
   requestGateProgress,
@@ -177,14 +178,20 @@ const returnMatches = {
   list: (route: Route) => route.name === PROJECT_BACKLOG && route.tab === "list",
   pbi: (route: Route) => route.name === PROJECT_USE_CASE && route.pbiId === record.pbiId,
   register: (route: Route) => route.name === PROJECT_FEATURE_REQUESTS && !route.requestId,
+  review: (route: Route) =>
+    route.name === PROJECT_REVIEWS && route.selection?.requestId === record.id,
 };
 const previous = computed(() => {
   const route = history.value.back.at(-1);
   if (!route || !("projectId" in route) || route.projectId !== record.projectId) return undefined;
-  return returnMatches[origin?.kind ?? "register"](route) ? route : undefined;
+  const kind = route.name === PROJECT_REVIEWS ? "review" : (origin?.kind ?? "register");
+  return returnMatches[kind](route) ? route : undefined;
 });
 const returnLabels = { board: text.boardBack, list: text.listBack, pbi: text.pbiBack };
-const returnLabel = computed(() => (origin ? returnLabels[origin.kind] : text.back));
+const returnLabel = computed(() => {
+  if (previous.value?.name === PROJECT_REVIEWS) return text.review.back;
+  return origin ? returnLabels[origin.kind] : text.back;
+});
 
 function close() {
   if (previous.value) return back();

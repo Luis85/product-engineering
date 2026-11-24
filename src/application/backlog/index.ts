@@ -20,6 +20,7 @@ export {
   backlogSnapshot,
   adoptBacklogItem,
   openBacklogBase,
+  readCurrentBacklogItems,
 } from "./service";
 export type { BacklogItem, BacklogSnapshot } from "./model";
 export { createBacklogItem, newBacklogCreation } from "./creation";

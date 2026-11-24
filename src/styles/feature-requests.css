@@ -99,6 +99,17 @@
   color: var(--pe-warn-fg);
 }
 
+.product-engineering-root .pe-review-proof-and-criteria {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.product-engineering-root .pe-review-work-items {
+  flex-basis: 100%;
+  padding-inline-start: 1rem;
+}
+
 .product-engineering-root .pe-request-links,
 .product-engineering-root .pe-request-link {
   display: grid;
@@ -171,6 +182,9 @@
 }
 
 @container pe-feature-requests (width < 35rem) {
+  .product-engineering-root .pe-review-proof-and-criteria {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .product-engineering-root .pe-request-register,
   .product-engineering-root .pe-request-register tbody,
   .product-engineering-root .pe-request-register tr,

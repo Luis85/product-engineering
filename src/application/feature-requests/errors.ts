@@ -14,6 +14,8 @@ export class FeatureRequestError extends Schema.TaggedError<FeatureRequestError>
       "stale",
       "delivery",
       "evidence",
+      "review-done",
+      "review-reason",
     ]),
   },
 ) {}

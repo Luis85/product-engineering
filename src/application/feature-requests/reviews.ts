@@ -8,7 +8,10 @@ import { readFeatureRequestBaseline, requestInputChanges } from "./release";
 import { featureRequestRevision } from "./revisions";
 import type { FeatureRequestRevision } from "./revisions";
 
-function scopedRun({ run, revision }: FeatureRequestRevision, { projectId, id }: FeatureRequest) {
+export function scopedReviewRun(
+  { run, revision }: FeatureRequestRevision,
+  { projectId, id }: FeatureRequest,
+) {
   if (run?.projectId === projectId && run.requestId === id && run.revision === revision) return run;
 }
 
@@ -36,8 +39,29 @@ function readTechnical(
   };
 }
 
-function decisionForRun({ decision }: FeatureRequestRevision, run: FactoryAcknowledgement) {
-  if (decision?.runId === run.runId && decision.attempt === run.attempt) return decision;
+function proofMatches(
+  proof: NonNullable<NonNullable<FeatureRequestRevision["decision"]>["proof"]>,
+  revision: number,
+  receipt: NonNullable<FeatureRequestRevision["technical"]>,
+) {
+  return (
+    proof.revision === revision &&
+    proof.checksum === receipt.checksum &&
+    proof.runId === receipt.runId &&
+    proof.attempt === receipt.attempt &&
+    proof.commit === receipt.result.commit &&
+    proof.receiptId === receipt.id
+  );
+}
+
+function decisionForRun(
+  { revision, decision }: FeatureRequestRevision,
+  run: FactoryAcknowledgement,
+  receipt: FeatureRequestRevision["technical"],
+) {
+  if (decision?.runId !== run.runId || decision.attempt !== run.attempt) return;
+  if (!decision.proof || (receipt && proofMatches(decision.proof, revision, receipt)))
+    return decision;
 }
 
 function readDecision(
@@ -65,7 +89,11 @@ function readReviewEvidence(entry: FeatureRequestRevision, run: FactoryAcknowled
     (event) => event.runId === run.runId && matchesRun(run, event),
   );
   const result = readTechnical(events, entry.package, run);
-  const decision = readDecision(decisionForRun(entry, run), entry.state, result.testedCommit);
+  const decision = readDecision(
+    decisionForRun(entry, run, result.technical),
+    entry.state,
+    result.testedCommit,
+  );
   const changes = hasScopeChange(entry, events);
   if (!result.testedCommit && !decision && !changes) return;
   const business =
@@ -84,7 +112,7 @@ function readReviewEvidence(entry: FeatureRequestRevision, run: FactoryAcknowled
 export function featureRequestReview(record: FeatureRequest, revision: number) {
   const entry = featureRequestRevision(record, revision);
   if (!entry) return;
-  const run = scopedRun(entry, record);
+  const run = scopedReviewRun(entry, record);
   if (!run) return;
   const review = readReviewEvidence(entry, run);
   if (!review) return;

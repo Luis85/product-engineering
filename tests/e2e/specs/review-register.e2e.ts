@@ -33,7 +33,7 @@ it("V19: exposes scoped typed Reviews membership and opens the tested FR-024 rev
   await expect(tested.$("code")).toHaveAttribute("title", reviewTestedCommit);
   await expect(tested.$('[data-testid="review-stale"]')).not.toExist();
   await tested.$("button").click();
-  await expect(el("request-evidence").$("h2")).toHaveText("Nachweise");
+  await expect(el("request-evidence").$("h2")).toHaveText("Prüfnachweise");
   await expect(el("request-detail")).toHaveText(expect.stringContaining("FR-024 · Revision 2"));
   await expect(el("request-evidence")).toHaveText(expect.stringContaining(reviewTestedCommit));
   expect(await readVaultText(deliveryPath)).toBe(before);

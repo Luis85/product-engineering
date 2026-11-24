@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { browser, expect } from "@wdio/globals";
 import { canonicalRequestJson, featureRequestsRoute } from "../../src/application/feature-requests";
-import type { StoredRequestPackage } from "../../src/application/feature-requests";
+import type { RequestPackage, StoredRequestPackage } from "../../src/application/feature-requests";
 import { newNoteText } from "../../src/domain/notes";
 import { adminFolder, adminProject, customerFolder, customerProject } from "./knowledge-vault";
 import { deliveryPath, deliveryRequest, seedRequestDeliveryVault } from "./request-delivery-vault";
@@ -40,8 +40,39 @@ function requestNote(displayId: string, title: string, state: string, deliveryDa
   });
 }
 
-export async function seedReviewRegisterVault(additionalRecords = false) {
-  const { git } = await seedRequestDeliveryVault(true);
+async function fixturePackage(mapRelease?: (payload: RequestPackage) => RequestPackage) {
+  const releasedJson = await browser.executeObsidian(({ app }, path) => {
+    const note = app.vault.getFileByPath(path);
+    const raw: unknown = note && app.metadataCache.getFileCache(note)?.frontmatter?.delivery_data;
+    if (typeof raw !== "string") throw new Error("Missing released fixture package");
+    return (JSON.parse(raw) as { current: { exportJson: string } }).current.exportJson;
+  }, deliveryPath);
+  const released = JSON.parse(releasedJson) as StoredRequestPackage;
+  if (!released.checksum || !released.package.useCase)
+    throw new Error("Incomplete fixture package");
+  const payload = mapRelease?.(released.package) ?? released.package;
+  const checksum = mapRelease
+    ? createHash("sha256").update(canonicalRequestJson(payload)).digest("hex")
+    : released.checksum.value;
+  const exportJson = mapRelease
+    ? canonicalRequestJson({
+        package: payload,
+        checksum: { ...released.checksum, value: checksum },
+      })
+    : releasedJson;
+  return { useCase: released.package.useCase, checksum, exportJson };
+}
+
+export async function seedReviewRegisterVault(
+  additionalRecords = false,
+  fixture?: {
+    options?: Parameters<typeof seedRequestDeliveryVault>[2];
+    withScope?: boolean;
+    beforeRelease?: () => Promise<void>;
+    mapRelease?: (payload: RequestPackage) => RequestPackage;
+  },
+) {
+  const { git } = await seedRequestDeliveryVault(true, fixture?.withScope, fixture?.options);
   const commitPath = join(
     browser.getObsidianPage().getVaultPath(),
     customerFolder,
@@ -51,6 +82,7 @@ export async function seedReviewRegisterVault(additionalRecords = false) {
   writeFileSync(commitPath, fixtureCommit, "utf8");
   expect(git("hash-object", "-w", "-t", "commit", commitPath)).toBe(reviewTestedCommit);
   expect(git("rev-parse", "--verify", "e3b7c21^{commit}")).toBe(reviewTestedCommit);
+  await fixture?.beforeRelease?.();
 
   await openView();
   await setViewRoute(
@@ -62,19 +94,12 @@ export async function seedReviewRegisterVault(additionalRecords = false) {
   await expect(browser.$(`${ROOT} [data-testid=request-state]`)).toHaveText("Freigegeben", {
     wait: 15_000,
   });
-  const exportJson = await browser.executeObsidian(({ app }, path) => {
-    const note = app.vault.getFileByPath(path);
-    const raw: unknown = note && app.metadataCache.getFileCache(note)?.frontmatter?.delivery_data;
-    if (typeof raw !== "string") throw new Error("Missing released fixture package");
-    return (JSON.parse(raw) as { current: { exportJson: string } }).current.exportJson;
-  }, deliveryPath);
-  const stored = JSON.parse(exportJson) as StoredRequestPackage;
-  if (!stored.checksum || !stored.package.useCase) throw new Error("Incomplete fixture package");
+  const { useCase, checksum, exportJson } = await fixturePackage(fixture?.mapRelease);
   const run = {
     projectId: customerProject,
     requestId: deliveryRequest,
     revision: 2,
-    checksum: stored.checksum.value,
+    checksum,
     runId: "RUN-042",
     attempt: 1,
     provider: "local-fixture",
@@ -87,11 +112,11 @@ export async function seedReviewRegisterVault(additionalRecords = false) {
       pullRequest: "47",
       commit: reviewTestedCommit,
       technicalReview: { verdict: "approved", commit: reviewTestedCommit },
-      evidence: stored.package.useCase.criteria.map((criterion) => ({
+      evidence: useCase.criteria.map((criterion, index) => ({
         criterionId: criterion.id,
         scenarioId: criterion.scenario_id,
         commit: reviewTestedCommit,
-        checkId: "ci-42",
+        checkId: `ci-${42 + index}`,
         outcome: "passed",
       })),
     },
@@ -105,16 +130,16 @@ export async function seedReviewRegisterVault(additionalRecords = false) {
     reply: "Organisation im Export klar benennen.",
   };
   await browser.executeObsidian(
-    async ({ app }, fixture) => {
-      const note = app.vault.getFileByPath(fixture.path);
+    async ({ app }, seed) => {
+      const note = app.vault.getFileByPath(seed.path);
       if (!note) throw new Error("Missing review fixture");
       await app.fileManager.processFrontMatter(note, (fields: Record<string, unknown>) => {
         fields.state = "review";
         fields.run_id = "RUN-042";
         fields.dispatch_recorded = true;
-        fields.delivery_data = fixture.delivery;
+        fields.delivery_data = seed.delivery;
       });
-      for (const entry of fixture.additional) await app.vault.create(entry.path, entry.text);
+      for (const entry of seed.additional) await app.vault.create(entry.path, entry.text);
     },
     {
       path: deliveryPath,
@@ -141,7 +166,7 @@ export async function seedReviewRegisterVault(additionalRecords = false) {
         : [],
     },
   );
-  return stored.package.useCase.revision;
+  return useCase.revision;
 }
 
 export async function markFixtureAccepted() {
@@ -208,3 +233,4 @@ export async function addForeignReviewFixture() {
     }),
   );
 }
+import { createHash } from "node:crypto";

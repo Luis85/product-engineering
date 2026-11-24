@@ -2,6 +2,7 @@ import { browser } from "@wdio/globals";
 import { Hash } from "effect";
 import { newNoteText } from "../../src/domain/notes";
 import { encodeProjectReleaseRules } from "../../src/domain/projects";
+import type { ProjectCriterion } from "../../src/domain/projects";
 import { exportBody, exportPath, featurePath } from "./backlog-vault";
 import {
   customerFolder,
@@ -34,7 +35,17 @@ export const deliveryCriterion = {
 };
 export const manualReady = "project-criterion-33333333-3333-4333-8333-000000000091";
 
-export async function seedRequestDeliveryVault(confirmed: boolean, withScope = true) {
+export async function seedRequestDeliveryVault(
+  confirmed: boolean,
+  withScope = true,
+  options: {
+    criteria?: readonly (typeof deliveryCriterion)[];
+    ready?: readonly ProjectCriterion[];
+    done?: readonly ProjectCriterion[];
+    scope?: string;
+    rulesVersion?: number;
+  } = {},
+) {
   const { git } = await seedPbiVault();
   const sources = {
     pbi_prd_id: customerRequirement,
@@ -43,20 +54,17 @@ export async function seedRequestDeliveryVault(confirmed: boolean, withScope = t
     pbi_research_id: pbiResearch,
     pbi_adr_id: "",
   };
+  const criteria = options.criteria ?? [deliveryCriterion];
   const fingerprint = Hash.string(
-    JSON.stringify([
-      pbiTitle,
-      exportBody,
-      sources,
-      [Object.values(deliveryCriterion)],
-      undefined,
-      false,
-    ]),
+    JSON.stringify([pbiTitle, exportBody, sources, criteria.map(Object.values), undefined, false]),
   );
+  const rulesVersion = options.rulesVersion ?? 2;
   const rules = encodeProjectReleaseRules({
-    version: 2,
-    ready: [{ id: manualReady, title: "Exportumfang geprüft", type: "manual", enabled: true }],
-    done: [],
+    version: rulesVersion,
+    ready: options.ready ?? [
+      { id: manualReady, title: "Exportumfang geprüft", type: "manual", enabled: true },
+    ],
+    done: options.done ?? [],
   });
   await browser.executeObsidian(
     async ({ app }, input) => {
@@ -65,7 +73,7 @@ export async function seedRequestDeliveryVault(confirmed: boolean, withScope = t
       const organisation = app.vault.getFileByPath(input.entityPath);
       if (!pbi || !project || !organisation) throw new Error("Missing seed source notes");
       await app.fileManager.processFrontMatter(pbi, (fields: Record<string, unknown>) => {
-        fields.pbi_criteria = [input.criterion];
+        fields.pbi_criteria = input.criteria;
         fields.pbi_approved_revision = 1;
         fields.pbi_approval_fingerprint = input.fingerprint;
       });
@@ -97,7 +105,7 @@ export async function seedRequestDeliveryVault(confirmed: boolean, withScope = t
       withScope,
       fingerprint,
       rules,
-      criterion: deliveryCriterion,
+      criteria,
       draft: newNoteText({
         schema: "product-engineering.feature-request/v1",
         id: deliveryRequest,
@@ -107,9 +115,9 @@ export async function seedRequestDeliveryVault(confirmed: boolean, withScope = t
         pbi_id: "UC-09",
         sequence: 24,
         revision: 2,
-        scope: deliveryScope,
+        scope: options.scope ?? deliveryScope,
         state: "draft",
-        ...(confirmed && { ready_checks: [manualReady], ready_check_version: 2 }),
+        ...(confirmed && { ready_checks: [manualReady], ready_check_version: rulesVersion }),
       }),
       nfr: newNoteText({
         schema: "product-engineering.nfr/v1",

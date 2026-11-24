@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Schema } from "effect";
+import { Context, Effect, Layer, Option, Schema } from "effect";
 import { featureRequestIdSchema } from "../../domain/feature-requests";
 import { projectIdSchema } from "../../domain/projects";
 import { requestRevisionNumber, requestSha } from "./delivery-package";
@@ -30,6 +30,16 @@ const result = Schema.Struct({
   evidence: Schema.Array(factoryEvidence),
 });
 const key = { ...acknowledgement, id: str };
+const looseReceipt = Schema.Struct({
+  ...key,
+  kind: Schema.Literal("verified"),
+  result: Schema.Struct({
+    pullRequest: Schema.optionalKey(str),
+    commit: Schema.optionalKey(Schema.Unknown),
+    technicalReview: Schema.optionalKey(Schema.Unknown),
+    evidence: Schema.optionalKey(Schema.Unknown),
+  }),
+});
 export const factoryEventSchema = Schema.Union([
   Schema.Struct({ ...key, kind: Schema.Literal("picked-up"), worker: str }),
   Schema.Struct({ ...key, kind: Schema.Literal("question"), scope: str, question: str }),
@@ -68,7 +78,7 @@ export function matchesRun(expected: DeliveryCommand, actual: FactoryAcknowledge
 
 export function requestCiPassed(
   payload: RequestPackage,
-  { commit, evidence }: Extract<FactoryCallback, { kind: "verified" }>["result"],
+  { commit, evidence }: Pick<typeof result.Type, "commit" | "evidence">,
 ) {
   const criteria = payload.useCase?.criteria ?? [];
   return (
@@ -84,6 +94,30 @@ export function requestCiPassed(
           .length === 1,
     )
   );
+}
+
+const decodeLooseReceipt = Schema.decodeUnknownOption(looseReceipt);
+const decodeEvidence = Schema.decodeUnknownOption(Schema.Array(factoryEvidence));
+const isCommit = Schema.is(requestSha);
+const isTechnical = Schema.is(result.fields.technicalReview);
+
+export function readIncompleteReceipt(events: readonly unknown[], run: FactoryAcknowledgement) {
+  const exact = events
+    .toReversed()
+    .map((event) => Option.getOrUndefined(decodeLooseReceipt(event)))
+    .find((event) => event && event.runId === run.runId && matchesRun(run, event));
+  const partial = exact?.result;
+  if (!partial || !isCommit(partial.commit)) return { issue: "commit" as const };
+  const { commit, pullRequest, technicalReview } = partial;
+  return {
+    issue:
+      isTechnical(technicalReview) && technicalReview.commit === commit
+        ? ("receipt" as const)
+        : ("technical" as const),
+    commit,
+    pullRequest,
+    evidence: Option.getOrUndefined(decodeEvidence(partial.evidence)),
+  };
 }
 
 export class FeatureRequestDelivery extends Context.Service<

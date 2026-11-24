@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, shallowRef, useTemplateRef, watch } from "vue";
 import {
-  featureRequestReview,
   featureRequestsChanges,
   featureRequestsSnapshot,
   PROJECT_REVIEWS,
+  readReviewWorkspace,
   reviewRegisterChanges,
+  requestInputChanges,
   reviewsRoute,
 } from "../../application/feature-requests";
-import type { ReviewRegisterSnapshot, ReviewsRoute } from "../../application/feature-requests";
+import type {
+  ReviewRegisterSnapshot,
+  ReviewsRoute,
+  ReviewWorkspace,
+} from "../../application/feature-requests";
 import { projectChanges, projectSnapshot } from "../../application/projects";
 import { useRestoreWorkspacePosition } from "../projects";
 import {
@@ -17,10 +22,11 @@ import {
   useHistory,
   useMessages,
   useNavigate,
+  useQuery,
   useRouting,
   useStream,
 } from "../shell";
-import FeatureRequestEvidence from "./FeatureRequestEvidence.vue";
+import ReviewDecision from "./ReviewDecision.vue";
 import ReviewRegister from "./ReviewRegister.vue";
 
 const { route } = defineProps<{ readonly route: ReviewsRoute }>();
@@ -36,17 +42,52 @@ const register = useAsyncStream<ReviewRegisterSnapshot, never>(
   reviewRegisterChanges(project),
 );
 const registered = computed(() => projects.value.projects.some(({ id }) => id === project));
-const selected = computed(() => {
-  if (!registered.value || !route.selection) return undefined;
-  const { requestId, revision } = route.selection;
-  const record = requests.value.records.find(({ id }) => id === requestId);
-  return record && featureRequestReview(record, revision);
+const review = useQuery(readReviewWorkspace);
+const settled = shallowRef<ReviewWorkspace>();
+const checked = shallowRef(false);
+const waitingHeading = useTemplateRef<HTMLElement>("waitingReviewHeading");
+const focusRequested = shallowRef(false);
+const changes = useAsyncStream<symbol | undefined, never>(undefined, requestInputChanges(project));
+const selectedRecord = computed(() => {
+  const id = route.selection?.requestId;
+  const record = requests.value.records.find((entry) => entry.id === id);
+  return record && JSON.stringify(record);
+});
+const selected = computed(() =>
+  settled.value?.record.id === route.selection?.requestId &&
+  settled.value?.entry.revision === route.selection?.revision
+    ? settled.value
+    : undefined,
+);
+async function refresh() {
+  const selection = route.selection;
+  if (!registered.value || !selection) return;
+  const result = await review.run(project, selection.requestId, selection.revision);
+  if (result._tag === "interrupted") return;
+  focusRequested.value = waitingHeading.value?.matches(":focus") ?? false;
+  settled.value = result._tag === "success" ? result.value : undefined;
+  checked.value = true;
+}
+watch(
+  () => route.selection,
+  () => {
+    checked.value = false;
+  },
+);
+watch([() => route.selection, registered, selectedRecord, changes], () => void refresh(), {
+  immediate: true,
 });
 const source = computed(() => (route.selection ? requests.value : register.value));
+const unavailable = computed(() =>
+  Boolean(projects.value.failed || source.value.failed || review.message.value),
+);
+const loading = computed(() => {
+  if (!projects.value.ready || !source.value.ready) return true;
+  return Boolean(registered.value && route.selection && !checked.value);
+});
 const status = computed(() => {
-  if (projects.value.failed || source.value.failed)
-    return { text: text.reviews.unavailable, alert: true };
-  if (!projects.value.ready || !source.value.ready) return { text: text.reviews.loading };
+  if (unavailable.value) return { text: text.reviews.unavailable, alert: true };
+  if (loading.value) return { text: text.reviews.loading };
   if (!registered.value || route.selection) return { text: text.reviews.missing };
   if (!register.value.rows.length) return { text: text.reviews.empty };
   return undefined;
@@ -67,7 +108,7 @@ watch([register, selected], () => restore(), { flush: "post" });
 <template>
   <section
     v-if="selected"
-    :key="selected.row.key"
+    :key="selected.record.id + '/' + selected.entry.revision"
     class="pe-feature-requests"
     data-testid="request-detail"
   >
@@ -81,17 +122,13 @@ watch([register, selected], () => restore(), { flush: "post" });
       data-testid="review-return"
       @click="close"
     />
-    <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">
-      {{ selected.row.title }}
-    </h1>
-    <p class="pe-request-row-meta">
-      {{ text.revision(selected.row.displayId, selected.row.revision) }} · {{ selected.row.runId }}
-    </p>
-    <FeatureRequestEvidence :revision="selected.evidence" />
+    <ReviewDecision :review="selected" :focus-requested="focusRequested" @refresh="refresh" />
   </section>
   <section v-else class="pe-feature-requests" data-testid="review-register">
     <header class="pe:grid pe:min-w-0 pe:gap-1">
-      <h1 tabindex="-1" class="pe:text-2xl pe:font-semibold">{{ text.reviews.title }}</h1>
+      <h1 ref="waitingReviewHeading" tabindex="-1" class="pe:text-2xl pe:font-semibold">
+        {{ text.reviews.title }}
+      </h1>
       <p v-if="!route.selection" class="pe:text-sm pe:text-muted">{{ text.reviews.intro }}</p>
     </header>
     <p
