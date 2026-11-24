@@ -8,6 +8,7 @@ import { knowledgeChanges, knowledgeSnapshot } from "../../application/knowledge
 import type { KnowledgeId } from "../../domain/knowledge";
 import { useRestoreWorkspacePosition } from "../projects";
 import { ErrorNotice, useMessages, useQuery, useStream } from "../shell";
+import NfrSourceLinks from "./nfr/NfrSourceLinks.vue";
 
 const { detail } = defineProps<{ readonly detail: PbiDetail }>();
 const emit = defineEmits<{ open: [KnowledgeId, MouseEvent]; links: [MouseEvent] }>();
@@ -42,10 +43,7 @@ watch(entities, () => restore(), { flush: "post" });
       <h2>{{ text.prototypes }}</h2>
       <p>{{ text.noPrototypes }}</p>
     </section>
-    <section>
-      <h2>{{ text.nfrs }}</h2>
-      <p>{{ text.noNfrs }}</p>
-    </section>
+    <NfrSourceLinks :project="detail.projectId" :item-id="detail.pbiId" show-scope />
     <section>
       <div class="pe-backlog-actions pe:justify-between">
         <h2>{{ text.entities }}</h2>

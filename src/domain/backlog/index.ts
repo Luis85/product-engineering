@@ -51,3 +51,22 @@ export const backlogType = defineNoteType({
 });
 export { boardStages, mappedBoardStage, normalizedBoardStage } from "./stages";
 export type { BoardStage } from "./stages";
+export {
+  checkNfrDraft,
+  nfrCategories,
+  nfrCsvHeaders,
+  nfrIdSchema,
+  nfrStandards,
+  nfrTitleKey,
+  nfrType,
+  previewNfrCsv,
+} from "./nfr";
+export type {
+  NfrCategory,
+  NfrCsvIssue,
+  NfrCsvPreview,
+  NfrDraft,
+  NfrId,
+  NfrInputIssue,
+  NfrTarget,
+} from "./nfr";

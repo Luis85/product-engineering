@@ -64,10 +64,24 @@ const boardOrigin = computed(() => {
   return (
     previous?.name === PROJECT_BACKLOG &&
     previous.projectId === projectId &&
-    previous.tab !== "list" &&
+    (!previous.tab || previous.tab === "board") &&
     !previous.item
   );
 });
+const nfrOrigin = computed(() => {
+  const previous = history.value.back.at(-1);
+  return (
+    previous?.name === PROJECT_BACKLOG &&
+    previous.projectId === projectId &&
+    previous.tab === "nfrs"
+  );
+});
+const returnLabel = computed(() =>
+  nfrOrigin.value ? text.nfr.back : boardOrigin.value ? text.board.returnToBoard : text.pbiReturn,
+);
+function returnToBacklog() {
+  return boardOrigin.value || nfrOrigin.value ? back() : navigate(backlogRoute(projectId));
+}
 const restore = useRestoreWorkspacePosition();
 const remember = useRememberWorkspaceOrigin();
 const { tab, gaps } = usePbiPreferences(projectId, pbiId);
@@ -202,8 +216,8 @@ async function openFile(event: MouseEvent) {
       variant="ghost"
       class="pe:justify-self-start"
       data-testid="pbi-return"
-      :label="boardOrigin ? text.board.returnToBoard : text.pbiReturn"
-      @click="boardOrigin ? back() : navigate(backlogRoute(projectId))"
+      :label="returnLabel"
+      @click="returnToBacklog"
     />
     <PbiHeader
       v-if="detail"

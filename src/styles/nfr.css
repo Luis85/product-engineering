@@ -1,0 +1,194 @@
+.pe-nfr-filters,
+.pe-nfr-form-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.pe-nfr-filters label,
+.pe-nfr-form > label {
+  display: grid;
+  min-width: 0;
+  gap: 0.3rem;
+  font-size: var(--font-ui-small);
+}
+
+.pe-nfr-filters :is(input, select),
+.pe-nfr-form :is(input:not([type="checkbox"]), select, textarea) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pe-nfr-form textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.pe-nfr-register,
+.pe-nfr-empty {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.65rem;
+}
+
+.pe-nfr-register {
+  overflow: hidden;
+}
+
+.pe-nfr-empty {
+  padding: 1rem;
+  color: var(--text-muted);
+}
+
+.pe-nfr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.6fr);
+  align-items: start;
+  gap: 0.55rem 1.25rem;
+  border-block-end: 1px solid var(--background-modifier-border);
+  padding: 0.75rem 1rem;
+  overflow-wrap: anywhere;
+}
+
+.pe-nfr-row:last-child:not(.pe-nfr-register-header) {
+  border-block-end: 0;
+}
+
+.pe-nfr-register-header {
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+}
+
+.pe-nfr-row > div,
+.pe-nfr-classification,
+.pe-nfr-preview,
+.pe-nfr-preview-rows,
+.pe-nfr-form,
+.pe-nfr-related {
+  display: grid;
+  min-width: 0;
+  gap: 0.3rem;
+  overflow-wrap: anywhere;
+}
+
+.pe-nfr-classification {
+  gap: 0.4rem;
+}
+
+.pe-nfr-classification small,
+.pe-nfr-id {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.pe-nfr-catalog .pe-nfr-link,
+.pe-nfr-modal .pe-nfr-link,
+.pe-nfr-related .pe-nfr-link {
+  justify-self: start;
+  display: inline-flex;
+  height: auto;
+  min-height: 1.85rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.15rem 0.15rem;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.pe-nfr-form,
+.pe-nfr-preview-rows {
+  gap: 0.75rem;
+}
+
+.pe-nfr-modal {
+  max-width: 41rem;
+}
+
+.pe-nfr-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.pe-nfr-fieldset,
+.pe-nfr-preview-rows > li {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.7rem;
+}
+
+.pe-nfr-fieldset legend {
+  max-width: 100%;
+  font-weight: var(--font-medium);
+  overflow-wrap: anywhere;
+}
+
+.pe-nfr-checklist {
+  display: grid;
+  gap: 0.1rem;
+  margin-block-start: 0.25rem;
+}
+
+.pe-nfr-checklist label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.4rem;
+  min-height: 1.6rem;
+  padding-block: 0.2rem;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.pe-nfr-checklist input {
+  margin-block: 0.2rem 0;
+}
+
+.pe-nfr-picker-list label + label {
+  border-block-start: 1px solid var(--background-modifier-border);
+}
+
+.pe-nfr-picker-list label > span {
+  display: grid;
+  padding-block: 0.25rem;
+}
+
+.pe-nfr-reference summary,
+.pe-nfr-fieldset summary {
+  cursor: pointer;
+  padding-block: 0.3rem;
+}
+
+.pe-nfr-reference p,
+.pe-nfr-csv-header {
+  color: var(--text-muted);
+}
+
+.pe-nfr-csv-header {
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-small);
+}
+
+.pe-nfr-preview-rows p {
+  white-space: pre-wrap;
+}
+
+@container (max-width: 38rem) {
+  .pe-nfr-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pe-nfr-register-header {
+    display: none;
+  }
+}

@@ -23,7 +23,7 @@ import type {
 import { openNote } from "../../application/notes";
 import { projectMemberChoices } from "../../application/projects";
 import type { BacklogBase, ProjectId } from "../../application/projects";
-import type { BacklogKind } from "../../domain/backlog";
+import type { BacklogKind, NfrId } from "../../domain/backlog";
 import { ArtifactGitHistory, useArtifactGit } from "../git";
 import { KnowledgeLeaveDialog } from "../knowledge";
 import { leafModalUi } from "../projects";
@@ -36,6 +36,8 @@ import {
   useQuery,
 } from "../shell";
 import BacklogEditorForm from "./BacklogEditorForm.vue";
+import NfrSourceLinks from "./nfr/NfrSourceLinks.vue";
+import { focusNfrLink } from "./nfr/focus";
 
 const {
   project,
@@ -45,6 +47,7 @@ const {
   edit: initialEdit = undefined,
   level = "",
   fixedParent = "",
+  restoreNfr = undefined,
 } = defineProps<{
   readonly project: ProjectId;
   readonly base: BacklogBase;
@@ -53,6 +56,7 @@ const {
   readonly edit?: BacklogEdit | undefined;
   readonly level?: BacklogKind | "";
   readonly fixedParent?: string;
+  readonly restoreNfr?: NfrId | undefined;
 }>();
 const emit = defineEmits<{
   dismiss: [reason?: "native-note"];
@@ -61,8 +65,13 @@ const emit = defineEmits<{
 }>();
 const text = useMessages().backlog;
 const edit = shallowRef(initialEdit);
+const assignedItem = computed(() => (edit.value?.item.adopted ? edit.value.item.id : undefined));
 const open = ref(true);
 const modal = useModal(open, () => emit("dismiss"), close);
+function focusEditor(event: Event) {
+  const selector = restoreNfr && `[data-nfr-open-record="${restoreNfr}"]`;
+  if (!focusNfrLink(event, selector)) modal.onOpenAutoFocus(event);
+}
 const id = useId();
 const panel = ref<HTMLElement>();
 const leave = ref(false);
@@ -232,7 +241,7 @@ async function adoptItem(event: MouseEvent) {
     :open="open"
     :title="title"
     :description="dialogDescription"
-    :content="modal"
+    :content="{ ...modal, onOpenAutoFocus: focusEditor }"
     :ui="{
       ...leafModalUi,
       content: leafModalUi.content + ' pe:max-w-[54rem]',
@@ -269,6 +278,7 @@ async function adoptItem(event: MouseEvent) {
           <section v-if="edit" :aria-label="text.related" class="pe-backlog-editor-section">
             <h3 class="pe:text-sm pe:font-semibold">{{ text.related }}</h3>
             <slot name="links" />
+            <NfrSourceLinks :project="project" :item-id="assignedItem" />
             <div class="pe-backlog-actions">
               <UButton
                 type="button"

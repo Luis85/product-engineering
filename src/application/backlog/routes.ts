@@ -1,5 +1,6 @@
 import { Schema } from "effect";
-import { backlogIdSchema } from "../../domain/backlog";
+import { backlogIdSchema, nfrIdSchema } from "../../domain/backlog";
+import type { NfrId } from "../../domain/backlog";
 import { projectIdSchema } from "../projects";
 import type { ProjectId } from "../projects";
 
@@ -11,9 +12,25 @@ export type BacklogTab = (typeof backlogTabs)[number];
 export const projectBacklogSchema = Schema.Struct({
   name: Schema.Literal(PROJECT_BACKLOG),
   projectId: projectIdSchema,
-  tab: Schema.optionalKey(Schema.Literals(["board", "list"])),
+  tab: Schema.optionalKey(Schema.Literals(["board", "list", "nfrs"])),
   item: Schema.optionalKey(backlogIdSchema),
+  nfr: Schema.optionalKey(nfrIdSchema),
+  nfrFromItem: Schema.optionalKey(backlogIdSchema),
 });
+
+export function nfrCatalogRoute(
+  projectId: ProjectId,
+  nfr?: NfrId,
+  nfrFromItem?: string,
+): typeof projectBacklogSchema.Type {
+  return {
+    name: PROJECT_BACKLOG,
+    projectId,
+    tab: "nfrs",
+    ...(nfr && { nfr }),
+    ...(nfrFromItem && { nfrFromItem }),
+  };
+}
 
 export function backlogBoardRoute(
   projectId: ProjectId,

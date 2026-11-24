@@ -19,7 +19,7 @@ export function backlogGitSource(projectId: ProjectId, key: string): GitArtifact
   };
 }
 
-function ancestors(items: readonly BacklogItem[], source: BacklogItem) {
+export function backlogAncestors(items: readonly BacklogItem[], source: BacklogItem) {
   const byKey = new Map(items.map((item) => [item.key, item]));
   const visited = new Set([source.key]);
   const result: BacklogItem[] = [];
@@ -34,7 +34,7 @@ function ancestors(items: readonly BacklogItem[], source: BacklogItem) {
   return result;
 }
 
-function descendants(items: readonly BacklogItem[], source: BacklogItem) {
+export function backlogDescendants(items: readonly BacklogItem[], source: BacklogItem) {
   const visited = new Set([source.key]);
   const result: BacklogItem[] = [];
   let roots = [source.key];
@@ -82,7 +82,7 @@ export const backlogDomainContribution: DomainScopeContributor<
       ({ adopted, conflict, id }) => adopted && !conflict && id === target.id,
     );
     if (!source) return;
-    const relatives = [...ancestors(items, source), ...descendants(items, source)];
+    const relatives = [...backlogAncestors(items, source), ...backlogDescendants(items, source)];
     const prds = (yield* prdOrigins(project, [source, ...relatives])).filter(
       (origin) => origin !== undefined,
     );

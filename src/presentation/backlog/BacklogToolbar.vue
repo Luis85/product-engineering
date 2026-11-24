@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
-import { backlogTabs } from "../../application/backlog";
 import type { BacklogTab } from "../../application/backlog";
 import { backlogKinds } from "../../domain/backlog";
 import type { BacklogKind } from "../../domain/backlog";
 import { useMessages } from "../shell";
 import BacklogFilterSelect from "./BacklogFilterSelect.vue";
+import BacklogTabs from "./BacklogTabs.vue";
 import type { BacklogFilters } from "./preferences";
 
 const {
-  tabs,
   active,
   states,
   priorities,
@@ -18,7 +17,6 @@ const {
   canUndo,
   statusLabels = undefined,
 } = defineProps<{
-  readonly tabs: readonly BacklogTab[];
   readonly active: BacklogTab;
   readonly states: readonly string[];
   readonly priorities: readonly string[];
@@ -39,7 +37,6 @@ const filtered = computed(() => {
   const { query, level, status, priority } = filters.value;
   return Boolean(query || (active === "list" && level) || status || priority);
 });
-const visibleTabs = computed(() => backlogTabs.filter((candidate) => tabs.includes(candidate)));
 
 function input(event: Event) {
   return (event.target as HTMLInputElement | HTMLSelectElement).value;
@@ -49,18 +46,7 @@ function input(event: Event) {
 <template>
   <div class="pe-backlog-toolbar">
     <section :aria-label="text.views" class="pe-backlog-actions">
-      <nav :aria-label="text.views" class="pe:flex pe:flex-wrap pe:gap-1">
-        <UButton
-          v-for="tab in visibleTabs"
-          :key="tab"
-          type="button"
-          color="neutral"
-          :variant="active === tab ? 'soft' : 'ghost'"
-          :aria-pressed="active === tab"
-          :label="text.tabs[tab]"
-          @click="emit('select', tab)"
-        />
-      </nav>
+      <BacklogTabs :active="active" @select="emit('select', $event)" />
       <UButton
         v-if="canCreate && active === 'list'"
         type="button"

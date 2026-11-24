@@ -3,13 +3,25 @@ import { PROJECT_BACKLOG } from "../../application/backlog";
 import { useRoute } from "../shell";
 import BacklogBoard from "./BacklogBoard.vue";
 import BacklogList from "./BacklogList.vue";
+import NfrCatalog from "./nfr/NfrCatalog.vue";
 
 const route = useRoute();
 </script>
 
 <template>
   <template v-if="route.name === PROJECT_BACKLOG">
-    <BacklogList v-if="route.tab === 'list' || route.item" :key="route.projectId" :route="route" />
+    <NfrCatalog
+      v-if="route.tab === 'nfrs'"
+      :key="route.projectId"
+      :project="route.projectId"
+      :selected="route.nfr"
+      :from-item="route.nfrFromItem"
+    />
+    <BacklogList
+      v-else-if="route.tab === 'list' || route.item"
+      :key="route.projectId"
+      :route="route"
+    />
     <BacklogBoard v-else :key="route.projectId" :project="route.projectId" />
   </template>
 </template>

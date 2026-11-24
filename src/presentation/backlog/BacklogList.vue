@@ -7,6 +7,7 @@ import {
   backlogChanges,
   backlogRoute,
   moveBacklogItem,
+  nfrCatalogRoute,
   openBacklogBase,
   pbiDetailRoute,
   readBacklogItem,
@@ -17,6 +18,7 @@ import type {
   BacklogItem,
   BacklogPlacement,
   BacklogSnapshot,
+  BacklogTab,
 } from "../../application/backlog";
 import { openNote } from "../../application/notes";
 import { projectAdministrationRoute } from "../../application/projects";
@@ -28,10 +30,12 @@ import {
   ErrorNotice,
   useAsyncStream,
   useCommand,
+  useHistory,
   useMessages,
   useModal,
   useNavigate,
   useQuery,
+  useRouting,
 } from "../shell";
 import BacklogEditor from "./BacklogEditor.vue";
 import BacklogListResults from "./BacklogListResults.vue";
@@ -42,6 +46,17 @@ const { route } = defineProps<{ readonly route: ReturnType<typeof backlogRoute> 
 const project = route.projectId;
 const text = useMessages().backlog;
 const navigate = useNavigate();
+const { history } = useRouting();
+const { back } = useHistory();
+const returningNfr = computed(() => {
+  const departing = history.value.forward.at(-1);
+  return departing?.name === route.name &&
+    departing.projectId === project &&
+    departing.tab === "nfrs"
+    ? departing
+    : undefined;
+});
+const routedItem = computed(() => route.item ?? returningNfr.value?.nfrFromItem);
 const restorePosition = useRestoreWorkspacePosition();
 const rememberOrigin = useRememberWorkspaceOrigin();
 const snapshot = useAsyncStream<BacklogSnapshot, never>(
@@ -147,7 +162,7 @@ async function open(item: BacklogItem, control?: HTMLElement, edit = false) {
 }
 
 watch(
-  [() => route.item, () => snapshot.value.ready],
+  [routedItem, () => snapshot.value.ready],
   ([item, ready]) => {
     if (!ready || item === sawRouteItem) return;
     sawRouteItem = item;
@@ -184,18 +199,33 @@ async function adopted(item: BacklogItem) {
 }
 
 async function dismiss(reason?: "native-note") {
-  const item = route.item;
+  const item = routedItem.value;
   const handoff = reason === "native-note";
   editor.value = undefined;
   entry.value = undefined;
   if (handoff) focusAfterClose = undefined;
-  if (item) await navigate(backlogRoute(project));
-  if (handoff) return;
+  if ((await closeRoutedEditor(handoff)) || handoff) return;
   await nextTick();
   const preferred = focusAfterClose ?? item;
   const control = preferred ? rowControl(preferred) : undefined;
   (control ?? trigger)?.focus({ preventScroll: true });
   if (control) focusAfterClose = undefined;
+}
+
+async function closeRoutedEditor(handoff: boolean) {
+  if (!route.item) return false;
+  const previous = history.value.back.at(-1);
+  if (
+    !handoff &&
+    previous?.name === route.name &&
+    previous.projectId === project &&
+    previous.tab === "nfrs"
+  ) {
+    await back();
+    return true;
+  }
+  await navigate(backlogRoute(project));
+  return false;
 }
 
 watch(
@@ -222,20 +252,24 @@ async function undoMove() {
   const result = await undo.run(project);
   if (result._tag === "success") preferences.canUndo = false;
 }
+
+function selectTab(tab: BacklogTab) {
+  if (tab === "board") return navigate(backlogBoardRoute(project, true));
+  if (tab === "nfrs") return navigate(nfrCatalogRoute(project));
+}
 </script>
 
 <template>
   <section ref="panel" class="pe-backlog" data-testid="backlog-list">
     <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">{{ text.title }}</h1>
     <BacklogToolbar
-      :tabs="['board', 'list']"
       active="list"
       :model-value="preferences"
       :can-create="Boolean(snapshot.base)"
       :can-undo="preferences.canUndo"
       :states="states"
       :priorities="priorities"
-      @select="(tab) => tab === 'board' && navigate(backlogBoardRoute(project, true))"
+      @select="selectTab"
       @create="choose"
       @undo="undoMove"
       @base="showBase"
@@ -282,6 +316,7 @@ async function undoMove() {
       :kind="editor"
       :edit="entry"
       :level="preferences.level"
+      :restore-nfr="returningNfr?.nfr"
       @dismiss="dismiss"
       @saved="saved"
       @adopted="adopted"

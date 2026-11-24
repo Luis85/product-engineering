@@ -4,6 +4,7 @@ import {
   backlogBoardRoute,
   backlogChanges,
   backlogRoute,
+  nfrCatalogRoute,
   moveBoardCard,
   openBacklogBase,
   pbiBoardStage,
@@ -146,6 +147,7 @@ function reset() {
 
 function selectTab(tab: BacklogTab) {
   if (tab === "list") return navigate(backlogRoute(project));
+  if (tab === "nfrs") return navigate(nfrCatalogRoute(project));
 }
 
 function focusCard(key: string) {
@@ -286,7 +288,6 @@ function drop(stage: BoardStage, event: DragEvent) {
   <section ref="panel" class="pe-backlog pe-kanban" data-testid="backlog-board">
     <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">{{ text.title }}</h1>
     <BacklogToolbar
-      :tabs="['board', 'list']"
       active="board"
       :model-value="preferences"
       :can-create="Boolean(snapshot.base)"

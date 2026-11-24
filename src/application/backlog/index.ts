@@ -5,6 +5,7 @@ export {
   backlogBoardRoute,
   backlogRoute,
   backlogTabs,
+  nfrCatalogRoute,
   pbiDetailRoute,
   pbiTabs,
 } from "./routes";
@@ -39,3 +40,10 @@ export type { PbiPreparation, PbiPreparationGap } from "./pbi-preparation";
 export { boardRequestDestination, boardRequestHandoff, pbiBoardStage } from "./board-requests";
 export type { BoardRequest, BoardRequestHandoff } from "./board-requests";
 export { inspectBoardPreparation, moveBoardCard } from "./board";
+export { directNfrs, nfrTargets, resolveNfrScope, saveNfr, setTargetNfrs } from "./nfr/assignments";
+export type { NfrMapContributor } from "./nfr/assignments";
+export { confirmNfrImport, planNfrImport } from "./nfr/import";
+export type { NfrImportPlan, NfrRecord, NfrSnapshot, NfrTargetOption } from "./nfr/model";
+export { nfrTargetKey, nfrsForScope } from "./nfr/scope";
+export type { NfrMap, NfrOrigin, NfrScopeSource, ScopedNfr } from "./nfr/scope";
+export { newNfrId, nfrChanges, nfrSnapshot } from "./nfr/storage";

@@ -1,4 +1,7 @@
+import { nfrEn } from "./nfr-en";
+
 export const en = {
+  nfr: nfrEn,
   title: "Backlog",
   create: "New item",
   tabs: { board: "Board", list: "List", nfrs: "NFRs", deliverables: "Deliverables" },

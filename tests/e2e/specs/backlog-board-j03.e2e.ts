@@ -247,7 +247,10 @@ async function checkScrolledReturn(id: string) {
   expect(offset).toBeGreaterThan(0);
   await browser.keys("Enter");
   await expect(el("pbi-detail")).toBeDisplayed();
-  await el("pbi-tab-companions").click();
+  const companionsTab = el("pbi-tab-companions");
+  await expect(companionsTab).toBeDisplayed();
+  await press(await companionsTab);
+  await expect(companionsTab).toHaveAttribute("aria-selected", "true");
   await press(await el("pbi-return"));
   await expect(title).toBeFocused();
   expect(await scroll()).toBe(offset);
