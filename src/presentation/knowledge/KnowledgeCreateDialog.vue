@@ -5,6 +5,7 @@ import UInput from "@nuxt/ui/components/Input.vue";
 import UModal from "@nuxt/ui/components/Modal.vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed, nextTick, ref, watch } from "vue";
+import type { AppError } from "../../application/errors";
 import {
   createKnowledge,
   isKnowledgeKind,
@@ -37,6 +38,7 @@ import {
   useService,
   useStream,
 } from "../shell";
+import type { UseCaseFn } from "../shell";
 import KnowledgeFoundations from "./KnowledgeFoundations.vue";
 import KnowledgeSelect from "./KnowledgeSelect.vue";
 
@@ -45,12 +47,20 @@ const {
   initialTemplate,
   origin = undefined,
   initialVision = undefined,
+  initialTitle = undefined,
+  originTitle = undefined,
+  lockTemplate = undefined,
+  prepare = createKnowledge,
   onCreated = undefined,
 } = defineProps<{
   readonly projectId: ProjectId;
   readonly initialTemplate: KnowledgeKind;
   readonly origin?: KnowledgeOrigin;
   readonly initialVision?: KnowledgeId | undefined;
+  readonly initialTitle?: string | undefined;
+  readonly originTitle?: string | undefined;
+  readonly lockTemplate?: boolean | undefined;
+  readonly prepare?: UseCaseFn<[CreateKnowledgeRequest, KnowledgeDraft], Note, AppError>;
   readonly onCreated?: (note: Note) => void | Promise<void>;
 }>();
 const emit = defineEmits<{ dismiss: [] }>();
@@ -67,10 +77,10 @@ const ownerOptions = computed(() =>
   (members.value.value ?? []).map(({ id, name }) => ({ value: id, label: name })),
 );
 const open = ref(true);
-const modal = useModal(open, () => emit("dismiss"));
+const modal = useModal(open, () => emit("dismiss"), dismiss);
 const controls = ref<HTMLFormElement>();
 const id = useService(newKnowledgeId);
-const command = useCommand(createKnowledge);
+const command = useCommand(prepare);
 const opener = useCommand(openNote);
 const pending = computed(() => command.pending.value || opener.pending.value);
 const route = useRoute();
@@ -78,7 +88,7 @@ useNavigationGuard(() => !pending.value);
 const fieldErrors = ["title", "actor_type", "owner_id", "vision_id", "job_ids"] as const;
 const invalid = ref<(typeof fieldErrors)[number]>();
 const commandError = computed(() => (invalid.value ? undefined : command.message.value));
-const templateLocked = computed(() => pending.value || Boolean(origin));
+const templateLocked = computed(() => pending.value || (lockTemplate ?? Boolean(origin)));
 const knowledge = useStream(knowledgeSnapshot, knowledgeChanges);
 const entries = computed(() => projectKnowledge(projectId, knowledge.value.records));
 const visions = computed(() => entries.value.filter(({ kind }) => kind === "vision"));
@@ -86,7 +96,9 @@ const jobs = computed(() => entries.value.filter(({ kind }) => kind === "jtbd"))
 const source = computed(
   () =>
     origin &&
-    (entries.value.find((entry) => entry.id === origin.recordId)?.title ?? origin.recordId),
+    (originTitle ??
+      entries.value.find((entry) => entry.id === origin.recordId)?.title ??
+      origin.recordId),
 );
 
 function titleFor(kind: KnowledgeKind) {
@@ -95,7 +107,7 @@ function titleFor(kind: KnowledgeKind) {
 
 const initial: KnowledgeDraft = {
   kind: initialTemplate,
-  title: titleFor(initialTemplate),
+  title: initialTitle ?? titleFor(initialTemplate),
   actor_type: "",
   owner_id: "",
   vision_id: origin?.kind === "vision" ? origin.recordId : (initialVision ?? ""),
@@ -183,13 +195,7 @@ function dismiss() {
     @update:open="dismiss"
   >
     <template #body>
-      <form
-        ref="controls"
-        class="pe:grid pe:gap-4"
-        novalidate
-        @submit.prevent="submit"
-        @keydown.esc.stop.prevent="dismiss"
-      >
+      <form ref="controls" class="pe:grid pe:gap-4" novalidate @submit.prevent="submit">
         <p v-if="source" class="pe:wrap-anywhere pe:text-sm pe:text-muted">
           {{ text.origin }} · {{ source }}
         </p>

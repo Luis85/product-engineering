@@ -163,7 +163,7 @@ function createInProject(
     const store = yield* NoteStore;
     const current = yield* store.list;
     const notes = currentKnowledgeNotes(current, recent);
-    const source = yield* verifyKnowledgeOrigin(projectId, kind, origin, notes);
+    const source = yield* verifyKnowledgeOrigin(projectId, id, kind, origin, notes);
     const prior = yield* existingNote(notes, request);
     if (prior) return prior;
     const foundations =

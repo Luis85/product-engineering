@@ -1,7 +1,9 @@
 import { nfrDe } from "./nfr-de";
+import { deliverableDe } from "./deliverable-de";
 
 export const de = {
   nfr: nfrDe,
+  deliverables: deliverableDe,
   title: "Backlog",
   create: "Neuer Eintrag",
   tabs: { board: "Board", list: "Liste", nfrs: "NFRs", deliverables: "Deliverables" },

@@ -12,6 +12,7 @@ import { useRestoreWorkspacePosition } from "../projects";
 import { DomainKnowledgeContribution } from "../domain-model";
 import { useMessages, useNavigationGuard } from "../shell";
 import KnowledgeDraftStatus from "./KnowledgeDraftStatus.vue";
+import KnowledgeDeliverables from "./KnowledgeDeliverables.vue";
 import KnowledgeLeaveDialog from "./KnowledgeLeaveDialog.vue";
 import KnowledgeMarkdown from "./KnowledgeMarkdown.vue";
 import KnowledgeNoteEditor from "./KnowledgeNoteEditor.vue";
@@ -190,14 +191,16 @@ if (autofocusDraft) {
         <KnowledgeNoteEditor ref="editor" v-model="markdown" :path="note.path" :saving="saving" />
       </template>
       <KnowledgeMarkdown v-else-if="pane === 'content'" :body="note.body" :path="note.path" />
-      <KnowledgeReferences
-        v-else-if="pane === 'references'"
-        :key="note.text"
-        :source="note.path"
-        :references="references"
-        :editable="canEditReferences"
-        @change="(values) => (fields = { ...fields, references: values })"
-      />
+      <template v-else-if="pane === 'references'">
+        <KnowledgeReferences
+          :key="note.text"
+          :source="note.path"
+          :references="references"
+          :editable="canEditReferences"
+          @change="(values) => (fields = { ...fields, references: values })"
+        />
+        <KnowledgeDeliverables :note="note" />
+      </template>
       <ArtifactGitHistory v-else :git="git" />
       <KnowledgeDraftStatus
         :dirty="dirty"

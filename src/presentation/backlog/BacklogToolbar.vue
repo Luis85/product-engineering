@@ -2,6 +2,7 @@
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
 import type { BacklogTab } from "../../application/backlog";
+import type { ProjectId } from "../../application/projects";
 import { backlogKinds } from "../../domain/backlog";
 import type { BacklogKind } from "../../domain/backlog";
 import { useMessages } from "../shell";
@@ -11,6 +12,7 @@ import type { BacklogFilters } from "./preferences";
 
 const {
   active,
+  project,
   states,
   priorities,
   canCreate,
@@ -18,6 +20,7 @@ const {
   statusLabels = undefined,
 } = defineProps<{
   readonly active: BacklogTab;
+  readonly project: ProjectId;
   readonly states: readonly string[];
   readonly priorities: readonly string[];
   readonly canCreate: boolean;
@@ -26,7 +29,6 @@ const {
 }>();
 const filters = defineModel<BacklogFilters>({ required: true });
 const emit = defineEmits<{
-  select: [BacklogTab];
   create: [HTMLElement];
   undo: [];
   base: [];
@@ -46,7 +48,7 @@ function input(event: Event) {
 <template>
   <div class="pe-backlog-toolbar">
     <section :aria-label="text.views" class="pe-backlog-actions">
-      <BacklogTabs :active="active" @select="emit('select', $event)" />
+      <BacklogTabs :active="active" :project="project" />
       <UButton
         v-if="canCreate && active === 'list'"
         type="button"

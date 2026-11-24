@@ -24,24 +24,27 @@ export type KnowledgeOrigin = KnowledgeSource | DeliverableSource;
 export class KnowledgeDeliverableOrigins extends Context.Service<
   KnowledgeDeliverableOrigins,
   {
-    readonly resolve: (origin: DeliverableSource) => Effect.Effect<DeliverableSource | undefined>;
+    readonly resolve: (
+      origin: DeliverableSource,
+      note: { readonly id: KnowledgeId; readonly template: KnowledgeKind },
+    ) => Effect.Effect<DeliverableSource | undefined>;
   }
 >()("product-engineering/application/KnowledgeDeliverableOrigins") {}
 
 const invalid = () => new KnowledgeCreateError({ reason: "origin" });
 
-function resolveDeliverable(origin: DeliverableSource) {
+function resolveDeliverable(origin: DeliverableSource, id: KnowledgeId, template: KnowledgeKind) {
   return Effect.gen(function* () {
     const source = yield* Effect.serviceOption(KnowledgeDeliverableOrigins);
-    const id = origin.recordId.trim();
+    const recordId = origin.recordId.trim();
     if (
       Option.isNone(source) ||
-      !id ||
-      id !== origin.recordId ||
-      Result.isFailure(knowledgeType.fields.deliverable_id.check(id))
+      !recordId ||
+      recordId !== origin.recordId ||
+      Result.isFailure(knowledgeType.fields.deliverable_id.check(recordId))
     )
       return yield* invalid();
-    const target = yield* source.value.resolve(origin);
+    const target = yield* source.value.resolve(origin, { id, template });
     if (target?.projectId !== origin.projectId || target.recordId !== origin.recordId) {
       return yield* invalid();
     }
@@ -72,6 +75,7 @@ function verifyNoteOrigin(
 
 export function verifyKnowledgeOrigin(
   projectId: ProjectId,
+  id: KnowledgeId,
   template: KnowledgeKind,
   origin: KnowledgeOrigin | undefined,
   notes: readonly Note[],
@@ -79,6 +83,6 @@ export function verifyKnowledgeOrigin(
   if (!origin) return Effect.succeed({});
   if (origin.projectId !== projectId) return Effect.fail(invalid());
   return origin.kind === "deliverable"
-    ? resolveDeliverable(origin)
+    ? resolveDeliverable(origin, id, template)
     : verifyNoteOrigin(origin, template, notes);
 }

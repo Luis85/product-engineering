@@ -5,6 +5,7 @@ export {
   backlogBoardRoute,
   backlogRoute,
   backlogTabs,
+  deliverablesRoute,
   nfrCatalogRoute,
   pbiDetailRoute,
   pbiTabs,
@@ -47,3 +48,15 @@ export type { NfrImportPlan, NfrRecord, NfrSnapshot, NfrTargetOption } from "./n
 export { nfrTargetKey, nfrsForScope } from "./nfr/scope";
 export type { NfrMap, NfrOrigin, NfrScopeSource, ScopedNfr } from "./nfr/scope";
 export { newNfrId, nfrChanges, nfrSnapshot } from "./nfr/storage";
+export {
+  deliverablesChanges,
+  deliverablesSnapshot,
+  newDeliverableId,
+} from "./deliverables/storage";
+export type { DeliverableRecord } from "./deliverables/storage";
+export { saveDeliverable, setDeliverableStatus } from "./deliverables/write";
+export {
+  deliverableBacklinks,
+  deliverableNote,
+  prepareDeliverableNote,
+} from "./deliverables/knowledge";

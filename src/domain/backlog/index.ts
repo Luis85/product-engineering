@@ -70,3 +70,16 @@ export type {
   NfrInputIssue,
   NfrTarget,
 } from "./nfr";
+export {
+  deliverableDraftIssue,
+  deliverableIdSchema,
+  deliverableStatuses,
+  deliverableType,
+  isDeliverableId,
+} from "./deliverable";
+export type {
+  DeliverableDraft,
+  DeliverableId,
+  DeliverableStatus,
+  DeliverableValues,
+} from "./deliverable";

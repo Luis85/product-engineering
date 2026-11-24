@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import {
-  backlogBoardRoute,
   backlogChanges,
-  backlogRoute,
-  nfrCatalogRoute,
   moveBoardCard,
   openBacklogBase,
   pbiBoardStage,
@@ -15,7 +12,6 @@ import type {
   BacklogEdit,
   BacklogItem,
   BacklogSnapshot,
-  BacklogTab,
   PbiPreparationGap,
   PbiTab,
 } from "../../application/backlog";
@@ -143,11 +139,6 @@ onBeforeUnmount(() => {
 
 function reset() {
   Object.assign(preferences, resetBacklogFilters());
-}
-
-function selectTab(tab: BacklogTab) {
-  if (tab === "list") return navigate(backlogRoute(project));
-  if (tab === "nfrs") return navigate(nfrCatalogRoute(project));
 }
 
 function focusCard(key: string) {
@@ -288,6 +279,7 @@ function drop(stage: BoardStage, event: DragEvent) {
   <section ref="panel" class="pe-backlog pe-kanban" data-testid="backlog-board">
     <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">{{ text.title }}</h1>
     <BacklogToolbar
+      :project="project"
       active="board"
       :model-value="preferences"
       :can-create="Boolean(snapshot.base)"
@@ -295,7 +287,6 @@ function drop(stage: BoardStage, event: DragEvent) {
       :states="statuses"
       :status-labels="statusLabels"
       :priorities="priorities"
-      @select="selectTab"
       @base="base.run(project)"
       @reset="reset"
     />

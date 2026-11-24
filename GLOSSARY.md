@@ -25,6 +25,11 @@
 | Related product vision | `vision_id` |
 | Related Jobs to Be Done | `job_ids` |
 | Originating deliverable | `deliverable_id` |
+| Deliverable | `deliverable` |
+| Expected deliverable outcome | `outcome` |
+| Deliverable document template | `template` |
+| Linked Knowledge note | `knowledge_id` |
+| Reserved Knowledge note during deliverable creation | `pending_knowledge_id` |
 | Root folder | `rootFolder` |
 | Product project | `project` |
 | Product name | `name` |

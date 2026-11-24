@@ -6,6 +6,7 @@ import {
   PROJECT_USE_CASE,
   backlogBoardRoute,
   backlogRoute,
+  deliverablesRoute,
   pbiDetailRoute,
 } from "../../../application/backlog";
 import { domainModelRoute } from "../../../application/domain-model";
@@ -24,6 +25,7 @@ import type {
   ProjectSearchRecord,
 } from "../../../application/projects";
 import type { Route } from "../../../application/routes";
+import { isDeliverableId } from "../../../domain/backlog";
 import { useCommand, useHistory, useMessages, useNavigate, useRouting } from "../../shell";
 
 const {
@@ -71,6 +73,12 @@ function sectionOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"
   }
 }
 
+function deliverableOrigin(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
+  if (origin?.section !== "deliverables") return;
+  const id = origin.reference?.recordId;
+  return deliverablesRoute(projectId, isDeliverableId(id) ? id : undefined);
+}
+
 function pbiOrigin(projectId: ProjectId, id: string | undefined) {
   return id?.startsWith("UC-") ? pbiDetailRoute(projectId, id) : backlogRoute(projectId);
 }
@@ -102,14 +110,15 @@ function returnsToBoard(last: Route | undefined) {
   return (
     last?.name === PROJECT_BACKLOG &&
     last.projectId === record.projectId &&
-    last.tab !== "list" &&
+    (last.tab === undefined || last.tab === "board") &&
     !last.item
   );
 }
 
 function leave() {
   const { projectId, reference } = record;
-  const section = sectionOrigin(projectId, record.origin);
+  const section =
+    deliverableOrigin(projectId, record.origin) ?? sectionOrigin(projectId, record.origin);
   if (section) return returnToSection(section);
   const { section: previousSection, reference: previous } = record.origin ?? {};
   if (previous && !sameReference(reference, previous)) {

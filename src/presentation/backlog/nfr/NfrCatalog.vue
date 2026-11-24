@@ -4,13 +4,11 @@ import { computed, nextTick, ref, shallowRef, watch } from "vue";
 import {
   PROJECT_BACKLOG,
   PROJECT_USE_CASE,
-  backlogBoardRoute,
-  backlogRoute,
   nfrCatalogRoute,
   nfrChanges,
   nfrSnapshot,
 } from "../../../application/backlog";
-import type { BacklogTab, NfrRecord } from "../../../application/backlog";
+import type { NfrRecord } from "../../../application/backlog";
 import { openNote } from "../../../application/notes";
 import { projectChanges, projectMembers, projectSnapshot } from "../../../application/projects";
 import type { ProjectId } from "../../../application/projects";
@@ -81,11 +79,6 @@ const native = useCommand(openNote);
 let creator: HTMLElement | undefined;
 let importer: HTMLElement | undefined;
 let focusId: NfrId | undefined;
-
-function selectTab(tab: BacklogTab) {
-  if (tab === "board") return navigate(backlogBoardRoute(project, true));
-  if (tab === "list") return navigate(backlogRoute(project));
-}
 
 function createNfr(event: MouseEvent) {
   creator = event.currentTarget as HTMLElement;
@@ -167,7 +160,7 @@ watch(
   <section ref="panel" class="pe-backlog pe-nfr-catalog" data-testid="nfr-catalog">
     <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">{{ texts.title }}</h1>
     <div class="pe-backlog-actions pe:justify-between">
-      <BacklogTabs active="nfrs" @select="selectTab" />
+      <BacklogTabs active="nfrs" :project="project" />
       <div class="pe-backlog-actions">
         <UButton
           type="button"

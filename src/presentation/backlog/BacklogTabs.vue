@@ -1,19 +1,38 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
-import { backlogTabs } from "../../application/backlog";
+import {
+  backlogBoardRoute,
+  backlogRoute,
+  backlogTabs,
+  deliverablesRoute,
+  nfrCatalogRoute,
+} from "../../application/backlog";
 import type { BacklogTab } from "../../application/backlog";
-import { useMessages } from "../shell";
+import type { ProjectId } from "../../application/projects";
+import { useMessages, useNavigate } from "../shell";
 
-const { active } = defineProps<{ readonly active: BacklogTab }>();
-const emit = defineEmits<{ select: [BacklogTab] }>();
+const { active, project } = defineProps<{
+  readonly active: BacklogTab;
+  readonly project: ProjectId;
+}>();
 const text = useMessages().backlog;
-const tabs = backlogTabs.filter((tab) => tab !== "deliverables");
+const navigate = useNavigate();
+const tabRoutes = {
+  board: () => backlogBoardRoute(project, true),
+  list: () => backlogRoute(project),
+  nfrs: () => nfrCatalogRoute(project),
+  deliverables: () => deliverablesRoute(project),
+};
+
+function select(tab: BacklogTab) {
+  if (tab !== active) return navigate(tabRoutes[tab]());
+}
 </script>
 
 <template>
-  <nav :aria-label="text.views" class="pe:flex pe:flex-wrap pe:gap-1">
+  <nav :aria-label="text.views" class="pe-backlog-tabs">
     <UButton
-      v-for="tab in tabs"
+      v-for="tab in backlogTabs"
       :key="tab"
       type="button"
       color="neutral"
@@ -22,7 +41,7 @@ const tabs = backlogTabs.filter((tab) => tab !== "deliverables");
       :data-testid="'backlog-tab-' + tab"
       :data-pe-focus-key="'backlog-tab-' + tab"
       :label="text.tabs[tab]"
-      @click="emit('select', tab)"
+      @click="select(tab)"
     />
   </nav>
 </template>

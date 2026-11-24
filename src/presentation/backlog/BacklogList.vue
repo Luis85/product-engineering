@@ -3,11 +3,9 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import UModal from "@nuxt/ui/components/Modal.vue";
 import { computed, nextTick, ref, shallowRef, watch } from "vue";
 import {
-  backlogBoardRoute,
   backlogChanges,
   backlogRoute,
   moveBacklogItem,
-  nfrCatalogRoute,
   openBacklogBase,
   pbiDetailRoute,
   readBacklogItem,
@@ -18,7 +16,6 @@ import type {
   BacklogItem,
   BacklogPlacement,
   BacklogSnapshot,
-  BacklogTab,
 } from "../../application/backlog";
 import { openNote } from "../../application/notes";
 import { projectAdministrationRoute } from "../../application/projects";
@@ -252,24 +249,19 @@ async function undoMove() {
   const result = await undo.run(project);
   if (result._tag === "success") preferences.canUndo = false;
 }
-
-function selectTab(tab: BacklogTab) {
-  if (tab === "board") return navigate(backlogBoardRoute(project, true));
-  if (tab === "nfrs") return navigate(nfrCatalogRoute(project));
-}
 </script>
 
 <template>
   <section ref="panel" class="pe-backlog" data-testid="backlog-list">
     <h1 tabindex="-1" class="pe:wrap-anywhere pe:text-2xl pe:font-semibold">{{ text.title }}</h1>
     <BacklogToolbar
+      :project="project"
       active="list"
       :model-value="preferences"
       :can-create="Boolean(snapshot.base)"
       :can-undo="preferences.canUndo"
       :states="states"
       :priorities="priorities"
-      @select="selectTab"
       @create="choose"
       @undo="undoMove"
       @base="showBase"

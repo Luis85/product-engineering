@@ -1,0 +1,126 @@
+.pe-deliverables .pe-deliverable-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.pe-deliverables .pe-deliverable-filters label,
+.pe-deliverables :is(.pe-deliverable-summary, .pe-deliverable-knowledge, .pe-deliverable-progress) {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.pe-deliverables .pe-deliverable-filters label {
+  font-size: var(--font-ui-small);
+}
+
+.pe-deliverables .pe-deliverable-results {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.65rem;
+}
+
+.pe-deliverables :is(.pe-deliverable-columns, .pe-deliverable-row) {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(9rem, 1fr);
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.pe-deliverables .pe-deliverable-columns {
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+}
+
+.pe-deliverables .pe-deliverable-row {
+  border-block-start: 1px solid var(--background-modifier-border);
+}
+
+.pe-deliverables .pe-deliverable-row button {
+  justify-self: start;
+  height: auto;
+  min-height: 1.75rem;
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: 0;
+  text-align: start;
+  white-space: normal;
+}
+
+.pe-deliverables .pe-deliverable-row button [data-slot="label"] {
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.pe-deliverable-modal .pe-deliverable-form,
+.pe-deliverable-modal .pe-deliverable-form label {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.pe-deliverable-modal .pe-deliverable-form {
+  gap: 0.85rem;
+}
+
+.pe-deliverable-modal .pe-deliverable-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.75rem;
+}
+
+.pe-deliverable-modal .pe-deliverable-form :is(input, select, textarea),
+.pe-deliverables
+  :is(.pe-deliverable-row select, .pe-deliverable-filters input, .pe-deliverable-filters select) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pe-deliverable-modal .pe-deliverable-form button {
+  height: auto;
+  min-height: 1.75rem;
+  white-space: normal;
+}
+
+@container (max-width: 34rem) {
+  .pe-deliverables .pe-deliverable-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pe-deliverables .pe-deliverable-filters label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .pe-deliverables .pe-deliverable-columns {
+    display: none;
+  }
+
+  .pe-deliverables .pe-deliverable-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pe-deliverables .pe-deliverable-row:first-child {
+    border-block-start: 0;
+  }
+
+  .pe-deliverables .pe-deliverable-progress {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.65rem;
+  }
+
+  .pe-deliverables .pe-deliverable-progress select {
+    width: fit-content;
+  }
+}
