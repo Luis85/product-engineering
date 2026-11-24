@@ -68,7 +68,9 @@ export async function seedReviewRegisterVault(
   fixture?: {
     options?: Parameters<typeof seedRequestDeliveryVault>[2];
     withScope?: boolean;
-    beforeRelease?: () => Promise<void>;
+    beforeRelease?: (
+      git: Awaited<ReturnType<typeof seedRequestDeliveryVault>>["git"],
+    ) => Promise<void>;
     mapRelease?: (payload: RequestPackage) => RequestPackage;
   },
 ) {
@@ -82,7 +84,7 @@ export async function seedReviewRegisterVault(
   writeFileSync(commitPath, fixtureCommit, "utf8");
   expect(git("hash-object", "-w", "-t", "commit", commitPath)).toBe(reviewTestedCommit);
   expect(git("rev-parse", "--verify", "e3b7c21^{commit}")).toBe(reviewTestedCommit);
-  await fixture?.beforeRelease?.();
+  await fixture?.beforeRelease?.(git);
 
   await openView();
   await setViewRoute(

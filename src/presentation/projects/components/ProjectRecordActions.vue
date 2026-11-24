@@ -31,6 +31,7 @@ import type {
 import { PROJECT_PROTOTYPES, prototypeOriginRoute } from "../../../application/prototypes";
 import type { Route } from "../../../application/routes";
 import { PROJECT_STORY_MAPS, storyMapsRoute } from "../../../application/story-maps";
+import { PROJECT_TRACE, traceRoute } from "../../../application/trace";
 import { isDeliverableId } from "../../../domain/backlog";
 import { isStoryMapId } from "../../../domain/story-maps";
 import { useCommand, useHistory, useMessages, useNavigate, useRouting } from "../../shell";
@@ -93,6 +94,7 @@ function deliverableOrigin(projectId: ProjectId, origin: ProjectRecordRoute["ori
 }
 
 function returnSection(projectId: ProjectId, origin: ProjectRecordRoute["origin"]) {
+  if (origin?.section === "trace") return traceRoute(projectId);
   return (
     prototypeOriginRoute(projectId, origin) ??
     featureRequestOriginRoute(projectId, origin) ??
@@ -123,6 +125,8 @@ function returnToSection(section: Route) {
 }
 
 function sameProductOrigin(last: Route | undefined, section: Route) {
+  if (section.name === PROJECT_TRACE)
+    return last?.name === PROJECT_TRACE && last.projectId === section.projectId;
   return (
     (section.name === PROJECT_STORY_MAPS || section.name === PROJECT_PROTOTYPES) &&
     last &&

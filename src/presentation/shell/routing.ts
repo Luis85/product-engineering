@@ -64,6 +64,7 @@ export type ViewNavigation<R extends RouteLike> = {
   readonly current: () => R;
   readonly history: () => RouteHistory<R>;
   readonly navigate: (route: R) => boolean | Promise<boolean>;
+  readonly replace: (route: R) => boolean | Promise<boolean>;
   readonly back: () => boolean | Promise<boolean>;
   readonly forward: () => boolean | Promise<boolean>;
   readonly onChange: (listener: (route: R) => void) => () => void;
@@ -177,6 +178,11 @@ export function memoryNavigation<R extends RouteLike>(
     current: () => state.current,
     history: () => state,
     navigate: (route) => change(visit(state, route, routes.equals), "navigate"),
+    replace: (route) =>
+      change(
+        routes.equals(state.current, route) ? state : { ...state, current: route },
+        "navigate",
+      ),
     back: () => change(stepBack(state), "back"),
     forward: () => change(stepForward(state), "forward"),
     reset: (route) => update(historyAt(route)),

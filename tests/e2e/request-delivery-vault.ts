@@ -44,12 +44,14 @@ export async function seedRequestDeliveryVault(
     done?: readonly ProjectCriterion[];
     scope?: string;
     rulesVersion?: number;
+    requirement?: string;
   } = {},
 ) {
-  const { git } = await seedPbiVault();
+  const requirement = options.requirement ?? "REQ-03";
+  const { git } = await seedPbiVault(requirement);
   const sources = {
     pbi_prd_id: customerRequirement,
-    pbi_requirement_id: "REQ-03",
+    pbi_requirement_id: requirement,
     pbi_job_id: jobOne,
     pbi_research_id: pbiResearch,
     pbi_adr_id: "",

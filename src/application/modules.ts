@@ -10,6 +10,7 @@ import { projectsModule } from "./projects";
 import { prototypesModule } from "./prototypes";
 import { shellModule } from "./shell";
 import { storyMapsModule } from "./story-maps";
+import { traceModule } from "./trace";
 
 export const APP_MODULES = [
   shellModule,
@@ -24,6 +25,7 @@ export const APP_MODULES = [
   storyMapsModule,
   prototypesModule,
   featureRequestsModule,
+  traceModule,
 ] as const;
 
 export type AppModule = (typeof APP_MODULES)[number];

@@ -1,0 +1,211 @@
+.product-engineering-root .pe-trace {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  overflow-wrap: anywhere;
+  container: pe-trace / inline-size;
+}
+
+.product-engineering-root .pe-trace h1 {
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+
+.product-engineering-root .pe-trace header > p {
+  color: var(--pe-text-muted);
+}
+
+.product-engineering-root .pe-trace h2,
+.product-engineering-root .pe-trace h3 {
+  font-weight: 650;
+}
+
+.product-engineering-root .pe-trace-selector {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  max-width: 32rem;
+  font-weight: 600;
+}
+
+.product-engineering-root .pe-trace-select-control {
+  position: relative;
+  min-width: 0;
+  color: var(--pe-text);
+}
+
+.product-engineering-root .pe-trace-select-control select {
+  display: block;
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  color: inherit;
+  font-weight: 400;
+  padding-block: 0.45rem;
+  padding-inline: 0.6rem 1.95rem;
+  text-overflow: ellipsis;
+}
+
+.product-engineering-root .pe-trace-select-chevron {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 0.55rem;
+  width: 1rem;
+  height: 1rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .product-engineering-root .pe-trace-select-chevron {
+    color: ButtonText;
+  }
+}
+
+.product-engineering-root .pe-trace-artifacts,
+.product-engineering-root .pe-trace-evidence {
+  display: grid;
+  min-width: 0;
+  gap: 0.55rem;
+}
+
+.product-engineering-root .pe-trace-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius);
+  background: var(--pe-bg);
+}
+
+.product-engineering-root .pe-trace-chain {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.85rem;
+}
+
+.product-engineering-root .pe-trace-chain + .pe-trace-chain {
+  border-inline-start: 1px solid var(--pe-border);
+}
+
+.product-engineering-root .pe-trace-chain ol {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-engineering-root .pe-trace-chain li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.65rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.55rem;
+  padding-block-end: 0.7rem;
+}
+
+.product-engineering-root .pe-trace-chain li:last-child {
+  padding-block-end: 0;
+}
+
+.product-engineering-root .pe-trace-chain li:not(:last-child)::before {
+  position: absolute;
+  inset-block: 1.4rem 0;
+  inset-inline-start: 0.825rem;
+  border-inline-start: 1px solid var(--pe-border);
+  content: "";
+}
+
+.product-engineering-root .pe-trace-mark {
+  z-index: 0;
+  box-sizing: content-box;
+  width: 0.88rem;
+  height: 0.88rem;
+  padding: 0.32rem;
+  border: 1px solid var(--pe-border);
+  border-radius: 50%;
+  color: var(--pe-text-muted);
+  background: var(--pe-bg-secondary);
+}
+
+.product-engineering-root .pe-trace-label {
+  color: var(--pe-text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.product-engineering-root .pe-trace code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.product-engineering-root .pe-trace-link {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.product-engineering-root .pe-trace-notice,
+.product-engineering-root .pe-trace-prior {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.4rem 0.9rem;
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius);
+  padding: 0.65rem 0.8rem;
+  background: var(--pe-bg-secondary);
+}
+
+.product-engineering-root .pe-trace-warning {
+  color: var(--pe-warn-fg);
+}
+
+.product-engineering-root .pe-trace-criteria {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 0;
+  font-size: var(--font-ui-small);
+}
+
+.product-engineering-root .pe-trace-criteria th,
+.product-engineering-root .pe-trace-criteria td {
+  border-bottom: 1px solid var(--pe-border);
+  padding: 0.58rem;
+  text-align: start;
+  vertical-align: top;
+}
+
+.product-engineering-root .pe-trace-criteria thead {
+  background: var(--pe-bg-secondary);
+}
+
+.product-engineering-root .pe-trace-criteria th:first-child {
+  width: 52%;
+}
+
+.product-engineering-root .pe-trace-criteria th[scope="row"] small {
+  display: block;
+  color: var(--pe-text-muted);
+}
+
+@container pe-trace (max-width: 42rem) {
+  .product-engineering-root .pe-trace-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-engineering-root .pe-trace-chain + .pe-trace-chain {
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--pe-border);
+  }
+
+  .product-engineering-root .pe-trace-criteria th,
+  .product-engineering-root .pe-trace-criteria td {
+    padding: 0.38rem;
+  }
+}

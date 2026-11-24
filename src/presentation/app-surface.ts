@@ -18,6 +18,7 @@ import type { ModuleScreens, SurfaceDefinition, SurfaceSection } from "./shell/h
 import type { ScreenLoader, SettingsSectionPart } from "./shell/host";
 import { shellScreens } from "./shell/screens";
 import { storyMapsScreens } from "./story-maps/screens";
+import { traceScreens } from "./trace/screens";
 
 const MODULE_SCREENS: {
   readonly [Name in AppModuleName]: ModuleScreens<Name> &
@@ -37,6 +38,7 @@ const MODULE_SCREENS: {
   "story-maps": storyMapsScreens,
   prototypes: prototypesScreens,
   "feature-requests": featureRequestsScreens,
+  trace: traceScreens,
 };
 
 const modules = APP_MODULES.map(({ name }) => MODULE_SCREENS[name]);

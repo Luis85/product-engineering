@@ -146,7 +146,9 @@ const comparisonCriteria = [
   },
 ];
 
-export function seedComparisonReviewDecision() {
+export function seedComparisonReviewDecision(
+  extra?: NonNullable<Parameters<typeof seedReviewRegisterVault>[1]>,
+) {
   return seedReviewRegisterVault(false, {
     withScope: false,
     options: {
@@ -155,8 +157,12 @@ export function seedComparisonReviewDecision() {
       rulesVersion: 1,
       ready: [rule(32, "Umfang ist beschrieben", "scope")],
       done: [rule(31, "Offene Bugs sind geklärt", "open-bug")],
+      ...extra?.options,
     },
-    beforeRelease: addProductOwner,
+    async beforeRelease(git) {
+      await addProductOwner();
+      await extra?.beforeRelease?.(git);
+    },
     mapRelease: ({ nfrs: _nfrs, domain: _domain, ...payload }) => payload,
   });
 }

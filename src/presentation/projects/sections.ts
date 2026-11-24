@@ -8,6 +8,7 @@ import type { ProjectId } from "../../application/projects";
 import { prototypesRoute } from "../../application/prototypes";
 import type { Route } from "../../application/routes";
 import { storyMapsRoute } from "../../application/story-maps";
+import { traceRoute } from "../../application/trace";
 
 type Section = {
   readonly label: string;
@@ -72,6 +73,7 @@ export function projectGroups(
             route: reviewsRoute(id),
             icon: "i-lucide-clipboard-check",
           },
+          { label: catalog.trace.title, route: traceRoute(id), icon: "i-lucide-link" },
         ]
       : [],
     administration: [

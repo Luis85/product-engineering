@@ -95,7 +95,7 @@ export const matchedMapLinks: readonly StoryMapCardLink[] = cardRows.flatMap(
     recordId ? [{ cardId, kind: "item", projectId: customerProject, recordId }] : [],
 );
 
-function customerMap() {
+export function customerMap() {
   const cards: readonly StoryMapCard[] = cardRows.map(
     ([id, stepId, sliceId, title, , description]) => ({
       id,

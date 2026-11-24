@@ -12,7 +12,7 @@ export const pbiTitle = "Gefilterte Servicefälle exportieren";
 export const pbiResearch = "knowledge-33333333-3333-4333-8333-000000000041";
 export const pbiDeclaration = exportPath.substring(customerFolder.length + 1);
 
-export async function seedPbiVault() {
+export async function seedPbiVault(requirement = "REQ-03") {
   await seedBacklogVault();
   const facts = [
     "schema: product-engineering.backlog/v1",
@@ -20,7 +20,7 @@ export async function seedPbiVault() {
     "project_id: " + customerProject,
     "pe-id: " + pbiId,
     "pbi_prd_id: " + customerRequirement,
-    "pbi_requirement_id: REQ-03",
+    "pbi_requirement_id: " + requirement,
     "pbi_job_id: " + jobOne,
     "pbi_research_id: " + pbiResearch,
   ].join("\n");

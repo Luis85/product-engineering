@@ -3,6 +3,7 @@ import type { InjectionKey, Ref } from "vue";
 import { PROJECT_DOMAIN_MODEL } from "../../application/domain-model";
 import { HISTORY_LIMIT } from "../../application/shell";
 import type { Route } from "../../application/routes";
+import { PROJECT_TRACE } from "../../application/trace";
 import { useRouting } from "../shell";
 
 type Position = {
@@ -81,6 +82,8 @@ function restoreScroll(workspace: HTMLElement, target: Position | undefined) {
 
 function keepsWorkspacePosition(previous: Route, next: Route) {
   if (previous.name === "settings") return next.name === "settings";
+  if (previous.name === PROJECT_TRACE)
+    return next.name === PROJECT_TRACE && next.projectId === previous.projectId;
   return (
     previous.name === PROJECT_DOMAIN_MODEL &&
     next.name === PROJECT_DOMAIN_MODEL &&

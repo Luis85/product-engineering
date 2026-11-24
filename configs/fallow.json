@@ -126,6 +126,7 @@
           "application/story-maps",
           "application/prototypes",
           "application/feature-requests",
+          "application/trace",
           "application-module",
           "application-composition"
         ]
@@ -222,6 +223,7 @@
           "presentation/story-maps",
           "presentation/prototypes",
           "presentation/feature-requests",
+          "presentation/trace",
           "presentation/shell",
           "application",
           "application-composition",
@@ -261,6 +263,7 @@
           "presentation/story-maps",
           "presentation/prototypes",
           "presentation/feature-requests",
+          "presentation/trace",
           "application",
           "application-composition",
           "domain"
