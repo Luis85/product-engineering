@@ -7,6 +7,11 @@ import { entityAssigned } from "../../application/domain-model";
 import { knowledgeChanges, knowledgeSnapshot, projectKnowledge } from "../../application/knowledge";
 import { openNote } from "../../application/notes";
 import {
+  prototypesChanges,
+  prototypesForSource,
+  prototypesSnapshot,
+} from "../../application/prototypes";
+import {
   PROJECT_STORY_MAPS,
   readStoryMapForEdit,
   storyMapsRoute,
@@ -15,6 +20,7 @@ import type { StoryMapRecord } from "../../application/story-maps";
 import type { StoryMapSlice } from "../../domain/story-maps";
 import { NfrSourceLinks } from "../backlog";
 import { useWorkspaceOriginKey } from "../projects";
+import { PrototypeSourceLinks } from "../prototypes";
 import {
   ErrorNotice,
   useCommand,
@@ -58,9 +64,11 @@ const known = useStream(knowledgeSnapshot, knowledgeChanges);
 const records = computed(() => projectKnowledge(map.projectId, known.value.records));
 const nfrs = useStream(nfrSnapshot(map.projectId), nfrChanges(map.projectId));
 const scope = { kind: "map" as const, id: map.id };
+const prototypeScope = { ...scope, projectId: map.projectId };
+const prototypes = useStream(prototypesSnapshot(map.projectId), prototypesChanges(map.projectId));
 const counts = computed(() => ({
   foundations: Number(Boolean(map.prdId)) + map.jobIds.length + map.references.length,
-  prototypes: 0,
+  prototypes: prototypesForSource(prototypes.value.records, prototypeScope).length,
   nfrs: directNfrs(nfrs.value.records, scope).length,
   entities: records.value.filter((note) => note.kind === "entity" && entityAssigned(note, scope))
     .length,
@@ -69,11 +77,13 @@ const previousFocus = useWorkspaceOriginKey();
 const key = previousFocus() ?? "";
 const initial = key.startsWith("story-map-foundations-")
   ? "foundations"
-  : key.startsWith("nfr-")
-    ? "nfrs"
-    : key.startsWith("domain-link-") || key.startsWith("story-entity-")
-      ? "entities"
-      : undefined;
+  : key.startsWith("prototype-")
+    ? "prototypes"
+    : key.startsWith("nfr-")
+      ? "nfrs"
+      : key.startsWith("domain-link-") || key.startsWith("story-entity-")
+        ? "entities"
+        : undefined;
 
 function goToMaps() {
   const previous = history.value.back.at(-1);
@@ -132,8 +142,11 @@ function finishEdit() {
     <StoryMapContext :initial="initial" :counts="counts">
       <template #foundations><StoryMapFoundations :map="map" :records="records" /></template>
       <template #prototypes
-        ><p>{{ text.context.noPrototypes }}</p></template
-      >
+        ><PrototypeSourceLinks
+          :source="prototypeScope"
+          :display-id="map.displayId"
+          :empty="text.context.noPrototypes"
+      /></template>
       <template #nfrs
         ><NfrSourceLinks :project="map.projectId" :map-id="map.id" :label="map.title" show-scope
       /></template>

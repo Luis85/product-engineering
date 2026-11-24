@@ -4,6 +4,7 @@ import { computed } from "vue";
 import type { NfrRecord, NfrSnapshot } from "../../../application/backlog";
 import type { ProjectMember } from "../../../application/projects";
 import type { NfrId } from "../../../domain/backlog";
+import { PrototypeCreateAction } from "../../prototypes";
 import { useMessages } from "../../shell";
 import NfrClassification from "./NfrClassification.vue";
 
@@ -58,6 +59,12 @@ function owner(id?: string) {
             {{ record.title }}
           </UButton>
           <p class="pe:text-muted">{{ record.requirement }}</p>
+          <PrototypeCreateAction
+            :project-id="record.projectId"
+            :source="{ kind: 'nfr', projectId: record.projectId, id: record.id }"
+            :display-id="record.id"
+            compact
+          />
         </div>
         <NfrClassification :categories="record.categories" />
         <span>{{ owner(record.owner_id) }}</span>

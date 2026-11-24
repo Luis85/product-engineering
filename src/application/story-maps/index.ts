@@ -11,7 +11,7 @@ export {
 export type { StoryMapNodeEdit } from "./journey";
 export { isCanonicalStoryItem, setStoryMapItemLink, storyMapItemBacklinks } from "./links";
 export { storyMapsModule } from "./module";
-export { storyMapBacklinks, storyMapsChanges, storyMapsSnapshot } from "./records";
+export { decodeStoryMap, storyMapBacklinks, storyMapsChanges, storyMapsSnapshot } from "./records";
 export type { StoryMapRecord } from "./records";
 export { storyMapRows } from "./register";
 export { PROJECT_STORY_MAPS, storyMapsRoute, storyMapSliceRoute } from "./routes";

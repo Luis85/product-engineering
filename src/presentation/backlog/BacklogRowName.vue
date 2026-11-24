@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
+import type { ProjectId } from "../../application/projects";
+import { backlogPrototypeSource } from "../../application/prototypes";
+import { PrototypeCreateAction } from "../prototypes";
 import { useMessages } from "../shell";
 import type { BacklogRow } from "./preferences";
 
-const { row } = defineProps<{ readonly row: BacklogRow }>();
+const { row, project } = defineProps<{ readonly row: BacklogRow; readonly project: ProjectId }>();
+const source = computed(() => backlogPrototypeSource(project, row.item));
 const emit = defineEmits<{ open: [HTMLElement, boolean?]; toggle: [] }>();
 const text = useMessages().backlog;
+const editablePbi = computed(
+  () => row.item.kind === "UC" && row.item.adopted && !row.item.conflict,
+);
 const label = computed(() => (row.expanded ? text.collapse : text.expand) + " " + row.item.title);
 const issue = computed(() =>
   row.item.conflict ? text.errors.identity : row.item.brokenParent ? text.suppliedParent : "",
@@ -49,7 +56,7 @@ function disclose(expanded: boolean) {
       >
       <span v-if="row.item.id" class="pe:ms-2 pe:text-xs pe:text-muted">{{ row.item.id }}</span>
       <UButton
-        v-if="row.item.kind === 'UC' && row.item.adopted && !row.item.conflict"
+        v-if="editablePbi"
         type="button"
         variant="ghost"
         color="neutral"
@@ -59,6 +66,13 @@ function disclose(expanded: boolean) {
         :data-pe-focus-key="'backlog-edit-' + row.item.key"
         data-testid="backlog-row-edit"
         @click="emit('open', $event.currentTarget as HTMLElement, true)"
+      />
+      <PrototypeCreateAction
+        v-if="source"
+        :project-id="project"
+        :source="source"
+        :display-id="row.item.id"
+        compact
       />
       <span v-if="row.lineage" class="pe:block pe:wrap-anywhere pe:text-xs pe:text-muted">{{
         row.lineage

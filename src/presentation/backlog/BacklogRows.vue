@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { ownerName } from "../../application/backlog";
 import type { BacklogItem, BacklogPlacement } from "../../application/backlog";
+import type { ProjectId } from "../../application/projects";
 import { parentKind } from "../../domain/backlog";
 import type { BacklogKind } from "../../domain/backlog";
 import { useMessages } from "../shell";
@@ -11,6 +12,7 @@ import BacklogRowName from "./BacklogRowName.vue";
 const { rows, level } = defineProps<{
   readonly rows: readonly BacklogRow[];
   readonly level: BacklogKind | "";
+  readonly project: ProjectId;
 }>();
 const emit = defineEmits<{
   toggle: [string];
@@ -101,6 +103,7 @@ function metadata(item: BacklogItem) {
     >
       <BacklogRowName
         :row="row"
+        :project="project"
         @open="(control, edit) => emit('open', row.item, control, edit)"
         @toggle="emit('toggle', row.item.key)"
       />

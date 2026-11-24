@@ -3,8 +3,10 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import { computed } from "vue";
 import { pbiSourceDraft, savePbiReferences } from "../../application/backlog";
 import type { PbiDetail } from "../../application/backlog";
+import { backlogPrototypeSource } from "../../application/prototypes";
 import { DomainScopeLinks } from "../domain-model";
 import { KnowledgeReferences } from "../knowledge";
+import { PrototypeSourceLinks } from "../prototypes";
 import { ErrorNotice, useCommand, useMessages, useNavigationGuard } from "../shell";
 import StoryMapItemLinks from "./StoryMapItemLinks.vue";
 
@@ -15,6 +17,7 @@ const emit = defineEmits<{
   open: [NonNullable<PbiDetail["sources"][number]["record"]>, MouseEvent];
 }>();
 const text = useMessages().backlog;
+const prototypeSource = computed(() => backlogPrototypeSource(detail.projectId, detail.edit.item));
 const requirement = computed(() => pbiSourceDraft(detail.edit.item.fields).pbi_requirement_id);
 const links = computed(() =>
   detail.sources
@@ -71,6 +74,7 @@ async function update(references: readonly string[]) {
         </li>
       </ul>
     </section>
+    <PrototypeSourceLinks v-if="prototypeSource" :source="prototypeSource" />
     <StoryMapItemLinks :project="detail.projectId" :item="detail.pbiId" />
     <DomainScopeLinks :item="{ id: detail.pbiId, projectId: detail.projectId }" from-pbi />
     <KnowledgeReferences

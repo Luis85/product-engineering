@@ -3,6 +3,7 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import UFormField from "@nuxt/ui/components/FormField.vue";
 import UInput from "@nuxt/ui/components/Input.vue";
 import UModal from "@nuxt/ui/components/Modal.vue";
+import UTextarea from "@nuxt/ui/components/Textarea.vue";
 import { useForm } from "@tanstack/vue-form";
 import { computed, nextTick, ref, watch } from "vue";
 import type { AppError } from "../../application/errors";
@@ -14,6 +15,7 @@ import {
   knowledgeSnapshot,
   newKnowledgeId,
   projectKnowledge,
+  validKnowledgeTitle,
 } from "../../application/knowledge";
 import type {
   CreateKnowledgeRequest,
@@ -52,6 +54,7 @@ const {
   lockTemplate = undefined,
   prepare = createKnowledge,
   onCreated = undefined,
+  stage = undefined,
 } = defineProps<{
   readonly projectId: ProjectId;
   readonly initialTemplate: KnowledgeKind;
@@ -62,6 +65,17 @@ const {
   readonly lockTemplate?: boolean | undefined;
   readonly prepare?: UseCaseFn<[CreateKnowledgeRequest, KnowledgeDraft], Note, AppError>;
   readonly onCreated?: (note: Note) => void | Promise<void>;
+  readonly stage?: {
+    readonly id?: KnowledgeId | undefined;
+    readonly title: string;
+    readonly body: string;
+    readonly dialogTitle: string;
+    readonly bodyLabel: string;
+    readonly submit: string;
+    readonly invalidTitle: string;
+    readonly invalidBody: string;
+    readonly save: (id: KnowledgeId, draft: KnowledgeDraft) => void;
+  };
 }>();
 const emit = defineEmits<{ dismiss: [] }>();
 const catalog = useMessages();
@@ -79,7 +93,7 @@ const ownerOptions = computed(() =>
 const open = ref(true);
 const modal = useModal(open, () => emit("dismiss"), dismiss);
 const controls = ref<HTMLFormElement>();
-const id = useService(newKnowledgeId);
+const id = stage?.id ?? useService(newKnowledgeId);
 const command = useCommand(prepare);
 const opener = useCommand(openNote);
 const pending = computed(() => command.pending.value || opener.pending.value);
@@ -87,7 +101,19 @@ const route = useRoute();
 useNavigationGuard(() => !pending.value);
 const fieldErrors = ["title", "actor_type", "owner_id", "vision_id", "job_ids"] as const;
 const invalid = ref<(typeof fieldErrors)[number]>();
+const stagedErrors = ref<{ title: boolean; body: boolean }>();
 const commandError = computed(() => (invalid.value ? undefined : command.message.value));
+const errors = computed(() =>
+  [commandError.value, opener.message.value].filter((message) => message !== undefined),
+);
+const titleError = computed(
+  () => (stagedErrors.value?.title ? stage?.invalidTitle : fieldError("title")) ?? false,
+);
+const bodyError = computed(
+  () => (stagedErrors.value?.body ? stage?.invalidBody : undefined) ?? false,
+);
+const dialogTitle = stage?.dialogTitle ?? text.create;
+const submitLabel = stage?.submit ?? (onCreated ? text.openDraft : text.submit);
 const templateLocked = computed(() => pending.value || (lockTemplate ?? Boolean(origin)));
 const knowledge = useStream(knowledgeSnapshot, knowledgeChanges);
 const entries = computed(() => projectKnowledge(projectId, knowledge.value.records));
@@ -107,7 +133,8 @@ function titleFor(kind: KnowledgeKind) {
 
 const initial: KnowledgeDraft = {
   kind: initialTemplate,
-  title: initialTitle ?? titleFor(initialTemplate),
+  title: stage?.title ?? initialTitle ?? titleFor(initialTemplate),
+  ...(stage && { body: stage.body }),
   actor_type: "",
   owner_id: "",
   vision_id: origin?.kind === "vision" ? origin.recordId : (initialVision ?? ""),
@@ -144,6 +171,19 @@ const form = useForm({
     invalid.value = undefined;
     if (!("projectId" in route.value) || route.value.projectId !== projectId) {
       dismiss();
+      return;
+    }
+    if (stage) {
+      const title = !validKnowledgeTitle(value.kind, value.title);
+      const body = !value.body?.trim();
+      stagedErrors.value = { title, body };
+      if (title || body) {
+        await nextTick();
+        controls.value?.querySelector<HTMLElement>(`[name="${title ? "title" : "body"}"]`)?.focus();
+      } else {
+        stage.save(id, value);
+        dismiss();
+      }
       return;
     }
     const outcome = await command.run(request, value);
@@ -188,7 +228,7 @@ function dismiss() {
 <template>
   <UModal
     :open="open"
-    :title="text.create"
+    :title="dialogTitle"
     :content="modal"
     :ui="leafModalUi"
     :dismissible="!pending"
@@ -200,7 +240,7 @@ function dismiss() {
           {{ text.origin }} · {{ source }}
         </p>
         <form.Field v-slot="{ field }" name="title">
-          <UFormField :label="text.noteTitle" :error="fieldError('title') ?? false">
+          <UFormField :label="text.noteTitle" :error="titleError">
             <UInput
               name="title"
               :model-value="field.state.value"
@@ -212,55 +252,67 @@ function dismiss() {
             />
           </UFormField>
         </form.Field>
-        <form.Field v-slot="{ field }" name="kind">
-          <KnowledgeSelect
-            name="kind"
-            :label="text.template"
-            :model-value="field.state.value"
-            :options="templateOptions"
-            :disabled="templateLocked"
-            @update:model-value="chooseKind"
-          />
+        <form.Field v-if="stage" v-slot="{ field }" name="body">
+          <UFormField :label="stage.bodyLabel" :error="bodyError">
+            <UTextarea
+              name="body"
+              :model-value="field.state.value ?? ''"
+              aria-required="true"
+              class="pe:w-full"
+              @update:model-value="(value) => field.handleChange(String(value))"
+            />
+          </UFormField>
         </form.Field>
-        <form.Field v-if="selectedKind === 'actor'" v-slot="{ field }" name="actor_type">
-          <KnowledgeSelect
-            name="actor_type"
-            :label="text.actorFilter"
-            :empty="text.chooseActor"
-            :error="fieldError('actor_type')"
-            :model-value="field.state.value"
-            :options="actorOptions"
-            :disabled="pending"
-            required
-            @update:model-value="field.handleChange"
+        <template v-else>
+          <form.Field v-slot="{ field }" name="kind">
+            <KnowledgeSelect
+              name="kind"
+              :label="text.template"
+              :model-value="field.state.value"
+              :options="templateOptions"
+              :disabled="templateLocked"
+              @update:model-value="chooseKind"
+            />
+          </form.Field>
+          <form.Field v-if="selectedKind === 'actor'" v-slot="{ field }" name="actor_type">
+            <KnowledgeSelect
+              name="actor_type"
+              :label="text.actorFilter"
+              :empty="text.chooseActor"
+              :error="fieldError('actor_type')"
+              :model-value="field.state.value"
+              :options="actorOptions"
+              :disabled="pending"
+              required
+              @update:model-value="field.handleChange"
+            />
+          </form.Field>
+          <form.Field v-slot="{ field }" name="owner_id">
+            <KnowledgeSelect
+              name="owner_id"
+              :label="text.owner"
+              :empty="text.unassigned"
+              :error="fieldError('owner_id')"
+              :model-value="field.state.value"
+              :options="ownerOptions"
+              :disabled="pending"
+              @update:model-value="field.handleChange"
+            />
+          </form.Field>
+          <KnowledgeFoundations
+            v-if="selectedKind === 'prd'"
+            :vision="selectedVision"
+            :selected-jobs="selectedJobs"
+            :visions="visions"
+            :jobs-options="jobs"
+            :origin="origin"
+            :pending="pending"
+            :invalid="invalid"
+            @update:vision="form.setFieldValue('vision_id', $event)"
+            @toggle-job="toggleJob"
           />
-        </form.Field>
-        <form.Field v-slot="{ field }" name="owner_id">
-          <KnowledgeSelect
-            name="owner_id"
-            :label="text.owner"
-            :empty="text.unassigned"
-            :error="fieldError('owner_id')"
-            :model-value="field.state.value"
-            :options="ownerOptions"
-            :disabled="pending"
-            @update:model-value="field.handleChange"
-          />
-        </form.Field>
-        <KnowledgeFoundations
-          v-if="selectedKind === 'prd'"
-          :vision="selectedVision"
-          :selected-jobs="selectedJobs"
-          :visions="visions"
-          :jobs-options="jobs"
-          :origin="origin"
-          :pending="pending"
-          :invalid="invalid"
-          @update:vision="form.setFieldValue('vision_id', $event)"
-          @toggle-job="toggleJob"
-        />
-        <ErrorNotice v-if="commandError" :message="commandError" />
-        <ErrorNotice v-if="opener.message.value" :message="opener.message.value" />
+        </template>
+        <ErrorNotice v-for="(error, index) in errors" :key="index" :message="error" />
         <div class="pe:flex pe:flex-wrap pe:justify-end pe:gap-2">
           <UButton
             type="button"
@@ -272,9 +324,7 @@ function dismiss() {
           >
             {{ text.cancel }}
           </UButton>
-          <UButton type="submit" :loading="pending">{{
-            onCreated ? text.openDraft : text.submit
-          }}</UButton>
+          <UButton type="submit" :loading="pending">{{ submitLabel }}</UButton>
         </div>
       </form>
     </template>

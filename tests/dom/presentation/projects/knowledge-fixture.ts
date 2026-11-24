@@ -56,8 +56,13 @@ export async function withProject(
   }) => Promise<void>,
   markdownHost?: MarkdownHost,
   artifactGit?: AppAdapters["artifactGit"],
+  agentChat?: AppAdapters["agentChat"],
 ) {
-  const host = testRuntime({ language: "en", ...(artifactGit ? { artifactGit } : {}) });
+  const host = testRuntime({
+    language: "en",
+    ...(artifactGit ? { artifactGit } : {}),
+    ...(agentChat ? { agentChat } : {}),
+  });
   const root = document.body.appendChild(document.createElement("div"));
   const navigation = memoryNavigation(appSurface, projectOverviewRoute(first));
   let close: (() => void) | undefined;

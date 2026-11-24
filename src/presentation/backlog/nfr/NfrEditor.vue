@@ -24,6 +24,7 @@ import type {
 } from "../../../domain/backlog";
 import { KnowledgeLeaveDialog } from "../../knowledge";
 import { leafModalUi, useRememberWorkspaceOrigin } from "../../projects";
+import { PrototypeSourceLinks } from "../../prototypes";
 import {
   ErrorNotice,
   useAsyncStream,
@@ -283,6 +284,11 @@ async function openTarget(target: NfrTarget, event: MouseEvent) {
         </ul>
         <ErrorNotice v-if="error" :message="error" />
       </form>
+      <PrototypeSourceLinks
+        v-if="initial"
+        :source="{ kind: 'nfr', projectId: project, id: initial.id }"
+        class="pe:mt-4"
+      />
     </template>
     <template #footer>
       <UButton

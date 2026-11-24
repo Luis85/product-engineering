@@ -3,6 +3,7 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import { computed, shallowRef, watch } from "vue";
 import { backlogRoute, pbiDetailRoute } from "../../application/backlog";
 import type { PbiDetail } from "../../application/backlog";
+import { backlogPrototypeSource } from "../../application/prototypes";
 import { entityRecords, resolveDomainScope } from "../../application/domain-model";
 import { knowledgeChanges, knowledgeSnapshot } from "../../application/knowledge";
 import {
@@ -14,6 +15,7 @@ import {
 import type { KnowledgeId } from "../../domain/knowledge";
 import { isStoryMapId } from "../../domain/story-maps";
 import { useRememberWorkspaceOrigin, useRestoreWorkspacePosition } from "../projects";
+import { PrototypeSourceLinks } from "../prototypes";
 import { ErrorNotice, useMessages, useNavigate, useQuery, useStream } from "../shell";
 import NfrSourceLinks from "./nfr/NfrSourceLinks.vue";
 
@@ -21,6 +23,7 @@ const { detail } = defineProps<{ readonly detail: PbiDetail }>();
 const emit = defineEmits<{ open: [KnowledgeId, MouseEvent]; links: [MouseEvent] }>();
 const texts = useMessages().backlog;
 const text = texts.pbiContext;
+const prototypeSource = computed(() => backlogPrototypeSource(detail.projectId, detail.edit.item));
 const restore = useRestoreWorkspacePosition();
 const remember = useRememberWorkspaceOrigin();
 const navigate = useNavigate();
@@ -64,10 +67,11 @@ function openOrigin(kind: string, id: string, event: MouseEvent) {
 
 <template>
   <div class="pe-pbi-context" data-testid="pbi-context">
-    <section>
-      <h2>{{ text.prototypes }}</h2>
-      <p>{{ text.noPrototypes }}</p>
-    </section>
+    <PrototypeSourceLinks
+      v-if="prototypeSource"
+      :source="prototypeSource"
+      :empty="text.noPrototypes"
+    />
     <NfrSourceLinks :project="detail.projectId" :item-id="detail.pbiId" show-scope />
     <section>
       <div class="pe-backlog-actions pe:justify-between">

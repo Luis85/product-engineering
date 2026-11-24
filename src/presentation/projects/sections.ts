@@ -4,6 +4,7 @@ import { projectKnowledgeRoute } from "../../application/knowledge";
 import type { Catalog } from "../../application/messages";
 import { projectAdministrationRoute, projectOverviewRoute } from "../../application/projects";
 import type { ProjectId } from "../../application/projects";
+import { prototypesRoute } from "../../application/prototypes";
 import type { Route } from "../../application/routes";
 import { storyMapsRoute } from "../../application/story-maps";
 
@@ -50,6 +51,11 @@ export function projectGroups(
             label: catalog.backlog.title,
             route: backlogBoardRoute(id),
             icon: "i-lucide-list-tree",
+          },
+          {
+            label: catalog.prototypes.title,
+            route: prototypesRoute(id),
+            icon: "i-lucide-panels-top-left",
           },
         ]
       : [],

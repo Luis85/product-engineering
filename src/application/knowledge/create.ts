@@ -24,6 +24,7 @@ export type KnowledgeDraft = {
   readonly owner_id: string;
   readonly vision_id: string;
   readonly job_ids: readonly string[];
+  readonly body?: string;
   readonly entity?: {
     readonly definition: string;
     readonly attributes: readonly EntityAttribute[];
@@ -93,16 +94,21 @@ function existingNote(notes: readonly Note[], request: CreateKnowledgeRequest) {
   return Effect.fail(new KnowledgeCreateError({ reason: "identity" }));
 }
 
+export function validKnowledgeTitle(kind: KnowledgeKind, title: string) {
+  const trimmed = title.trim();
+  return (
+    Boolean(trimmed) &&
+    Result.isSuccess(knowledgeType.fields.title.check(trimmed)) &&
+    fitsFileName(trimmed, knowledgePrefixes[kind])
+  );
+}
+
 function checkedDraft(draft: KnowledgeDraft) {
   return Effect.gen(function* () {
     const { kind } = draft;
     if (!isKnowledgeKind(kind)) return yield* new KnowledgeCreateError({ reason: "template" });
     const title = draft.title.trim();
-    if (
-      !title ||
-      Result.isFailure(knowledgeType.fields.title.check(title)) ||
-      !fitsFileName(title, knowledgePrefixes[kind])
-    ) {
+    if (!validKnowledgeTitle(kind, title)) {
       return yield* new KnowledgeCreateError({ reason: "title" });
     }
     if (kind !== "actor") return { title, kind };
@@ -144,6 +150,9 @@ function draftContent(kind: KnowledgeKind, draft: KnowledgeDraft, requirementId?
         return yield* new KnowledgeCreateError({ reason: "attributes" });
       }
       return { body: draft.entity.definition, fields: { domain_attributes: attributes.success } };
+    }
+    if ((kind === "style-guide" || kind === "design-system") && draft.body?.trim()) {
+      return { body: draft.body, fields: {} };
     }
     const { knowledge } = yield* Messages;
     return { body: knowledgeTemplateBody(knowledge.headings, kind, requirementId), fields: {} };

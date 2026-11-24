@@ -104,7 +104,8 @@
           "domain/projects",
           "domain/knowledge",
           "domain/backlog",
-          "domain/story-maps"
+          "domain/story-maps",
+          "domain/prototypes"
         ]
       },
       { "from": "domain/shell", "allow": [] },
@@ -122,6 +123,7 @@
           "application/git",
           "application/backlog",
           "application/story-maps",
+          "application/prototypes",
           "application-module",
           "application-composition"
         ]
@@ -216,6 +218,7 @@
           "presentation/git",
           "presentation/backlog",
           "presentation/story-maps",
+          "presentation/prototypes",
           "presentation/shell",
           "application",
           "application-composition",
@@ -253,6 +256,7 @@
           "presentation/git",
           "presentation/backlog",
           "presentation/story-maps",
+          "presentation/prototypes",
           "application",
           "application-composition",
           "domain"

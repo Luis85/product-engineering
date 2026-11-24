@@ -269,6 +269,7 @@ async function undoMove() {
     />
     <ErrorNotice v-if="message" :message="message" />
     <BacklogListResults
+      :project="project"
       :snapshot="snapshot"
       :rows="rows"
       :level="preferences.level"

@@ -27,6 +27,7 @@ it("creates an independent Story Map from Planning, validates fields, and return
     expect(planning, "Planning follows the reference navigation order").toEqual([
       "Story Maps",
       "Backlog",
+      "Prototypes",
     ]);
     nav?.click();
     await eventually(() =>

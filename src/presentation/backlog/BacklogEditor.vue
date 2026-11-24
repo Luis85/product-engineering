@@ -24,6 +24,7 @@ import type {
 import { openNote } from "../../application/notes";
 import { projectMemberChoices } from "../../application/projects";
 import type { BacklogBase, ProjectId } from "../../application/projects";
+import { backlogPrototypeSource } from "../../application/prototypes";
 import { PROJECT_STORY_MAPS } from "../../application/story-maps";
 import type { BacklogKind, NfrId } from "../../domain/backlog";
 import { ArtifactGitHistory, useArtifactGit } from "../git";
@@ -100,6 +101,9 @@ const frozen = computed(() => creation?.frozen ?? false);
 const submitAutofocus = computed(() => (frozen.value ? "" : undefined));
 const edit = shallowRef(initialEdit);
 const assignedItem = computed(() => (edit.value?.item.adopted ? edit.value.item.id : undefined));
+const prototypeSource = computed(
+  () => edit.value && backlogPrototypeSource(project, edit.value.item),
+);
 const open = ref(true);
 const modal = useModal(open, () => emit("dismiss"), close);
 function focusEditor(event: Event) {
@@ -332,6 +336,7 @@ async function adoptItem(event: MouseEvent) {
             v-if="edit"
             :project="project"
             :item="assignedItem"
+            :prototype-source="prototypeSource"
             :adopted="edit.item.adopted"
             :opening="native.pending.value"
             :adopting="adopt.pending.value"

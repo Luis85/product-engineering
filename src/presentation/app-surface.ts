@@ -12,6 +12,7 @@ import { knowledgeScreens } from "./knowledge/screens";
 import { notesScreens } from "./notes/screens";
 import { projectFrame, projectsScreens } from "./projects/screens";
 import type { ProjectRecordPart, ProjectSearchPart, ProjectTemplatePart } from "./projects";
+import { prototypesScreens } from "./prototypes/screens";
 import type { ModuleScreens, SurfaceDefinition, SurfaceSection } from "./shell/host";
 import type { ScreenLoader, SettingsSectionPart } from "./shell/host";
 import { shellScreens } from "./shell/screens";
@@ -33,6 +34,7 @@ const MODULE_SCREENS: {
   git: gitScreens,
   backlog: backlogScreens,
   "story-maps": storyMapsScreens,
+  prototypes: prototypesScreens,
 };
 
 const modules = APP_MODULES.map(({ name }) => MODULE_SCREENS[name]);

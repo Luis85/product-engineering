@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import type { ProjectId } from "../../application/projects";
+import type { PrototypeSource } from "../../domain/prototypes";
+import { PrototypeSourceLinks } from "../prototypes";
 import { useMessages } from "../shell";
 import NfrSourceLinks from "./nfr/NfrSourceLinks.vue";
 import StoryMapItemLinks from "./StoryMapItemLinks.vue";
@@ -8,6 +10,7 @@ import StoryMapItemLinks from "./StoryMapItemLinks.vue";
 defineProps<{
   readonly project: ProjectId;
   readonly item: string | undefined;
+  readonly prototypeSource: PrototypeSource | undefined;
   readonly adopted: boolean;
   readonly opening: boolean;
   readonly adopting: boolean;
@@ -22,6 +25,7 @@ const text = useMessages().backlog;
     <slot />
     <StoryMapItemLinks :project="project" :item="item" />
     <NfrSourceLinks :project="project" :item-id="item" />
+    <PrototypeSourceLinks v-if="prototypeSource" :source="prototypeSource" />
     <div class="pe-backlog-actions">
       <UButton
         type="button"

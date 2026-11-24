@@ -6,8 +6,10 @@ import { ownerName } from "../../application/backlog";
 import type { BacklogItem, BacklogSnapshot, PbiPreparationGap } from "../../application/backlog";
 import type { KnowledgeRecord } from "../../application/knowledge";
 import type { ProjectId } from "../../application/projects";
+import { backlogPrototypeSource } from "../../application/prototypes";
 import { boardStages } from "../../domain/backlog";
 import type { BoardStage } from "../../domain/backlog";
+import { PrototypeCreateAction } from "../prototypes";
 import { useMessages } from "../shell";
 import BacklogBoardHandoff from "./BacklogBoardHandoff.vue";
 import PbiCompanions from "./PbiCompanions.vue";
@@ -31,6 +33,7 @@ const emit = defineEmits<{
 }>();
 const text = useMessages().backlog;
 const identity = computed(() => item.id ?? String(item.fields["pbl-id"] ?? text.board.legacy));
+const source = computed(() => backlogPrototypeSource(project, item));
 
 function change(event: Event) {
   const control = event.currentTarget as HTMLSelectElement;
@@ -54,6 +57,13 @@ function change(event: Event) {
       <span v-if="item.priority"
         ><UIcon name="i-lucide-flag" aria-hidden="true" /> {{ item.priority }}</span
       >
+      <PrototypeCreateAction
+        v-if="source"
+        :project-id="project"
+        :source="source"
+        :display-id="identity"
+        compact
+      />
     </div>
     <UButton
       type="button"
