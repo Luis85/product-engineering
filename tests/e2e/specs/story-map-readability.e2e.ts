@@ -12,6 +12,7 @@ import { openView, ROOT, setTheme, setViewRoute, VIEW_TYPE } from "../support";
 
 const primary = '[data-v13-readability="primary"]';
 const sibling = '[data-v13-readability="sibling"]';
+const wrappedPbiTitle = "Gefilterte Servicefälle als vollständige CSV-Datei exportieren";
 const parts = [
   ["foundations", "Grundlagen", "2"],
   ["prototypes", "Prototypen", "0"],
@@ -29,7 +30,7 @@ const metrics = (width: number, height: number) =>
   });
 
 before(async () => {
-  await seedStoryMapsVault();
+  await seedStoryMapsVault(wrappedPbiTitle);
   await metrics(1296, 1000);
   await openView();
   await setTheme("light");
@@ -205,7 +206,7 @@ async function expectBacklogLink(minimumLines: number) {
   const { link } = await measureText(backlogLink, []);
   if (!link) throw new Error("Missing measured backlog link");
   expect(link).toMatchObject({
-    text: "UC-09 · Gefilterte Servicefälle exportieren",
+    text: `UC-09 · ${wrappedPbiTitle}`,
     status: "PBI · Active",
   });
   expect(link.lines).toBeGreaterThanOrEqual(minimumLines);

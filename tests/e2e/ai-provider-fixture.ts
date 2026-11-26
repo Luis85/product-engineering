@@ -8,6 +8,7 @@ type Call = { provider: ChatProvider; input: string; aborted: boolean; released:
 type ProviderWindow = Window & {
   peProviderFixture?: {
     calls: Call[];
+    partial(index: number, text: string): void;
     finish(index: number, text: string): void;
     restore(): void;
   };
@@ -37,6 +38,7 @@ export async function installProviderFixture(paths: FixturePaths) {
     const original = childProcess.spawn;
     const calls: Call[] = [];
     const replies: ((text: string) => void)[] = [];
+    const partials: ((text: string) => void)[] = [];
 
     childProcess.spawn = new Proxy(original, {
       apply(target, receiver: unknown, args: unknown[]) {
@@ -67,6 +69,16 @@ export async function installProviderFixture(paths: FixturePaths) {
           call.input += input;
         });
         calls.push(call);
+        partials.push((text) => {
+          const event =
+            provider === "codex"
+              ? { type: "item.completed", item: { type: "agent_message", text } }
+              : {
+                  type: "stream_event",
+                  event: { type: "content_block_delta", delta: { type: "text_delta", text } },
+                };
+          if (!child.stdout.destroyed) child.stdout.write(JSON.stringify(event) + "\n");
+        });
         replies.push((text) => {
           call.released = true;
           const events =
@@ -87,6 +99,11 @@ export async function installProviderFixture(paths: FixturePaths) {
     });
     owner.peProviderFixture = {
       calls,
+      partial(index, text) {
+        const delivery = partials[index];
+        if (!delivery) throw new Error("The fixture call for the partial response is missing");
+        delivery(text);
+      },
       finish(index, text) {
         const reply = replies[index];
         if (!reply) throw new Error("The configured fake provider call is missing");
@@ -98,6 +115,18 @@ export async function installProviderFixture(paths: FixturePaths) {
       },
     };
   }, paths);
+}
+
+export function streamProviderText(index: number, reply: string) {
+  return browser.executeObsidian(
+    (_, requestIndex, response) => {
+      const fixture = (window as ProviderWindow).peProviderFixture;
+      if (!fixture) throw new Error("The fake provider is missing");
+      fixture.partial(requestIndex, response);
+    },
+    index,
+    reply,
+  );
 }
 
 export function readProviderCalls() {

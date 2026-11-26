@@ -11,6 +11,6 @@ export { useHistory, useNavigate, useNavigationGuard, useRoute, useRouting } fro
 export { frameMenu } from "./routing";
 export type { BeforeNavigation } from "./routing";
 export type { ModuleScreens, ScreenLoader } from "./routing";
-export { useCommand, useMessages, useQuery, useService } from "./runtime/use-runtime";
+export { useAutosave, useCommand, useMessages, useQuery, useService } from "./runtime/use-runtime";
 export type { UseCaseFn } from "./runtime/use-runtime";
 export { useAsyncStream, useSettings, useSettingsStatus, useStream } from "./runtime/use-stream";

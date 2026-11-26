@@ -12,6 +12,12 @@
 | Incident | `incident` |
 | Conversation | `conversation` |
 | Provider | `provider` |
+| Copilot | `copilot` |
+| Project instructions | `instructions` |
+| Unsent Copilot draft | `composer` |
+| Conversation thread list | `threads` |
+| Typed source links | `source_links` |
+| Applied proposal identity | `applied_proposal` |
 | MCP tool | `tool` |
 | Shared item | `sharedItem` |
 | Note | `note` |

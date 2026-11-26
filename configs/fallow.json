@@ -101,6 +101,7 @@
           "domain/shell",
           "domain/notes",
           "domain/items",
+          "domain/integrations",
           "domain/projects",
           "domain/knowledge",
           "domain/backlog",

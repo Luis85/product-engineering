@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
+import UIcon from "@nuxt/ui/components/Icon.vue";
 import { computed } from "vue";
 import type { Route } from "../../../application/routes";
 import type { Project } from "../../../application/projects";
@@ -15,58 +16,53 @@ const { collapsed, groups, project, section } = defineProps<{
 const emit = defineEmits<{ pick: [trigger: HTMLElement]; select: [route: Route] }>();
 const text = useMessages().projects;
 const title = computed(() => project?.name ?? text.title);
-const buttons = computed(() =>
-  groups.map((group) => ({
-    ...group,
-    items: group.items.map((entry) => ({
-      ...entry,
-      attributes:
-        section === entry.route.name
-          ? ({ "aria-current": "page", color: "primary", variant: "soft" } as const)
-          : ({ color: "neutral", variant: "ghost" } as const),
-    })),
-  })),
-);
-const buttonClass = computed(() => (collapsed ? "pe:justify-center" : "pe:w-full pe:text-left"));
 </script>
 
 <template>
-  <UButton
-    :aria-label="text.picker"
-    :title="text.picker"
-    icon="i-lucide-folder"
-    variant="soft"
-    color="neutral"
-    type="button"
-    data-pe-focus-key="project-picker"
-    data-autofocus
-    :class="buttonClass"
-    @click="emit('pick', $event.currentTarget as HTMLElement)"
-  >
-    <span v-if="!collapsed" class="pe:grid pe:min-w-0 pe:gap-0.5">
-      <strong class="pe:truncate">{{ title }}</strong>
-      <span v-if="project" class="pe:text-xs pe:font-normal pe:text-muted">{{ text.project }}</span>
-    </span>
-  </UButton>
-  <nav :aria-label="text.navigation" data-testid="frame-navigation" class="pe:grid pe:gap-4">
-    <div v-for="group in buttons" :key="group.label" class="pe:grid pe:gap-1">
-      <p v-if="!collapsed" class="pe:px-2 pe:text-xs pe:font-semibold pe:text-muted">
-        {{ group.label }}
-      </p>
-      <UButton
-        v-for="entry in group.items"
-        :key="entry.route.name"
-        :aria-label="entry.label"
-        :title="entry.label"
-        v-bind="entry.attributes"
-        :icon="entry.icon"
-        :data-pe-focus-key="entry.route.name"
-        type="button"
-        :class="buttonClass"
-        @click="emit('select', entry.route)"
-      >
-        <span v-if="!collapsed" class="pe:whitespace-normal">{{ entry.label }}</span>
-      </UButton>
-    </div>
-  </nav>
+  <div class="pe-project-navigation" :data-collapsed="collapsed">
+    <UButton
+      :aria-label="text.picker"
+      :title="text.picker"
+      variant="ghost"
+      color="neutral"
+      type="button"
+      data-pe-focus-key="project-picker"
+      data-autofocus
+      class="pe-project-picker"
+      @click="emit('pick', $event.currentTarget as HTMLElement)"
+    >
+      <span class="pe-project-picker-mark" aria-hidden="true"
+        ><UIcon name="i-lucide-folder"
+      /></span>
+      <span class="pe-project-picker-label pe-project-expanded-label">
+        <strong>{{ title }}</strong>
+        <span v-if="project">{{ text.project }}</span>
+      </span>
+      <UIcon name="i-lucide-chevron-down" class="pe-project-expanded-label" aria-hidden="true" />
+    </UButton>
+    <nav :aria-label="text.navigation" data-testid="frame-navigation" class="pe-project-nav-groups">
+      <div v-for="(group, index) in groups" :key="group.label" class="pe-project-nav-group">
+        <div v-if="!collapsed || index === 0" class="pe-project-nav-heading">
+          <p class="pe-project-expanded-label">{{ group.label }}</p>
+          <slot v-if="index === 0" name="rail-toggle" />
+        </div>
+        <UButton
+          v-for="entry in group.items"
+          :key="entry.route.name"
+          :aria-label="entry.label"
+          :title="entry.label"
+          :aria-current="section === entry.route.name ? 'page' : undefined"
+          :icon="entry.icon"
+          :data-pe-focus-key="entry.route.name"
+          type="button"
+          variant="ghost"
+          color="neutral"
+          class="pe-project-nav-entry"
+          @click="emit('select', entry.route)"
+        >
+          <span class="pe-project-expanded-label">{{ entry.label }}</span>
+        </UButton>
+      </div>
+    </nav>
+  </div>
 </template>

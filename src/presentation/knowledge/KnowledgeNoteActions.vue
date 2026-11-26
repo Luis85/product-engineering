@@ -3,8 +3,10 @@ import UButton from "@nuxt/ui/components/Button.vue";
 import { nextTick, ref, useId } from "vue";
 import { readKnowledgeNote } from "../../application/knowledge";
 import type { KnowledgeNote } from "../../application/knowledge";
+import { aiCapability } from "../../application/integrations";
 import { openProjectIntegrationSettings } from "../../application/projects";
-import { useCommand, useMessages, useQuery } from "../shell";
+import { useCopilotEntry } from "../projects";
+import { useCommand, useMessages, useQuery, useSettings } from "../shell";
 
 const { note, canCreateMap } = defineProps<{
   readonly note: KnowledgeNote;
@@ -20,6 +22,8 @@ const trigger = ref<{ $el: HTMLElement }>();
 const exportButton = ref<{ $el: HTMLElement }>();
 const query = useQuery(readKnowledgeNote);
 const aiSettings = useCommand(openProjectIntegrationSettings);
+const openCopilot = useCopilotEntry();
+const settings = useSettings();
 
 async function toggle() {
   open.value = !open.value;
@@ -66,6 +70,12 @@ async function exportNote() {
 async function reviewSettings() {
   close();
   await aiSettings.run();
+}
+
+function review() {
+  close();
+  const source = trigger.value?.$el;
+  if (source) openCopilot?.({ trigger: source, review: true });
 }
 </script>
 
@@ -116,6 +126,16 @@ async function reviewSettings() {
         :label="catalog['story-maps'].createFromPrd"
       />
       <UButton
+        v-if="openCopilot && aiCapability(settings).enabled"
+        type="button"
+        variant="ghost"
+        color="neutral"
+        data-testid="knowledge-ai-review"
+        @click="review"
+        :label="catalog.integrations.copilot.review"
+      />
+      <UButton
+        v-else
         type="button"
         variant="ghost"
         color="neutral"

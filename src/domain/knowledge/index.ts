@@ -6,3 +6,4 @@ export { cardinalities, checkedEntityAttributes } from "./entity";
 export type { Cardinality, EntityAttribute, EntityEdge, EntityScopeTarget } from "./entity";
 export { knowledgeExcerpt } from "./excerpt";
 export { markdownWebTarget } from "./web-link";
+export type { KnowledgeSourceLink } from "./source-links";

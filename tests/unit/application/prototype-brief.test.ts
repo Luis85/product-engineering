@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { Effect } from "effect";
 import { catalogFor } from "../../../src/application/messages";
 import { rebuildNoteIndex } from "../../../src/application/notes";
 import { createProject } from "../../../src/application/projects";
@@ -20,6 +21,7 @@ const entity = "knowledge-33333333-3333-4333-8333-000000000677";
 const neighbor = "knowledge-33333333-3333-4333-8333-000000000678";
 const nfr = "nfr-33333333-3333-4333-8333-000000000679";
 const otherNfr = "nfr-33333333-3333-4333-8333-000000000680";
+const member = "project-member-33333333-3333-4333-8333-000000000681";
 const labels = catalogFor("en");
 const bytes = (value: string) => new TextEncoder().encode(value);
 
@@ -208,7 +210,7 @@ async function fixture() {
     if (!row) throw new Error("Missing saved brief");
     return row;
   };
-  return { ...host, run, create, mapPath };
+  return { ...host, run, create, mapPath, nfrPath: `${project.folder}/NFR.md` };
 }
 
 it("exports one deterministic map scope with real criteria, missing labels and only explicit materials", async () => {
@@ -273,6 +275,41 @@ it("limits a single NFR to itself while resolving domain origins through its ass
     expect(inputs?.journey).toBeUndefined();
     expect(inputs?.domain.entities.map(({ id }) => id)).toEqual([entity]);
     expect(inputs?.domain.neighbors.map(({ id }) => id)).toEqual([neighbor]);
+  } finally {
+    await host.runtime.dispose();
+  }
+});
+
+it("rereads unassigned scoped NFR fields and keeps sibling requirements outside the brief", async () => {
+  const host = await fixture();
+  try {
+    const base = await host.create({ projectId: owner, kind: "nfr", id: nfr });
+    await Effect.runPromise(
+      host.notes.seed(host.nfrPath, {
+        schema: "product-engineering.nfr/v1",
+        id: nfr,
+        project_id: owner,
+        title: "Independent export rule",
+        requirement: "Show the empty state",
+        acceptance: "No assigned sources are needed",
+        owner_id: member,
+      }),
+    );
+    const brief = await host.run(resolvePrototypeBrief(base));
+    expect(brief.selection?.title).toBe("Independent export rule");
+    expect(brief.inputs?.nfrs).toEqual([
+      {
+        id: nfr,
+        title: "Independent export rule",
+        requirement: "Show the empty state",
+        acceptance: "No assigned sources are needed",
+        categories: [],
+        owner_id: member,
+        sources: [{ kind: "nfr", id: nfr, projectId: owner, title: "Independent export rule" }],
+      },
+    ]);
+    expect(brief.inputs?.targets).toEqual([]);
+    expect(brief.inputs?.domain.entities).toEqual([]);
   } finally {
     await host.runtime.dispose();
   }

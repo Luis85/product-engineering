@@ -61,7 +61,7 @@ export function updateNoteContent<E>(
   const source = splitNoteText(text);
   const before = readFrontmatter(source, parseYaml);
   if (Result.isFailure(before)) return Result.fail(before.failure);
-  const changed = change({ frontmatter: structuredClone(before.success), body: source.body });
+  const changed = change({ frontmatter: structuredClone(before.success), body: source.body, text });
   if (Result.isFailure(changed)) return Result.fail(changed.failure);
   const { patch, body } = changed.success;
 

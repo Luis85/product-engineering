@@ -186,7 +186,11 @@ export function memoryNoteStore() {
           if (failWrites) return yield* Effect.fail(synthetic(new NoteWriteError()));
           if (file.frontmatter === "broken") return yield* Effect.fail(new NoteUnreadableError());
           const current = copyFrontmatter(file.frontmatter);
-          const changeResult = change({ frontmatter: structuredClone(current), body: file.body });
+          const changeResult = change({
+            frontmatter: structuredClone(current),
+            body: file.body,
+            text: contentOf(file).text,
+          });
           if (Result.isFailure(changeResult)) return yield* Effect.fail(changeResult.failure);
           const next = applyPatch(current, changeResult.success.patch);
           const body = changeResult.success.body ?? file.body;

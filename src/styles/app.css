@@ -16,6 +16,7 @@
 @import "./tokens.css";
 @import "./bridge.css";
 @import "./native-settings.css";
+@import "./project-frame.css";
 @import "./knowledge.css";
 @import "./git.css";
 @import "./domain-model.css";
@@ -29,3 +30,4 @@
 @import "./feature-requests.css";
 @import "./trace.css";
 @import "./project-overview.css";
+@import "./copilot.css";

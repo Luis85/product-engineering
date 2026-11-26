@@ -1,6 +1,6 @@
 import { Context, Effect, Layer, Result, Semaphore } from "effect";
 import { checkedEntityAttributes, isKnowledgeId, knowledgeType } from "../../domain/knowledge";
-import type { EntityAttribute, KnowledgeId } from "../../domain/knowledge";
+import type { EntityAttribute, KnowledgeId, KnowledgeSourceLink } from "../../domain/knowledge";
 import { fitsFileName, recordFileName, recordId } from "../../domain/notes";
 import { isProjectMemberId } from "../../domain/projects";
 import { IdGenerator, NoteStore, recordFrontmatter } from "../notes";
@@ -35,6 +35,11 @@ export type CreateKnowledgeRequest = {
   readonly projectId: ProjectId;
   readonly id: KnowledgeId;
   readonly origin?: KnowledgeOrigin;
+  readonly proposal?: {
+    readonly body: string;
+    readonly references: readonly string[];
+    readonly links: readonly KnowledgeSourceLink[];
+  };
 };
 
 class KnowledgeWrites extends Context.Service<
@@ -183,7 +188,10 @@ function createInProject(
           ])
         : undefined;
     const { displayId, requirementId } = allocateShortIds(notes, projectId, kind);
-    const { body, fields } = yield* draftContent(kind, draft, requirementId);
+    const content = yield* draftContent(kind, draft, requirementId);
+    const body = request.proposal
+      ? request.proposal.body.replaceAll("{{REQ}}", requirementId ?? "")
+      : content.body;
     const note = yield* store.create({
       folder: project.folder,
       name: noteName(title, displayId),
@@ -196,7 +204,12 @@ function createInProject(
         owner_id: owner,
         actor_type: actor,
         requirement_id: requirementId,
-        ...fields,
+        ...content.fields,
+        ...(request.proposal && {
+          references: request.proposal.references,
+          source_links: request.proposal.links,
+          applied_proposal: id,
+        }),
         ...source,
         ...foundations,
       }),

@@ -14,6 +14,7 @@ it("V20: displays the original FR-024 comparison state with both frozen scenario
   this.timeout(90_000);
   await seedComparisonReviewDecision();
   await setViewRoute(reviewsRoute(customerProject, { requestId: deliveryRequest, revision: 2 }));
+  await el("request-detail").waitForDisplayed({ timeout: 15_000 });
   await expect(el("request-detail")).toHaveText(expect.stringContaining("Fachliche Review"));
   for (const value of [
     "#47",

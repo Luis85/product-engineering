@@ -1,5 +1,4 @@
 import { Effect, Stream } from "effect";
-import { nfrType } from "../../domain/backlog";
 import { isPrototypeSource } from "../../domain/prototypes";
 import type { PrototypeSource } from "../../domain/prototypes";
 import {
@@ -17,6 +16,7 @@ import type { BacklogItem } from "../backlog";
 import { NoteStore } from "../notes";
 import type { ProjectId } from "../projects";
 import { decodeStoryMap, storyMapsChanges, storyMapsRoute, storyMapsSnapshot } from "../story-maps";
+import { readPrototypeNfrs } from "./brief-nfr";
 
 export type PrototypeSourceOption = {
   readonly source: PrototypeSource;
@@ -89,18 +89,8 @@ function resolveMap(source: Extract<PrototypeSource, { kind: "map" }>) {
 function resolveNfr(source: Extract<PrototypeSource, { kind: "nfr" }>) {
   return Effect.gen(function* () {
     const { id, projectId } = source;
-    const { records } = yield* nfrSnapshot(projectId);
-    const indexed = records.find((record) => record.id === id);
-    const note = indexed && (yield* freshSource(indexed.path));
-    const record = note && nfrType.decode(note);
-    if (
-      record?.kind === "editable" &&
-      !record.issues.length &&
-      record.id === id &&
-      record.values.project_id === projectId &&
-      record.values.title
-    )
-      return { source, title: record.values.title, displayId: id };
+    const [record] = yield* readPrototypeNfrs(projectId, id);
+    if (record) return { source, title: record.title, displayId: id };
   });
 }
 

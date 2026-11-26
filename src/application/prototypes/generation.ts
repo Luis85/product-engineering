@@ -1,8 +1,11 @@
 import { Effect } from "effect";
 import type { NfrCategory } from "../../domain/backlog";
+import { PROTOTYPE_HTML_LIMIT } from "../../domain/prototypes";
 import type { PrototypeId } from "../../domain/prototypes";
+import { AgentChat, aiCapability, sameAiCapability } from "../integrations";
 import type { ChatProvider } from "../integrations";
 import type { ProjectId } from "../projects";
+import { SettingsService } from "../shell";
 import {
   prototypeInputFingerprint,
   samePrototypeArtifactBase,
@@ -28,6 +31,7 @@ export type PrototypeGenerationDestination =
 export type PrototypeGenerationDisclosure = {
   readonly target: PrototypeGenerationTarget;
   readonly destination: PrototypeGenerationDestination;
+  readonly instruction: string;
   readonly markdown: string;
 };
 
@@ -40,6 +44,7 @@ type PreparedGeneration = {
   readonly base: PrototypeRecord;
   readonly fingerprint: string;
   readonly replaceRequired: boolean;
+  readonly scope: { readonly displayId: string; readonly title: string };
   readonly disclosure: PrototypeGenerationDisclosure;
 };
 
@@ -56,6 +61,7 @@ export function preparePrototypeGeneration(
   categoryLabel: (id: NfrCategory) => string = (id) => id,
 ) {
   return Effect.gen(function* () {
+    const text = language === "en" ? en : de;
     const current = yield* readPrototype(base);
     const brief = yield* resolvePrototypeBrief(current);
     if (!brief.selection) return yield* new PrototypeError({ reason: "source" });
@@ -63,16 +69,12 @@ export function preparePrototypeGeneration(
       base: current,
       fingerprint: yield* prototypeInputFingerprint(brief),
       replaceRequired: prototypeOutputKind(current) !== "none",
+      scope: brief.selection,
       disclosure: {
         target: { projectId: current.projectId, prototypeId: current.id },
         destination,
-        markdown: prototypeBriefMarkdown(
-          brief,
-          (language === "en" ? en : de).brief,
-          categoryLabel,
-          language,
-          false,
-        ),
+        instruction: text.generation.instruction,
+        markdown: prototypeBriefMarkdown(brief, text.brief, categoryLabel, language, false),
       },
     } satisfies PreparedGeneration;
   });
@@ -99,8 +101,12 @@ function providerResult(
   return Effect.raceFirst(
     Effect.tryPromise({
       try: (interrupted) => provider(disclosure, AbortSignal.any([signal, interrupted])),
-      catch: () =>
-        new PrototypeError({ reason: signal.aborted ? "generationCancelled" : "generationFailed" }),
+      catch: (error) =>
+        error instanceof PrototypeError
+          ? error
+          : new PrototypeError({
+              reason: signal.aborted ? "generationCancelled" : "generationFailed",
+            }),
     }),
     abortResult(signal),
   );
@@ -168,6 +174,50 @@ export function runPrototypeGeneration(
         provenance: disclosure.destination.kind === "provider" ? "generated" : "simulation",
       },
       { fingerprint, signal, isCurrent },
+    );
+  });
+}
+
+export function dispatchPrototypeGeneration(
+  preparation: PreparedGeneration,
+  confirmation: ConfirmedGeneration,
+  expected: ReturnType<typeof aiCapability>,
+) {
+  return Effect.gen(function* () {
+    const { current } = yield* SettingsService;
+    const chat = yield* AgentChat;
+    const { destination } = preparation.disclosure;
+    const provider = destination.kind === "simulation" ? "demo" : destination.provider;
+    const active = () => {
+      if (
+        expected.enabled &&
+        provider === expected.mode &&
+        sameAiCapability(expected, aiCapability(Effect.runSync(current)))
+      ) {
+        return confirmation.active();
+      }
+    };
+
+    return yield* runPrototypeGeneration(
+      preparation,
+      { ...confirmation, active },
+      async ({ instruction, markdown }, signal) => {
+        const messages = [
+          { role: "user", content: instruction },
+          { role: "user", content: markdown },
+        ] as const;
+        let response = "";
+        for await (const chunk of chat.stream(
+          { provider, purpose: "prototype-html", messages },
+          signal,
+        )) {
+          response += chunk;
+          // Cap buffered text and leave room for an optional fence. The save checks exact UTF-8 size.
+          if (response.length > PROTOTYPE_HTML_LIMIT * 2)
+            throw new PrototypeError({ reason: "outputTooLarge" });
+        }
+        return response;
+      },
     );
   });
 }

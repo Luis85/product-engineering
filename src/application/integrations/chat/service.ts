@@ -21,8 +21,16 @@ export const unavailableAgentChat = Layer.succeed(AgentChat, {
 
 export function deterministicDemoChat(reply: string): ProviderChat {
   return {
-    async *stream({ provider }, signal) {
+    async *stream({ provider, purpose }, signal) {
       if (signal?.aborted) throw new ProviderChatError({ provider, reason: "cancelled" });
+      if (purpose === "prototype-html") {
+        yield '<!doctype html><html><meta charset="utf-8"><title>Local Demo</title><main><h1>Local Demo</h1></main></html>';
+        return;
+      }
+      if (purpose === "copilot-draft" || purpose === "copilot-revise") {
+        yield JSON.stringify({ title: "Local Demo", body: "## Local Demo\n\n" + reply });
+        return;
+      }
       yield reply;
     },
   };

@@ -212,7 +212,9 @@ if (autofocusDraft) {
         />
         <KnowledgeNoteEditor ref="editor" v-model="markdown" :path="note.path" :saving="saving" />
       </template>
-      <KnowledgeMarkdown v-else-if="pane === 'content'" :body="note.body" :path="note.path" />
+      <div v-else-if="pane === 'content'" class="pe-project-reading-card">
+        <KnowledgeMarkdown :body="note.body" :path="note.path" />
+      </div>
       <template v-else-if="pane === 'references'">
         <KnowledgeReferences
           :key="note.text"

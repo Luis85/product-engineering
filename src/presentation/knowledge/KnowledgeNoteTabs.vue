@@ -15,7 +15,7 @@ const entries = computed(() =>
 </script>
 
 <template>
-  <nav class="pe:flex pe:flex-wrap pe:gap-1" :aria-label="text.markdown">
+  <nav class="pe-project-tabs" :aria-label="text.markdown">
     <UButton
       v-for="tab in entries"
       :key="tab"

@@ -152,6 +152,8 @@
     gap: 0.625rem 0.875rem;
     padding: 0.875rem;
     --pe-overview-tone: var(--pe-primary-fg);
+    background: color-mix(in oklab, var(--pe-overview-tone) 10%, var(--pe-bg));
+    border-color: color-mix(in oklab, var(--pe-overview-tone) 19%, var(--pe-border));
   }
 
   .product-engineering-root .pe-overview-featured[data-phase="blocked"] {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
 import { computed, shallowRef } from "vue";
+import { aiCapability } from "../../application/integrations";
 import {
   prototypeBriefMarkdown,
   prototypeOutputKind,
@@ -8,14 +9,17 @@ import {
   resolvePrototypeBrief,
 } from "../../application/prototypes";
 import type { PrototypeRecord } from "../../application/prototypes";
-import { ErrorNotice, useMessages, useQuery } from "../shell";
+import { ErrorNotice, useMessages, useQuery, useSettings } from "../shell";
 import { downloadPrototypeFile } from "./download";
 import { bundledPrototypeHtml } from "./legacy-case-controls";
+import PrototypeGenerateAction from "./PrototypeGenerateAction.vue";
 import PrototypeHtmlDialog from "./PrototypeHtmlDialog.vue";
 import PrototypePreview from "./PrototypePreview.vue";
 
 const { record } = defineProps<{ readonly record: PrototypeRecord }>();
 const catalog = useMessages();
+const settings = useSettings();
+const capability = computed(() => aiCapability(settings.value));
 const text = catalog.prototypes.brief;
 const output = catalog.prototypes.output;
 const query = useQuery(resolvePrototypeBrief);
@@ -79,6 +83,11 @@ function closeImport() {
   <template v-for="part in outputOrder" :key="part">
     <template v-if="part === 'actions'">
       <div class="pe:flex pe:flex-wrap pe:gap-2">
+        <PrototypeGenerateAction
+          v-if="capability.enabled"
+          :record="record"
+          :capability="capability"
+        />
         <UButton
           type="button"
           color="neutral"

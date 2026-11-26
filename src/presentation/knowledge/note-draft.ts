@@ -1,14 +1,15 @@
-import { computed, ref, shallowRef, watch } from "vue";
+import { computed, onScopeDispose, ref, shallowRef, watch } from "vue";
 import {
   knowledgeBodyChanges,
   knowledgeBodySnapshot,
+  KnowledgeDraftRegistry,
   readKnowledgeNote,
   saveKnowledgeNote,
 } from "../../application/knowledge";
 import type { KnowledgeEditFields, KnowledgeNote } from "../../application/knowledge";
 import type { ProjectRecordRoute } from "../../application/projects";
 import { sameFrontmatterValue } from "../../domain/notes";
-import { useCommand, useQuery, useStream } from "../shell";
+import { useCommand, useQuery, useService, useStream } from "../shell";
 
 function editorText(body: string) {
   return body.replace(/\r\n|\r/g, "\n");
@@ -50,6 +51,14 @@ export function useKnowledgeDraft(
       ) as KnowledgeEditFields,
   );
   const dirty = computed(() => bodyDirty.value || Object.keys(changedFields.value).length > 0);
+  const drafts = useService(KnowledgeDraftRegistry);
+  onScopeDispose(
+    drafts.register(
+      record.projectId,
+      record.reference.recordId,
+      () => dirty.value || writer.pending.value,
+    ),
+  );
 
   function adopt(current: KnowledgeNote) {
     note.value = current;

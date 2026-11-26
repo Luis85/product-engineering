@@ -1,4 +1,5 @@
 import type { AiMode } from "../../../domain/shell";
+import type { CopilotDraftKind, CopilotMode } from "../../../domain/integrations";
 import type { Language, UserMessage } from "../../shell";
 import type { ChatFailure, ProviderChatError } from "../chat";
 import type { McpSettingsAction, McpSettingsError } from "../mcp/settings-error";
@@ -11,6 +12,34 @@ export interface IntegrationsCatalog {
   readonly language: Language;
   readonly providers: Readonly<Record<AiMode, string>>;
   readonly chatFailures: Readonly<Record<ChatFailure, ChatFailureText>>;
+  readonly copilot: {
+    readonly heading: string;
+    readonly empty: string;
+    readonly review: string;
+    readonly mode: string;
+    readonly modes: Readonly<Record<CopilotMode, string>>;
+    readonly reviewPrompt: string;
+    readonly thread: string;
+    readonly newThread: string;
+    readonly sources: string;
+    readonly selectSources: string;
+    readonly removeMissingSource: string;
+    readonly reviewTarget: string;
+    readonly chooseReviewTarget: string;
+    readonly cancel: string;
+    readonly instructions: string;
+    readonly draftKind: string;
+    readonly draftKinds: Readonly<Record<CopilotDraftKind, string>>;
+    readonly revisionTarget: string;
+    readonly chooseTarget: string;
+    readonly proposal: string;
+    readonly proposalReady: string;
+    readonly proposalTitle: string;
+    readonly proposalBody: string;
+    readonly apply: string;
+    readonly saveAsNew: string;
+    readonly proposalStale: string;
+  };
   readonly chat: {
     readonly title: string;
     readonly demoReply: string;

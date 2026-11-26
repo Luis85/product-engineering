@@ -1,6 +1,7 @@
 export { knowledgeModule } from "./module";
 export { createKnowledge, newKnowledgeId, validKnowledgeTitle } from "./create";
 export { saveKnowledgeNote } from "./edit";
+export { KnowledgeDraftRegistry } from "./draft-registry";
 export type { KnowledgeEditFields } from "./edit";
 export type { CreateKnowledgeRequest, KnowledgeDraft } from "./create";
 export { KnowledgeDeliverableOrigins } from "./origins";

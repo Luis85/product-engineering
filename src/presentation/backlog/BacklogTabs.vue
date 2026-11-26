@@ -30,7 +30,7 @@ function select(tab: BacklogTab) {
 </script>
 
 <template>
-  <nav :aria-label="text.views" class="pe-backlog-tabs">
+  <nav :aria-label="text.views" class="pe-backlog-tabs pe-project-tabs">
     <UButton
       v-for="tab in backlogTabs"
       :key="tab"

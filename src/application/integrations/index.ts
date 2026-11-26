@@ -1,6 +1,12 @@
 export { chatFailureOf, isChatFailure, ProviderChatError } from "./chat";
 export type { ChatFailure, ChatMessage, ChatProvider, ChatRequest, ProviderChat } from "./chat";
 export { aiCapability, sameAiCapability } from "./chat/capability";
+export { scopedChatMessages } from "./chat/context";
+export { copilotRouteSource, copilotSourceChanges } from "./chat/sources";
+export type { CopilotSource } from "./chat/sources";
+export { applyCopilotProposal, prepareCopilotProposal } from "./chat/proposals";
+export type { CopilotProposal } from "./chat/proposals";
+export { loadCopilot, newCopilotThreadId, saveCopilot } from "./chat/conversations";
 export {
   AgentChat,
   configuredAgentChat,

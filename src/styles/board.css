@@ -14,7 +14,6 @@
   grid-template-columns:
     var(--pe-board-backlog) repeat(4, minmax(11rem, 1fr))
     var(--pe-board-done);
-  align-items: start;
   gap: 0.55rem;
 }
 
@@ -34,7 +33,7 @@
   min-width: 0;
   min-height: 7.5rem;
   padding: 0.45rem;
-  background: var(--background-secondary);
+  background: color-mix(in oklab, var(--pe-project-action) 6%, var(--pe-project-canvas));
   border: 1px solid var(--background-modifier-border);
   border-block-start: 2px solid var(--pe-board-accent);
   border-radius: 0.55rem;
@@ -65,6 +64,7 @@
 }
 
 .product-engineering-root .pe-board-lane[data-folded="true"] {
+  align-self: start;
   min-height: 3rem;
 }
 
@@ -189,6 +189,13 @@
   padding-block-start: 0.4rem;
 }
 
+.product-engineering-root .pe-board-empty {
+  padding: 0.875rem 0.375rem;
+  border: 1px dashed var(--pe-project-line);
+  border-radius: 0.4rem;
+  text-align: center;
+}
+
 .product-engineering-root .pe-board-handoff strong {
   color: var(--text-normal);
 }
@@ -207,6 +214,7 @@
 @container (width < 32rem) {
   .product-engineering-root .pe-board-grid {
     grid-template-columns: minmax(0, 1fr);
+    align-items: start;
   }
 
   .product-engineering-root .pe-board-lane[data-folded="true"] .pe-board-lane-head > svg,

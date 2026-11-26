@@ -1,6 +1,7 @@
 import { knowledgeType } from "../../domain/knowledge";
 import { defineModule } from "../module";
 import { knowledgeWritesLayer } from "./create";
+import { knowledgeDraftsLayer } from "./draft-registry";
 import type { KnowledgeCreateError, KnowledgeEditError } from "./errors";
 import { de } from "./i18n/de";
 import { en } from "./i18n/en";
@@ -11,7 +12,7 @@ export const knowledgeModule = defineModule({
   catalog: { en, de },
   routes: [projectKnowledgeSchema],
   noteTypes: [knowledgeType],
-  services: knowledgeWritesLayer,
+  services: Layer.merge(knowledgeWritesLayer, knowledgeDraftsLayer),
   errors: {
     tags: { KnowledgeCreateError: true, KnowledgeEditError: true },
     describe: (error: KnowledgeCreateError | KnowledgeEditError, text: typeof en) => ({
@@ -24,3 +25,4 @@ export const knowledgeModule = defineModule({
     }),
   },
 });
+import { Layer } from "effect";

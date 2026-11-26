@@ -11,6 +11,7 @@ export type KnowledgeRecord = {
   readonly projectId: ProjectId;
   readonly kind: string;
   readonly title: string;
+  readonly editable?: boolean;
   readonly path: string;
   readonly displayId: string;
   readonly values: KnowledgeValues;
@@ -27,6 +28,7 @@ export function knowledgeRecord(note: Decoded): KnowledgeRecord | undefined {
     id: note.id,
     projectId,
     title,
+    editable: note.kind === "editable",
     kind,
     path: note.path,
     displayId: displayId || note.id,

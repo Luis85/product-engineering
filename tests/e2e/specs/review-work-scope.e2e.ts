@@ -34,6 +34,7 @@ it("V20: Done uses released and currently linked work with typed and missing-ite
   await removeReviewWork(releasedBug.id);
   await addReviewWork(currentTask);
   await setViewRoute(reviewsRoute(customerProject, { requestId: deliveryRequest, revision: 2 }));
+  await el("review-criterion-check").waitForDisplayed();
   await expect(el("review-criterion-check")).toBeEnabled();
   await expect(gate(scopeRules.bugs.id)).toHaveText(expect.stringContaining(releasedBug.id));
   await expect(gate(scopeRules.bugs.id)).toHaveText(expect.stringContaining("fehlt"));

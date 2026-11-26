@@ -10,6 +10,9 @@ const ChatFailure = Schema.Literals([
   "process-failed",
   "invalid-response",
   "unsupported-request",
+  "source-unavailable",
+  "target-unavailable",
+  "invalid-proposal",
   "cancelled",
 ]);
 export type ChatFailure = typeof ChatFailure.Type;
@@ -35,6 +38,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   readonly provider: AiMode;
   readonly messages: readonly ChatMessage[];
+  readonly purpose?: "prototype-html" | "copilot-draft" | "copilot-revise";
 }
 
 export interface ProviderChat {

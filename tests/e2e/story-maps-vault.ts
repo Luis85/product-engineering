@@ -140,10 +140,10 @@ function adminMap() {
   };
 }
 
-export async function seedStoryMapsVault() {
+export async function seedStoryMapsVault(exportTitle = "Gefilterte Servicefälle exportieren") {
   await seedBacklogVault();
   const backlog = [
-    ["UC-09", "Gefilterte Servicefälle exportieren", "Active"],
+    ["UC-09", exportTitle, "Active"],
     ["UC-12", "Leere Trefferliste erklären", "Open"],
     ["UC-14", "Fallübersicht nach Status filtern", "Done"],
   ].map(([id, title, status], index) => ({

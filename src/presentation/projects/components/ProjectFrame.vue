@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import UButton from "@nuxt/ui/components/Button.vue";
+import UIcon from "@nuxt/ui/components/Icon.vue";
 import USlideover from "@nuxt/ui/components/Slideover.vue";
 import { computed, nextTick, onScopeDispose, ref, watch } from "vue";
 import { PROJECT_BACKLOG, PROJECT_USE_CASE } from "../../../application/backlog";
@@ -26,6 +27,8 @@ import {
   useStream,
 } from "../../shell";
 import { useProjectRecordScreens } from "../record-screens";
+import { provideCopilotEntry } from "../copilot-entry";
+import type { CopilotEntry } from "../copilot-entry";
 import { provideProjectSearchSources } from "../search-sources";
 import type { ProjectSearchSource } from "../search-sources";
 import { provideProjectTemplateFactories } from "../template-factories";
@@ -104,12 +107,10 @@ const rail = computed(() =>
     ? {
         name: text.expand,
         icon: "i-lucide-panel-left-open",
-        columns: "pe:@min-[780px]:grid-cols-[3.5rem_minmax(0,1fr)]",
       }
     : {
         name: text.collapse,
         icon: "i-lucide-panel-left-close",
-        columns: "pe:@min-[780px]:grid-cols-[14rem_minmax(0,1fr)]",
       },
 );
 const drawer = ref(false);
@@ -120,6 +121,15 @@ const frame = ref<HTMLElement>();
 const content = ref<HTMLElement>();
 const searchButton = ref<{ $el: HTMLElement }>();
 const position = useWorkspacePosition(frame, content);
+const copilotEntry = ref<CopilotEntry>();
+provideCopilotEntry({
+  open: (entry) => {
+    copilotEntry.value = entry;
+  },
+  project: () => activeProject.value,
+  navigate,
+  followCitation: position.followCitation,
+});
 let pickerTrigger: HTMLElement | undefined;
 let drawerTrigger: HTMLElement | undefined;
 let searchTrigger: HTMLElement | undefined;
@@ -225,15 +235,8 @@ function switchProject(project: Project) {
 </script>
 
 <template>
-  <div
-    ref="frame"
-    data-testid="app-frame"
-    :lang="catalog.shell.language"
-    class="pe:@container pe:min-w-0"
-  >
-    <header
-      class="pe:flex pe:min-w-0 pe:items-center pe:gap-2 pe:border-b pe:border-default pe:px-3 pe:py-2 pe:@min-[780px]:px-5"
-    >
+  <div ref="frame" data-testid="app-frame" :lang="catalog.shell.language" class="pe-project-frame">
+    <header class="pe-project-header">
       <UButton
         :aria-label="text.openNavigation"
         :aria-expanded="drawer"
@@ -241,13 +244,21 @@ function switchProject(project: Project) {
         color="neutral"
         variant="ghost"
         icon="i-lucide-menu"
-        class="pe:@min-[780px]:hidden"
+        class="pe-project-menu-button"
         @click="openDrawer"
       />
-      <strong class="pe:hidden pe:shrink-0 pe:@min-[780px]:block">{{ PRODUCT_NAME }}</strong>
-      <div class="pe:min-w-0 pe:flex-1 pe:truncate pe:text-sm" data-testid="project-breadcrumb">
-        <span v-if="activeProject" class="pe:text-muted">{{ activeProject.name }} / </span>
-        <span class="pe:font-medium">{{ breadcrumb }}</span>
+      <div class="pe-project-brand">
+        <span class="pe-project-brand-mark" aria-hidden="true"
+          ><UIcon name="i-lucide-layers"
+        /></span>
+        <strong class="pe:hidden pe:@min-[780px]:block">{{ PRODUCT_NAME }}</strong>
+      </div>
+      <div class="pe-project-breadcrumb" data-testid="project-breadcrumb">
+        <template v-if="activeProject">
+          <span class="pe-project-crumb-project">{{ activeProject.name }}</span>
+          <span class="pe-project-crumb-divider" aria-hidden="true"> / </span>
+        </template>
+        <span class="pe-project-crumb-section">{{ breadcrumb }}</span>
       </div>
       <UButton
         v-if="activeProject"
@@ -258,10 +269,10 @@ function switchProject(project: Project) {
         variant="outline"
         color="neutral"
         type="button"
-        class="pe:shrink-0"
+        class="pe-project-search-button"
         data-pe-focus-key="project-search"
         @click="openSearch($event.currentTarget as HTMLElement)"
-        ><span class="pe:hidden pe:@min-[780px]:inline">{{ text.search.open }}</span></UButton
+        ><span>{{ text.search.open }}</span></UButton
       >
       <div
         v-if="canGoBack || canGoForward"
@@ -292,26 +303,15 @@ function switchProject(project: Project) {
       <ProjectCopilot
         v-if="activeProject"
         :key="activeProject.id"
+        :project="activeProject"
+        :entry="copilotEntry"
         :focus-workspace="position.focusHeading"
+        :hold-scroll="position.holdScroll"
+        :follow-citation="position.followCitation"
       />
     </header>
-    <div class="pe:grid pe:min-w-0" :class="rail.columns">
-      <aside
-        data-testid="project-rail"
-        class="pe:hidden pe:min-w-0 pe:content-start pe:gap-4 pe:border-r pe:border-default pe:bg-muted pe:p-3 pe:@min-[780px]:grid"
-        :class="{ 'pe:px-2': collapsed }"
-      >
-        <UButton
-          :aria-label="rail.name"
-          :title="rail.name"
-          :aria-expanded="!collapsed"
-          :icon="rail.icon"
-          type="button"
-          color="neutral"
-          variant="ghost"
-          class="pe:justify-self-end"
-          @click="toggleRail"
-        />
+    <div class="pe-project-frame-grid" :data-collapsed="collapsed">
+      <aside class="pe-project-rail" data-testid="project-rail">
         <ProjectNavigation
           :project="activeProject"
           :groups="groups"
@@ -319,13 +319,27 @@ function switchProject(project: Project) {
           :collapsed="collapsed"
           @pick="openPicker"
           @select="select"
-        />
+        >
+          <template #rail-toggle>
+            <UButton
+              :aria-label="rail.name"
+              :title="rail.name"
+              :aria-expanded="!collapsed"
+              :icon="rail.icon"
+              type="button"
+              color="neutral"
+              variant="ghost"
+              class="pe-project-rail-toggle"
+              @click="toggleRail"
+            />
+          </template>
+        </ProjectNavigation>
       </aside>
       <section
         ref="content"
         :aria-label="catalog.shell.frame.content"
         tabindex="-1"
-        class="pe:min-w-0 pe:px-4 pe:py-5 pe:@min-[780px]:px-6"
+        class="pe-project-content"
         data-testid="project-content"
       >
         <RouteOutlet />
@@ -336,19 +350,22 @@ function switchProject(project: Project) {
       :title="text.navigation"
       :content="drawerModal"
       side="left"
-      :ui="{ content: 'pe:max-w-[18rem] pe:sm:max-w-[18rem]' }"
+      :ui="{
+        content: 'pe-project-nav-drawer',
+        header: 'pe-project-nav-drawer-header',
+        body: 'pe-project-nav-drawer-body',
+        close: 'pe-project-nav-close',
+      }"
     >
       <template #body>
-        <div class="pe:grid pe:content-start pe:gap-4">
-          <ProjectNavigation
-            :project="activeProject"
-            :groups="groups"
-            :section="section"
-            :collapsed="false"
-            @pick="openPicker"
-            @select="select"
-          />
-        </div>
+        <ProjectNavigation
+          :project="activeProject"
+          :groups="groups"
+          :section="section"
+          :collapsed="false"
+          @pick="openPicker"
+          @select="select"
+        />
       </template>
     </USlideover>
     <ProjectPickerDialog

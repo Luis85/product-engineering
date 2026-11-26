@@ -226,6 +226,19 @@
   max-width: 100%;
 }
 
+.pe-prototype-generation-payload {
+  max-height: 14rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  margin-block: 0.25rem 0;
+  padding: 0.55rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 0.35rem;
+  background: var(--background-secondary);
+  font-size: var(--font-ui-smaller);
+}
+
 @container (max-width: 32rem) {
   .pe-prototype-table,
   .pe-prototype-table tbody,

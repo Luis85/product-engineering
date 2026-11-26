@@ -126,7 +126,7 @@ it("keeps project overlays inside a physically narrow and short Obsidian leaf", 
   const copilot = named(root, text.copilot);
   await copilot.click();
   await browser.$(`${root} ${dialog} textarea`).waitForDisplayed();
-  await expectInsideLeaf(text.copilot);
+  await expectInsideLeaf(catalog.integrations.copilot.heading);
   await browser.keys("Escape");
   await expect(copilot).toBeFocused();
   expect(await pluginProblems()).toEqual([]);

@@ -35,7 +35,7 @@ export type FrontmatterChange<E = never> = (
 ) => Result.Result<FrontmatterPatch, E>;
 
 export type NoteContentChange<E = never> = (
-  current: Pick<NoteContent, "frontmatter" | "body">,
+  current: Omit<NoteContent, "path">,
 ) => Result.Result<{ readonly patch: FrontmatterPatch; readonly body?: string }, E>;
 
 export class NoteStore extends Context.Service<

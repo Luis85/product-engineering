@@ -55,6 +55,31 @@ function submit(root: HTMLElement) {
   form.dispatchEvent(new Event("submit", { cancelable: true }));
 }
 
+it("places project switching before the width toggle and section links in the rail tab order", async () => {
+  const view = await fixture();
+  const id = "project-33333333-3333-4333-8333-000000000005";
+  try {
+    await view.runtime.runPromise(
+      createProject(id, {
+        name: "Kundenportal",
+        description: "Product description",
+        repository: "team/product",
+      }),
+    );
+    await view.navigation.navigate(projectOverviewRoute(id));
+    await eventually(() => expect(view.root.querySelector("h1")?.textContent).toBe("Kundenportal"));
+
+    const controls = view.root.querySelectorAll('[data-testid="project-rail"] button');
+    expect(
+      Array.from(controls)
+        .slice(0, 3)
+        .map((control) => control.getAttribute("aria-label")),
+    ).toEqual(["Switch or create project", "Collapse side navigation", "Overview"]);
+  } finally {
+    await view.dispose();
+  }
+});
+
 it("offers project creation from an empty workspace", async () => {
   const view = await fixture();
   try {

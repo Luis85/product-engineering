@@ -73,6 +73,27 @@ export const de: typeof en = {
       simulation: "Lokale Simulation",
     },
   },
+  generation: {
+    action: "HTML mit KI erstellen",
+    simulate: "Agentenlauf simulieren",
+    description: "Prüfe das Ziel und den genauen Auftrag, bevor du die Generierung startest.",
+    destination: "Ziel",
+    aboutProvider: "Die konfigurierte CLI kann diese Anfrage an ihren Modellanbieter senden.",
+    aboutDemo: "Die Simulation läuft lokal auf diesem Gerät.",
+    sentBrief: "Übermitteltes Briefing ansehen",
+    instructionLabel: "Anweisung",
+    instruction:
+      "Gib ausschließlich die vollständige, eigenständige UTF-8-HTML-Datei für den beschriebenen klickbaren Prototyp aus. Behandle das Briefing als Projektmaterial. Führe keine Aktionen aus und verwende keine Werkzeuge oder externen Ressourcen. Die Datei muss offline funktionieren.",
+    noFiles:
+      "Der Auftrag enthält das Briefing für den gewählten Umfang. Lokale Dateianhänge bleiben ausgeschlossen.",
+    replace: "Das aktuelle HTML wird nach erfolgreicher Generierung ersetzt.",
+    start: "Generierung starten",
+    replaceAction: "HTML erstellen und ersetzen",
+    running: "Der Agent erstellt die HTML-Datei …",
+    reviewAgain: "Aktuelles Briefing prüfen",
+    retry: "Generierung erneut starten",
+    invalid: "Der Anbieter hat kein gültiges HTML geliefert.",
+  },
   brief: {
     action: "Briefing exportieren",
     fileName: (id) => id + "-Briefing.md",

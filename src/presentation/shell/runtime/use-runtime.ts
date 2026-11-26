@@ -222,3 +222,20 @@ export function useCommand<Args extends readonly unknown[], A, E extends AppErro
   };
   return { ...fields, run };
 }
+
+export function useAutosave<Args extends readonly unknown[], A, E extends AppError>(
+  fn: UseCaseFn<Args, A, E>,
+): UseCase<Args, A, E> {
+  const { fields, begin, complete, isActive, execute, notify } = useCaseScope(fn);
+  let lastWrite = 0;
+  const run = async (...args: Args) => {
+    if (!isActive()) return interrupted;
+    const write = ++lastWrite;
+    begin();
+    const outcome = await execute(args);
+    if (outcome._tag === "failure" && !isActive()) await notify(outcome.message);
+    if (isActive() && write === lastWrite) complete(outcome);
+    return outcome;
+  };
+  return { ...fields, run };
+}

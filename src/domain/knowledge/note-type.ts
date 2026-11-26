@@ -1,9 +1,10 @@
 import { Schema } from "effect";
-import { defineNoteType, lineOfText, list, required, text } from "../notes";
+import { defineNoteType, lineOfText, list, recordList, required, text } from "../notes";
 import type { NoteValues } from "../notes";
 import { projectIdSchema, projectMemberIdSchema } from "../projects";
 import { entityFields } from "./entity";
 import { knowledgeId } from "./identity";
+import { knowledgeSourceLinks } from "./source-links";
 
 export const actorTypes = ["human", "system"] as const;
 export const approvals = ["draft", "in-review", "approved", "changes-requested"] as const;
@@ -27,6 +28,8 @@ export const knowledgeType = defineNoteType({
     job_ids: list({ schema: Schema.Array(knowledgeId), issue: "job.invalid" }),
     deliverable_id: text({ schema: lineOfText(160), issue: "deliverable.invalid" }),
     references: list({ schema: Schema.Array(lineOfText(1024)), issue: "reference.invalid" }),
+    source_links: recordList({ schema: knowledgeSourceLinks, issue: "reference.invalid" }),
+    applied_proposal: text({ schema: lineOfText(160), issue: "reference.invalid" }),
     ...entityFields,
   },
   migrations: {},

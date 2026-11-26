@@ -16,6 +16,7 @@ type Position = {
   readonly inner: { readonly key: string; readonly left: number; readonly top: number } | undefined;
 };
 
+type Citation = { readonly route: Route; readonly origin: HTMLElement | undefined };
 const focusSelector = "[data-pe-focus-key]";
 const scrollSelector = "[data-pe-scroll-key]";
 const restoreKey: InjectionKey<(phase?: "settled" | "available") => void> = Symbol(
@@ -81,6 +82,24 @@ function restoreScroll(workspace: HTMLElement, target: Position | undefined) {
   }
 }
 
+function capturePosition(
+  workspace: HTMLElement,
+  route: Route,
+  control: HTMLElement | undefined,
+): Position {
+  const scroll = scrollOwner(workspace);
+  const region = control?.closest<HTMLElement>(scrollSelector);
+  const key = region?.dataset.peScrollKey;
+  return {
+    route,
+    control,
+    key: control?.dataset.peFocusKey,
+    left: scroll.scrollLeft,
+    top: scroll.scrollTop,
+    inner: key && region ? { key, left: region.scrollLeft, top: region.scrollTop } : undefined,
+  };
+}
+
 function keepsWorkspacePosition(previous: Route, next: Route) {
   if (previous.name === "settings") return next.name === "settings";
   if (previous.name === PROJECT_TRACE || previous.name === PROJECT_OVERVIEW)
@@ -102,9 +121,17 @@ export function useWorkspacePosition(
   const positions: Position[] = [];
   let restoredControl: HTMLElement | undefined;
   let fallbackControl: HTMLElement | undefined;
+  let pendingCitation: Citation | undefined;
+  let enteredByCitation = false;
+  let stopCitationObserver: (() => void) | undefined;
+  onScopeDispose(() => stopCitationObserver?.());
+
+  function mountedHeading() {
+    return content.value?.querySelector<HTMLElement>("h1[tabindex]");
+  }
 
   function heading() {
-    return content.value?.querySelector<HTMLElement>("h1[tabindex]") ?? content.value;
+    return mountedHeading() ?? content.value;
   }
 
   function currentPosition() {
@@ -119,6 +146,10 @@ export function useWorkspacePosition(
   });
 
   function restore(fallback = false) {
+    if (enteredByCitation) {
+      focusCitationHeading();
+      return;
+    }
     const workspace = frame.value;
     if (!workspace || restoredControl) return;
     const target = currentPosition();
@@ -131,6 +162,7 @@ export function useWorkspacePosition(
   }
 
   function restoreSettledScroll() {
+    if (enteredByCitation) return;
     const workspace = frame.value;
     if (!workspace || !restoredControl || workspace.ownerDocument.activeElement !== restoredControl)
       return;
@@ -144,39 +176,91 @@ export function useWorkspacePosition(
   function rememberOrigin(control: HTMLElement | undefined) {
     origin = control;
   }
+  async function followCitation(route: Route, originControl?: HTMLElement) {
+    const same = definition.equals(navigation.current(), route);
+    const request = { route, origin: originControl };
+    pendingCitation = request;
+    const accepted = await navigation.navigate(route);
+    if (pendingCitation === request) pendingCitation = undefined;
+    if (same && accepted) heading()?.focus({ preventScroll: true });
+    return accepted;
+  }
+  function takeCitation(route: Route) {
+    const request = pendingCitation;
+    if (!request || !definition.equals(request.route, route)) return;
+    pendingCitation = undefined;
+    return request;
+  }
+  function focusCitationHeading() {
+    if (restoredControl?.isConnected) return true;
+    const title = mountedHeading();
+    if (!title) return false;
+    const active = title.ownerDocument.activeElement;
+    const owner = frame.value?.closest(".product-engineering-root");
+    if (active?.closest('[role="dialog"][data-state="open"]') && owner?.contains(active))
+      return true;
+    restoredControl = title;
+    title.focus({ preventScroll: true });
+    return true;
+  }
+  function focusCitationDestination(workspace: HTMLElement) {
+    restoreScroll(workspace, undefined);
+    if (focusCitationHeading()) return;
+    const outlet = content.value;
+    const Observer = outlet?.ownerDocument.defaultView?.MutationObserver;
+    outlet?.focus({ preventScroll: true });
+    if (!outlet || !Observer) return;
+    const observer = new Observer(() => {
+      if (focusCitationHeading()) observer.disconnect();
+    });
+    observer.observe(outlet, { childList: true, subtree: true });
+    stopCitationObserver = () => observer.disconnect();
+  }
+  function holdScroll() {
+    const workspace = frame.value;
+    if (!workspace) return () => undefined;
+    const owner = scrollOwner(workspace);
+    const { scrollLeft, scrollTop } = owner;
+    return () => {
+      owner.scrollLeft = scrollLeft;
+      owner.scrollTop = scrollTop;
+    };
+  }
   provide(originKey, rememberOrigin);
+
+  function recordDeparture(workspace: HTMLElement, citation: Citation | undefined) {
+    const control = citation?.origin ?? origin ?? activeControl(workspace);
+    positions.push(capturePosition(workspace, previous, control));
+    if (positions.length > HISTORY_LIMIT) positions.shift();
+    origin = undefined;
+  }
 
   onScopeDispose(
     navigation.onChange((route) => {
       const workspace = frame.value;
       if (!workspace || definition.equals(previous, route)) return;
-      const scroll = scrollOwner(workspace);
-      const control = origin ?? activeControl(workspace);
-      const region = control?.closest<HTMLElement>(scrollSelector);
-      const key = region?.dataset.peScrollKey;
-      positions.push({
-        route: previous,
-        control,
-        key: control?.dataset.peFocusKey,
-        left: scroll.scrollLeft,
-        top: scroll.scrollTop,
-        inner: key && region ? { key, left: region.scrollLeft, top: region.scrollTop } : undefined,
-      });
-      if (positions.length > HISTORY_LIMIT) positions.shift();
-      origin = undefined;
+      const citation = takeCitation(route);
+      stopCitationObserver?.();
+      stopCitationObserver = undefined;
+      enteredByCitation = Boolean(citation);
+      recordDeparture(workspace, citation);
       restoredControl = undefined;
       fallbackControl = undefined;
       const sectionChange = keepsWorkspacePosition(previous, route);
       previous = route;
-      if (sectionChange) return;
+      if (sectionChange && !citation) return;
       void nextTick(() => {
-        if (navigation.current() === route) restore(true);
+        if (navigation.current() !== route) return;
+        if (citation) focusCitationDestination(workspace);
+        else restore(true);
       });
     }),
   );
 
   return {
     rememberOrigin,
+    followCitation,
+    holdScroll,
     focusHeading: () => heading()?.focus({ preventScroll: true }),
   };
 }

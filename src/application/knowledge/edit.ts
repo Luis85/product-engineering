@@ -1,6 +1,6 @@
 import { Effect, Result } from "effect";
 import { checkedEntityAttributes, knowledgeType } from "../../domain/knowledge";
-import type { KnowledgeValues } from "../../domain/knowledge";
+import type { KnowledgeSourceLink, KnowledgeValues } from "../../domain/knowledge";
 import {
   NoteEditConflictError,
   NoteNotFoundError,
@@ -8,13 +8,18 @@ import {
   NoteWriteRefusedError,
   editChange,
 } from "../notes";
-import type { NoteContentChange } from "../notes";
+import type { NoteContent, NoteContentChange } from "../notes";
 import { resolveProjectMember } from "../projects";
+import { KnowledgeDraftRegistry } from "./draft-registry";
 import { KnowledgeEditError } from "./errors";
 import { knowledgeNoteOf } from "./selection";
 import type { KnowledgeNote } from "./selection";
 
 type EditableField = "title" | "approval" | "owner_id" | "references" | "domain_attributes";
+type ProposalGuard = {
+  readonly id: string;
+  readonly links: readonly KnowledgeSourceLink[];
+};
 export type KnowledgeEditFields = {
   readonly [Key in EditableField]?: KnowledgeValues[Key] | undefined;
 };
@@ -51,30 +56,62 @@ function validateFields(base: KnowledgeNote, fields: KnowledgeEditFields) {
   });
 }
 
-export function saveKnowledgeNote(base: KnowledgeNote, body: string, fields: KnowledgeEditFields) {
+function matchesNote(
+  base: KnowledgeNote,
+  current: NoteContent["frontmatter"],
+  edited: KnowledgeEditFields,
+) {
+  const { project_id, title, kind, domain_archived } = knowledgeType.check(current).values;
+  return (
+    project_id === base.projectId &&
+    current.id === base.id &&
+    Boolean(title) &&
+    kind === base.kind &&
+    !(edited.domain_attributes !== undefined && domain_archived)
+  );
+}
+
+function proposalCheck(
+  current: Omit<NoteContent, "path">,
+  base: KnowledgeNote,
+  proposal: ProposalGuard,
+  drafts: KnowledgeDraftRegistry["Service"],
+) {
+  if (current.frontmatter.applied_proposal === proposal.id) return Result.succeed({ patch: {} });
+  if (current.text !== base.text || drafts.hasDirty(base.projectId, base.id))
+    return Result.fail(new NoteEditConflictError({ conflicts: [] }));
+}
+
+function competingBody(current: string, base: string, proposed: string) {
+  return current !== base && current.replace(/\r\n|\r/g, "\n") !== proposed;
+}
+
+export function saveKnowledgeNote(
+  base: KnowledgeNote,
+  body: string,
+  fields: KnowledgeEditFields,
+  proposal?: ProposalGuard,
+) {
   const changedBody = body !== base.body.replace(/\r\n|\r/g, "\n");
   return Effect.gen(function* () {
     const edited = yield* validateFields(base, fields);
-    const merge = editChange(knowledgeType, base.frontmatter, { ...base.frontmatter, ...edited });
+    const drafts = yield* KnowledgeDraftRegistry;
+    const proposalFields = proposal && {
+      source_links: proposal.links,
+      applied_proposal: proposal.id,
+    };
+    const merge = editChange(knowledgeType, base.frontmatter, {
+      ...base.frontmatter,
+      ...edited,
+      ...proposalFields,
+    });
     const change: NoteContentChange<NoteEditConflictError | NoteWriteRefusedError> = (current) => {
-      const { project_id, title, kind, domain_archived } = knowledgeType.check(
-        current.frontmatter,
-      ).values;
-      if (
-        project_id !== base.projectId ||
-        !title ||
-        kind !== base.kind ||
-        (edited.domain_attributes !== undefined && domain_archived)
-      ) {
+      if (!matchesNote(base, current.frontmatter, edited))
         return Result.fail(new NoteWriteRefusedError({ reason: "identity" }));
-      }
-      if (
-        changedBody &&
-        current.body !== base.body &&
-        current.body.replace(/\r\n|\r/g, "\n") !== body
-      ) {
+      const proposalResult = proposal && proposalCheck(current, base, proposal, drafts);
+      if (proposalResult) return proposalResult;
+      if (changedBody && competingBody(current.body, base.body, body))
         return Result.fail(new NoteEditConflictError({ conflicts: [] }));
-      }
       return Result.map(merge(current.frontmatter), (patch) => ({
         patch,
         ...(changedBody ? { body } : {}),

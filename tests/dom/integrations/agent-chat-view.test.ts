@@ -10,6 +10,7 @@ import { appSurface } from "../../../src/presentation/app-surface";
 import { agentChat } from "../../../src/presentation/integrations";
 import { mountSurface } from "../../../src/presentation/shell";
 import { testRuntime } from "../../support/runtime";
+import { mountApp } from "../../support/surface";
 import { eventually } from "../../support/wait";
 
 const stream = vi.hoisted(() => vi.fn<ProviderChat["stream"]>());
@@ -87,6 +88,31 @@ it("hides send controls on a saved chat route without consent", async () => {
     expect(stream).not.toHaveBeenCalled();
   } finally {
     await view.dispose();
+  }
+});
+
+it("requires a project for an exposed legacy route before it can send project context", async () => {
+  const { runtime, vaultReady } = testRuntime({
+    language: "en",
+    initialSettings: { aiEnabled: true, aiMode: "codex" },
+  });
+  const root = document.body.appendChild(document.createElement("div"));
+  let close: (() => void) | undefined;
+  try {
+    await vaultReady();
+    const view = await mountApp(root, runtime, { initial: { name: AGENT_CHAT } });
+    close = view.close;
+    const open = await eventually(() =>
+      find<HTMLButtonElement>(root, '[data-testid="copilot-choose-project"]'),
+    );
+    expect(root.querySelector("textarea")).toBeNull();
+    expect(stream).not.toHaveBeenCalled();
+    open.click();
+    await eventually(() => expect(view.navigation.current()).toEqual({ name: "projects" }));
+  } finally {
+    close?.();
+    root.remove();
+    await runtime.dispose();
   }
 });
 

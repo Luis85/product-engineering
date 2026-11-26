@@ -32,7 +32,11 @@ export {
   inspectPrototypeBrief,
   recordedPrototypeArtifact,
 } from "./artifact";
-export { preparePrototypeGeneration, runPrototypeGeneration } from "./generation";
+export {
+  dispatchPrototypeGeneration,
+  preparePrototypeGeneration,
+  runPrototypeGeneration,
+} from "./generation";
 export type {
   PrototypeGenerationDestination,
   PrototypeGenerationDisclosure,

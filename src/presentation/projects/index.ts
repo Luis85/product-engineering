@@ -13,6 +13,7 @@ export {
   useWorkspaceRouteFocus,
 } from "./workspace-position";
 export { leafModalUi } from "./overlay-ui";
+export { useCopilotEntry, useCopilotProject } from "./copilot-entry";
 export type { ProjectRecordPart } from "./record-screens";
 export type { ProjectSearchPart } from "./search-sources";
 export { useProjectSearchSources } from "./search-sources";

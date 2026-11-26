@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import { isKnowledgeId } from "../../domain/knowledge";
 import { prototypeDesignFields, prototypeDesignKinds } from "../../domain/prototypes";
 import type { PrototypeSource } from "../../domain/prototypes";
-import { backlogSnapshot, nfrSnapshot, resolveNfrScope } from "../backlog";
+import { backlogSnapshot, nfrsForScope } from "../backlog";
 import type { NfrScopeSource } from "../backlog";
 import { resolveDomainScope } from "../domain-model";
 import { knowledgeNoteOptions, readKnowledgeNote, resolveKnowledgeNote } from "../knowledge";
@@ -18,6 +18,7 @@ import type { StoryMapRecord } from "../story-maps";
 import { briefBacklog, briefDocumentReferences, briefFileReferences } from "./brief-backlog";
 import type { BriefDocumentReference } from "./brief-backlog";
 import { briefFiles } from "./brief-files";
+import { readPrototypeNfrs } from "./brief-nfr";
 import { PrototypeError } from "./errors";
 import { decodePrototype } from "./records";
 import type { PrototypeRecord } from "./records";
@@ -79,25 +80,26 @@ function journey(map: StoryMapRecord | undefined) {
   };
 }
 
-function scopeContext(source: PrototypeSource) {
+function scopeContext(
+  source: PrototypeSource,
+  items: Effect.Success<ReturnType<typeof backlogSnapshot>>["items"],
+) {
   return Effect.gen(function* () {
     const { projectId, id, kind } = source;
     const target: NfrScopeSource =
       source.kind === "nfr"
         ? { kind: "nfr", id: source.id }
         : { kind: kind === "map" ? "map" : "item", id };
-    const nfr =
-      kind === "nfr"
-        ? (yield* nfrSnapshot(projectId)).records.find((row) => row.id === id)
-        : undefined;
-    const targets = target.kind === "nfr" ? (nfr?.targets ?? []) : [target];
-    const [nfrs, domain] = yield* Effect.all(
+    const [records, maps] = yield* Effect.all(
       [
-        resolveNfrScope(projectId, target, storyMapNfrContribution),
-        resolveDomainScope(projectId, targets, storyMapDomainContribution),
+        readPrototypeNfrs(projectId, target.kind === "nfr" ? target.id : undefined),
+        storyMapNfrContribution(projectId),
       ],
       { concurrency: 2 },
     );
+    const nfrs = nfrsForScope(projectId, target, records, items, maps);
+    const targets = target.kind === "nfr" ? (records[0]?.targets ?? []) : [target];
+    const domain = yield* resolveDomainScope(projectId, targets, storyMapDomainContribution);
     return { nfrs, domain, targets };
   });
 }
@@ -179,11 +181,13 @@ export function resolvePrototypeBrief(base: PrototypeRecord) {
         ? yield* resolvePrototypeSource(projectId, source)
         : undefined;
     if (!source || !selection) return { ...common, source, selection, inputs: undefined };
-    const [map, { items }, context] = yield* Effect.all(
-      [briefMap(source), backlogSnapshot(projectId), scopeContext(source)],
-      { concurrency: 3 },
+    const [map, { items }] = yield* Effect.all([briefMap(source), backlogSnapshot(projectId)], {
+      concurrency: 2,
+    });
+    const [backlog, context] = yield* Effect.all(
+      [briefBacklog(projectId, source, map, items), scopeContext(source, items)],
+      { concurrency: 2 },
     );
-    const backlog = yield* briefBacklog(projectId, source, map, items);
     const references = [...briefDocumentReferences(map, backlog), ...designReferences(record)];
     const materials = yield* documents(projectId, references);
     const known = yield* knowledgeNoteOptions(projectId);

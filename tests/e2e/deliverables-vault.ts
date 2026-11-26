@@ -4,7 +4,7 @@ import { seedBacklogVault } from "./backlog-vault";
 import { customerFolder, customerProject } from "./knowledge-vault";
 
 export const plannedTitle = "Testkonzept für den Falllistenexport";
-export const reviewTitle = "Architekturentscheidung zur Organisationsgrenze";
+export const reviewTitle = "Architekturentscheidung zur Organisationsgrenze im Export";
 export const noteTitle = "Organisationsgrenze im Export";
 export const adrIdentity = "knowledge-33333333-3333-4333-8333-000000000121";
 export const adrPath = customerFolder + "/ADR-02.md";
