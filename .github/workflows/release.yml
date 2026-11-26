@@ -106,7 +106,8 @@ jobs:
 
       - name: Test the plugin in Obsidian
         env:
-          WDIO_MAX_INSTANCES: "2"
+          # Keyboard tests share the virtual desktop.
+          WDIO_MAX_INSTANCES: "1"
         run: npm run test:e2e
 
       - name: Package the verified release

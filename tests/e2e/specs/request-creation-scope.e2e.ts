@@ -123,7 +123,7 @@ it("V17: creates distinct scopes on one PBI, in a narrow layout, and isolates sa
   await expect(card).toBeDisplayed();
   await expect(card.$("[data-request-link=FR-026]")).toBeDisplayed();
   await expect(card).toHaveText(expect.stringContaining("Entwurf"));
-  await card.$("summary").click();
+  await card.$('[data-testid="pbi-request-links"] > details > summary').click();
   await expect(card.$("[data-request-link=FR-025]")).toBeDisplayed();
   await expect(card.$("[data-request-link=FR-024]")).toBeDisplayed();
   const scope = await browser.executeObsidian(

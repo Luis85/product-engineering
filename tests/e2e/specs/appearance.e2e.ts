@@ -90,11 +90,16 @@ async function verifySidebar(): Promise<void> {
     root.style.width = "320px";
     root.style.maxWidth = "320px";
     const lines = new Set(Array.from(span.getClientRects(), ({ y }) => y));
-    return { first, narrow: root.clientWidth, scroll: root.scrollWidth, lines: lines.size };
+    const narrow = {
+      width: root.getBoundingClientRect().width,
+      visible: root.clientWidth,
+      scroll: root.scrollWidth,
+    };
+    return { first, narrow, lines: lines.size };
   }, sidebar);
   expect(sizes.first.scroll).toBeLessThanOrEqual(sizes.first.visible + 1);
-  expect(sizes.narrow).toBe(320);
-  expect(sizes.scroll).toBeLessThanOrEqual(321);
+  expect(sizes.narrow.width).toBe(320);
+  expect(sizes.narrow.scroll).toBeLessThanOrEqual(sizes.narrow.visible + 1);
   expect(sizes.lines).toBeGreaterThan(1);
 }
 

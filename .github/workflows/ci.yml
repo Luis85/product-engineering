@@ -85,7 +85,8 @@ jobs:
           printf 'DISPLAY=%s\n' "$DISPLAY" >> "$GITHUB_ENV"
       - run: npm run test:e2e
         env:
-          WDIO_MAX_INSTANCES: "2"
+          # Keyboard tests share the virtual desktop.
+          WDIO_MAX_INSTANCES: "1"
       - name: Upload Obsidian test reports
         if: ${{ failure() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
