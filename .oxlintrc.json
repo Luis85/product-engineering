@@ -1,0 +1,249 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "vue", "import", "unicorn", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "error"
+  },
+  "rules": {
+    "no-console": "error",
+    "vitest/no-standalone-expect": ["error", { "additionalTestBlockFunctions": ["it.effect"] }],
+    "eqeqeq": "error",
+    "typescript/no-non-null-assertion": "error",
+    "no-underscore-dangle": [
+      "error",
+      {
+        "allow": ["_tag"]
+      }
+    ],
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": ["**/*.css"]
+      }
+    ]
+  },
+  "ignorePatterns": [
+    "docs/**",
+    "dist/**",
+    "release/**",
+    "reports/**",
+    ".stryker-tmp/**",
+    ".obsidian-cache/**",
+    ".obsidian/**",
+    ".claude/**",
+    ".fallow/**",
+    ".probe/**"
+  ],
+  "overrides": [
+    {
+      "files": ["scripts/**", "src/infrastructure/logging/**"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["src/domain/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "obsidian",
+                  "electron",
+                  "vue",
+                  "vue/*",
+                  "@nuxt/*",
+                  "@tanstack/*",
+                  "@vue/*",
+                  "@iconify/*"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/application/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "obsidian",
+                  "electron",
+                  "vue",
+                  "vue/*",
+                  "@nuxt/*",
+                  "@tanstack/*",
+                  "@vue/*",
+                  "@iconify/*"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/infrastructure/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "obsidian",
+                  "vue",
+                  "vue/*",
+                  "@nuxt/*",
+                  "@tanstack/*",
+                  "@vue/*",
+                  "@iconify/*"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/infrastructure/obsidian/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["vue", "vue/*", "@nuxt/*", "@tanstack/*", "@vue/*", "@iconify/*"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/infrastructure/provider-cli/adapter.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "obsidian",
+                  "vue",
+                  "vue/*",
+                  "@nuxt/*",
+                  "@tanstack/*",
+                  "!@tanstack/ai",
+                  "!@tanstack/ai/adapters",
+                  "@vue/*",
+                  "@iconify/*"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/presentation/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["obsidian", "effect", "effect/*", "**/infrastructure/**"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/presentation/shell/runtime/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["obsidian", "**/infrastructure/**"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/main.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "effect",
+                  "effect/*",
+                  "vue",
+                  "vue/*",
+                  "@nuxt/*",
+                  "@tanstack/*",
+                  "@vue/*",
+                  "@iconify/*"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/bootstrap.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["vue", "vue/*", "@nuxt/*", "@tanstack/*", "@vue/*", "@iconify/*"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["harness/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["obsidian", "**/infrastructure/obsidian/**"]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["tests/e2e/**"],
+      "rules": {
+        "no-await-in-loop": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    }
+  ]
+}

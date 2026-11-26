@@ -1,0 +1,24 @@
+# V23 · Plugin settings and AI consent
+
+**Entry** `#/project/kundenportal/plugin-settings` in the clickdummy. In Obsidian, **Einstellungen → Product Engineering** is the authority for global AI settings. A project link may open that authority. Depends on V01 and V02 and provides the consent/capability query for V04, V08, V16 and V24. Read the [shared contracts](../contracts.md), [groundwork intake](../groundwork.md) and [shell blueprint](../../obsidian-plugin-shell-blueprint/README.md).
+
+### Build the flow
+
+1. **KI-Copilot aktivieren** starts off on a new install and after loading a legacy project that has model preferences. Until enabled, hide the Copilot, contextual AI review and prototype-generation controls and reject direct provider invocations. Manual note editing, prototype briefing/export/import and board actions remain usable.
+2. Identify the active execution mode and what the configured provider receives when the user sends a request. Saving a setting, opening the panel, switching projects or choosing context starts no model request. On invalid configuration retain entered values, explain the field issue and focus the field. A disabled or unsupported provider should still allow users to correct settings.
+3. Persist global consent through the native settings service. Scope project instructions, threads, data classification and Factory policy to the project. The existing local MCP server has its own start/stop, selected items, port and temporary token. Neither enabling MCP nor configuring an executable grants AI consent.
+4. When the user changes provider or withdraws consent, cancel pending work and ignore late replies. Close an open AI sidepanel, restore focus to an available control and leave manual workflows accessible. Reopening the vault retains the consent setting and makes no initial provider call.
+
+### Resolve the actual provider surface
+
+Reuse [createAgentSettingsPart](../../../../src/infrastructure/obsidian/integrations/settings.ts), the [settings mirror](../../../../src/infrastructure/obsidian/shell/settings-mirror.ts), [settings codec](../../../../src/domain/shell/settings-codec.ts) and [AgentChat service](../../../../src/application/integrations/chat/service.ts). Current groundwork supports Claude Code and Codex executable overrides/discovery and CLI-managed authentication. Add the global enable flag through the same validated settings path. Recheck the post-groundwork catalog and existing chat command before wiring UI. An executable may authenticate remotely even though the adapter runs locally. Name the configured provider in the disclosure.
+
+The clickdummy also models **Lokale Demo** and an optional custom Chat-Completions endpoint. Keep the offline demonstration testable with a deterministic adapter. Resolve transport availability with the orchestrator against the completed groundwork. If a compatible HTTP adapter is part of that contract, preserve destination/model validation, scoped session-only credential handling, local-loopback allowance, transport disclosure, cancellation and response validation shown in the reference. Keep production credentials out of Markdown, synced project records, diagnostics and fixtures. Record the negotiated adapter matrix in the receipt.
+
+### Red-first acceptance and handoff
+
+- Write the failing capability test first with absent consent + a saved legacy project profile + configured executables + running MCP. Assert zero provider calls across open, save and project navigation. Enable explicitly and confirm project switching retains consent while project content stays isolated. Verify settings error/retry and reload using the native settings tab.
+- Start an explicit job using the existing chat session and a fake provider, disable or switch provider, then emit a late answer. V24 repeats this at the integrated sidepanel entry point. Verify the panel closes or updates as appropriate, output is discarded and V16 manual exports still work. Reopen a direct legacy chat route while disabled and verify the invocation guard.
+- Cover a narrow settings layout, keyboard validation and focus after saving. Use mocks for providers and local MCP. Hand V24/V16 the capability query, cancellation signal and confirmed provider behavior. Include the red/green results and `npm run verify` exit code.
+
+[Clickdummy](../../../concept/Product-Engineering-Clickdummy-Story-Maps.html) symbols include `pluginSettingsView`, `aiEnabled`, `checkedAiEndpoint`, `saveAiSettings`, `applyAiOptions`. Compare [consent and transport](../../../concept/tests/test_ai_settings.py), [optional actions](../../../concept/tests/test_ai_proposals.py), [prototype generation](../../../concept/tests/test_ai_prototype_endpoint.py) and [existing native provider tests](../../../../tests/unit/infrastructure/provider-cli/provider-chat.test.ts).

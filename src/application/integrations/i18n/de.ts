@@ -1,0 +1,175 @@
+import type { IntegrationsCatalog } from "./catalog";
+
+export const de: IntegrationsCatalog = {
+  language: "de",
+  settings: {
+    mcp: {
+      title: "Lokaler MCP-Server",
+      port: {
+        name: "MCP-Port",
+        desc: "Lass das Feld für die automatische Portwahl leer. Änderungen gelten beim nächsten Start.",
+      },
+      running: (endpoint) => `Erreichbar unter ${endpoint}.`,
+      stopped: "Starte den Server, um einen lokalen MCP-Client zu verbinden.",
+      start: "MCP-Server starten",
+      stop: "MCP-Server stoppen",
+      copy: "MCP-Verbindung kopieren",
+      copied: {
+        title: "MCP-Verbindung kopiert",
+        detail: "Verwende diese Verbindungsdaten in deinem MCP-Client.",
+      },
+      sharing: {
+        title: "Für MCP-Clients freigegebene Einträge",
+        description:
+          "Wähle die Einträge aus, die Clients lesen dürfen. Neue Freigaben gelten ab dem nächsten Serverstart. Das Aufheben einer Freigabe entzieht den Zugriff sofort.",
+        loading: "Einträge werden geladen…",
+        unavailable: "Der Eintragsindex ist nicht verfügbar.",
+        empty: "Es sind keine Einträge für die Freigabe verfügbar.",
+        unavailableItem: "Nicht verfügbarer Eintrag",
+      },
+      errors: {
+        start: {
+          title: "Der MCP-Server konnte nicht gestartet werden",
+          detail: "Wähle einen anderen Port oder lass das Feld leer.",
+        },
+        stop: {
+          title: "Der MCP-Server konnte nicht gestoppt werden",
+          detail: "Versuche erneut, ihn zu stoppen.",
+        },
+        copy: {
+          title: "Die MCP-Verbindung konnte nicht kopiert werden",
+          detail: "Starte den Server und versuche erneut, die Verbindung zu kopieren.",
+        },
+      },
+    },
+    ai: {
+      title: "KI-Copilot",
+      enabled: {
+        name: "KI-Copilot aktivieren",
+        desc: "Der Copilot unterstützt Fragen, Entwürfe und Reviews. Diese Einstellung gilt für alle Projekte.",
+      },
+      connection: "Modellanbindung",
+      mode: {
+        name: "Betriebsart",
+        desc: "Die Betriebsart gilt für alle Produktprojekte.",
+      },
+      modes: { demo: "Lokale Demo", codex: "Codex (CLI)", "claude-code": "Claude Code (CLI)" },
+      destination: "Datenübertragung",
+      disclosure: (mode) => {
+        if (mode === "demo")
+          return "Lokale Demo erzeugt Beispielantworten auf diesem Gerät. Projektdaten bleiben hier.";
+        const provider = de.providers[mode];
+        return `Erst beim Senden erhält ${provider} deine Eingabe, den verwendeten Gesprächsverlauf und die ausgewählten Projektquellen. Die CLI startet lokal, verwaltet ihre Anmeldung selbst und kann externe Anfragen senden.`;
+      },
+      claudeCodePath: {
+        name: "Claude-Code-Programmdatei",
+        desc: "Gib einen absoluten Pfad ein oder lass das Feld für die automatische Suche leer.",
+      },
+      codexPath: {
+        name: "Codex-Programmdatei",
+        desc: "Gib einen absoluten Pfad ein oder lass das Feld für die automatische Suche leer.",
+      },
+    },
+  },
+  providers: { "claude-code": "Claude Code", codex: "Codex", demo: "Lokale Demo" },
+  copilot: {
+    heading: "Projekt-Copilot",
+    empty: "Noch keine Nachrichten.",
+    review: "KI-Review",
+    mode: "Aufgabe",
+    modes: { ask: "Fragen", review: "Prüfen", draft: "Entwerfen", revise: "Überarbeiten" },
+    reviewPrompt: "Prüfe den aktuellen Stand auf Lücken und offene Entscheidungen.",
+    thread: "Gespräch",
+    newThread: "Neues Gespräch",
+    sources: "Kontext",
+    selectSources: "Quellen wählen",
+    removeMissingSource: "Nicht verfügbare Quelle entfernen",
+    reviewTarget: "Prüfgegenstand",
+    chooseReviewTarget: "Aus Quellen wählen",
+    cancel: "Abbrechen",
+    instructions: "Projekthinweise",
+    draftKind: "Entwurfstyp",
+    draftKinds: { vision: "Vision", jtbd: "JTBD", research: "Research", prd: "PRD" },
+    revisionTarget: "Notiz zur Überarbeitung",
+    chooseTarget: "Bearbeitbare Notiz auswählen",
+    proposal: "Vorschlag prüfen",
+    proposalReady: "Vorschlag zur Prüfung bereit",
+    proposalTitle: "Vorgeschlagener Titel",
+    proposalBody: "Vorgeschlagenes Markdown",
+    apply: "Übernehmen",
+    saveAsNew: "Als neue Notiz speichern",
+    proposalStale:
+      "Die ursprüngliche Notiz fehlt, wurde geändert oder enthält ungespeicherte Änderungen. Speichere den Vorschlag als neue Notiz oder erstelle ihn erneut.",
+  },
+  chat: {
+    title: "KI-Chat",
+    demoReply: "Das ist eine lokale Beispielantwort der Demo.",
+    correctExecutable: "Programmdatei in den Einstellungen korrigieren",
+    conversation: "Gespräch",
+    empty: "Sende eine Nachricht, um das Gespräch zu beginnen.",
+    message: "Nachricht",
+    send: "Senden",
+    stop: "Antwort stoppen",
+    responding: "Antwort wird erstellt…",
+    stopping: "Antwort wird gestoppt…",
+    stopped: "Antwort gestoppt",
+    speakers: { user: "Du", assistant: "Assistent" },
+  },
+  chatFailures: {
+    "consent-required": () => ({
+      severity: "warning",
+      title: "KI ist deaktiviert",
+      detail: "Der KI-Chat erfordert deine ausdrückliche Zustimmung.",
+    }),
+    "provider-not-found": (provider) => ({
+      severity: "error",
+      action: "retry",
+      title: `${provider} ist nicht verfügbar`,
+      detail: `Prüfe die Programmdatei für ${provider} oder installiere die CLI. Sende danach deine Nachricht erneut.`,
+    }),
+    "authentication-required": (provider) => ({
+      severity: "error",
+      action: "retry",
+      title: `${provider} erfordert eine Anmeldung`,
+      detail: "Melde dich in der installierten CLI an und sende deine Nachricht erneut.",
+    }),
+    "process-failed": (provider) => ({
+      severity: "error",
+      action: "retry",
+      title: `${provider} wurde vor Abschluss der Antwort beendet`,
+      detail: "Versuche, deine Nachricht erneut zu senden.",
+    }),
+    "invalid-response": (provider) => ({
+      severity: "error",
+      action: "retry",
+      title: `${provider} hat eine unlesbare Antwort zurückgegeben`,
+      detail: "Aktualisiere die installierte CLI und versuche es erneut.",
+    }),
+    "unsupported-request": (provider) => ({
+      severity: "warning",
+      title: `Diese Nachricht konnte nicht an ${provider} gesendet werden`,
+      detail: "Prüfe die Nachricht und versuche es erneut.",
+    }),
+    "source-unavailable": () => ({
+      severity: "warning",
+      title: "Eine ausgewählte Quelle ist nicht verfügbar",
+      detail: "Entferne die Quelle aus der Auswahl oder stelle sie wieder her und sende erneut.",
+    }),
+    "target-unavailable": () => ({
+      severity: "warning",
+      title: "Wähle ein Ziel aus diesem Projekt",
+      detail:
+        "Behalte das Ziel in der Quellenauswahl. Für eine Überarbeitung muss die Notiz bearbeitbar sein.",
+    }),
+    "invalid-proposal": () => ({
+      severity: "warning",
+      title: "Der Vorschlag konnte nicht geprüft werden",
+      detail: "Verwende einen Titel und Markdown-Text oder sende die Anfrage erneut.",
+    }),
+    cancelled: () => ({
+      severity: "info",
+      title: "Antwort gestoppt",
+      detail: "Sende eine weitere Nachricht, um fortzufahren.",
+    }),
+  },
+};

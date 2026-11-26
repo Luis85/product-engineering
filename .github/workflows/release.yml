@@ -1,0 +1,191 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Current manifest version or its exact bare x.y.z value
+        required: true
+        default: current
+        type: string
+      prerelease:
+        description: Mark this release as a prerelease for beta testing
+        type: boolean
+        default: false
+      dry_run:
+        description: Verify and package the release without creating a tag or release
+        type: boolean
+        default: false
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: npm
+
+      - name: Resolve and validate the release plan
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          node scripts/release-plan.mjs --workflow
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            printf '::error::Release must build a commit on main.\n'
+            exit 1
+          fi
+
+      - name: Check manual publication tag
+        if: github.event_name == 'workflow_dispatch' && steps.version.outputs.publish == 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            printf '::error::Tag %s already exists.\n' "$TAG"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run verify
+
+      - name: Resolve Obsidian versions
+        run: |
+          node --import tsx tests/e2e/wdio.conf.mts | grep '^obsidian-cache-key:' > obsidian-versions-lock.txt
+          rm -rf -- .obsidian-cache
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .obsidian-cache
+          key: obsidian-cache-${{ runner.os }}-${{ hashFiles('obsidian-versions-lock.txt') }}
+
+      - name: Start the virtual desktop
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -q -y herbstluftwm xvfb x11-utils
+          export DISPLAY=:99
+          Xvfb "$DISPLAY" -screen 0 1280x1024x24 +extension GLX -noreset > /tmp/product-engineering-xvfb.log 2>&1 &
+          for _ in {1..20}; do
+            if xdpyinfo -display "$DISPLAY" > /dev/null 2>&1; then
+              break
+            fi
+            sleep 0.25
+          done
+          xdpyinfo -display "$DISPLAY" > /dev/null
+          herbstluftwm > /tmp/product-engineering-window-manager.log 2>&1 &
+          printf 'DISPLAY=%s\n' "$DISPLAY" >> "$GITHUB_ENV"
+
+      - name: Test the plugin in Obsidian
+        env:
+          # Keyboard tests share the virtual desktop.
+          WDIO_MAX_INSTANCES: "1"
+        run: npm run test:e2e
+
+      - name: Package the verified release
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          PUBLISH: ${{ steps.version.outputs.publish }}
+        run: |
+          npm run release:package -- --tag "$TAG"
+          printf 'Packaged **%s** from `%s`. Prerelease `%s`. Publish `%s`.\n' \
+            "$TAG" "$GITHUB_SHA" "$PRERELEASE" "$PUBLISH" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload release files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: release/
+          if-no-files-found: error
+
+      - name: Upload end-to-end failure reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-e2e-reports
+          path: reports/e2e/
+
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Download verified release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: release
+
+      - name: Attest the release files
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            release/product-engineering/main.js
+            release/product-engineering/manifest.json
+            release/product-engineering/styles.css
+            release/THIRD-PARTY-NOTICES.txt
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.build.outputs.tag }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+          SHA: ${{ github.sha }}
+        run: |
+          flags=(--verify-tag)
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            if response=$(gh api --include "repos/$GH_REPO/git/ref/tags/$TAG" 2>/dev/null); then
+              printf '::error::Tag %s already exists.\n' "$TAG"
+              exit 1
+            fi
+            status=${response%%$'\n'*}
+            if [[ ! "$status" =~ ^HTTP/[^[:space:]]+[[:space:]]+404([[:space:]]|$) ]]; then
+              printf '::error::Could not confirm that tag %s is available.\n' "$TAG"
+              exit 1
+            fi
+            flags=(--target "$SHA")
+          fi
+          if [[ "$PRERELEASE" == true ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$TAG" \
+            release/product-engineering/main.js \
+            release/product-engineering/manifest.json \
+            release/product-engineering/styles.css \
+            release/THIRD-PARTY-NOTICES.txt \
+            --title "$TAG" --generate-notes "${flags[@]}"

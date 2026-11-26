@@ -1,0 +1,95 @@
+import { Effect, Result } from "effect";
+import type { RequestGate } from "../../domain/feature-requests";
+import type { ProjectBaseCheck, ProjectCriterion } from "../../domain/projects";
+import { backlogSnapshot, inspectPbiPreparation, pbiCompanions, readPbiDetail } from "../backlog";
+import type { BacklogItem, PbiDetail, PbiPreparation, PbiPreparationGap } from "../backlog";
+import { captureProjectReleaseRules } from "../projects";
+import type { ProjectReleaseRuleSnapshot } from "../projects";
+import type { FeatureRequest } from "./records";
+
+const gateStatus = (condition: boolean) => (condition ? "passed" : "open");
+const base = (id: ProjectBaseCheck, status: RequestGate["status"]): RequestGate => ({ id, status });
+const openKinds = { "open-task": "TASK", "open-issue": "ISS", "open-bug": "BUG" } as const;
+
+function readyCriterion(
+  { id, type, title }: ProjectCriterion,
+  source: PbiDetail | undefined,
+  items: readonly BacklogItem[] | undefined,
+  scope: string,
+  manual: readonly string[],
+): RequestGate {
+  if (type === "manual") return { id, title, status: gateStatus(manual.includes(id)) };
+  if (type === "scope") return { id, title, status: gateStatus(Boolean(scope.trim())) };
+  if (!source || !items) return { id, title, status: "unavailable" };
+  const candidates =
+    type === "open-work" ? items : items.filter(({ kind }) => kind === openKinds[type]);
+  return { id, title, status: gateStatus(pbiCompanions(candidates, source.edit.item).open === 0) };
+}
+
+function preparationGates(preparation: PbiPreparation | undefined, approved: boolean) {
+  if (!preparation) return [base("base-ready", "unavailable"), base("base-git", "unavailable")];
+  const criteriaMet = preparation.prerequisites.length === 0 && approved;
+  const committed =
+    preparation.inputs.length > 0 &&
+    preparation.inputs.every((input) => input.state === "clean" && Boolean(input.commit));
+  return [base("base-ready", gateStatus(criteriaMet)), base("base-git", gateStatus(committed))];
+}
+
+function manualChecks(record: FeatureRequest, rules: ProjectReleaseRuleSnapshot | undefined) {
+  if (record.manualChecks?.version === rules?.version) return record.manualChecks?.ids ?? [];
+  return [];
+}
+
+function configuredGates(
+  record: FeatureRequest,
+  rules: ProjectReleaseRuleSnapshot | undefined,
+  source: PbiDetail | undefined,
+  items: readonly BacklogItem[] | undefined,
+) {
+  const manual = manualChecks(record, rules);
+  return {
+    ready:
+      rules?.ready.map((criterion) =>
+        readyCriterion(criterion, source, items, record.scope, manual),
+      ) ?? [],
+    done: rules?.done.map(({ id, title }) => ({ id, title, status: "unavailable" as const })) ?? [],
+  };
+}
+
+export function readDraftRequestGates(record: FeatureRequest) {
+  const { projectId, pbiId } = record;
+  return Effect.gen(function* () {
+    const rules = yield* captureProjectReleaseRules(projectId);
+    const pbi = yield* Effect.result(readPbiDetail(projectId, pbiId));
+    const source = Result.isSuccess(pbi) ? pbi.success : undefined;
+    const preparation = source ? yield* inspectPbiPreparation(source) : undefined;
+    const backlog = yield* backlogSnapshot(projectId);
+    const items = backlog.base && backlog.items;
+    const configured = configuredGates(record, rules, source, items);
+    const ready = [
+      ...preparationGates(preparation, source?.approval === "approved"),
+      ...configured.ready,
+    ];
+    const done = [
+      base("base-done", "unavailable"),
+      base("base-review", "unavailable"),
+      ...configured.done,
+    ];
+    const gaps: readonly PbiPreparationGap[] = preparation?.gaps ?? [];
+    return {
+      ready,
+      done,
+      gaps,
+      rulesAvailable: rules !== undefined,
+      rules,
+      source,
+      preparation,
+      items,
+    };
+  });
+}
+
+export function requestGateProgress(gates: readonly RequestGate[] | undefined) {
+  if (!gates) return;
+  return { met: gates.filter(({ status }) => status === "passed").length, total: gates.length };
+}

@@ -1,0 +1,96 @@
+:root,
+.light,
+.dark {
+  --ui-bg: var(--pe-bg);
+  --ui-bg-muted: var(--pe-bg-secondary);
+  --ui-bg-elevated: var(--pe-bg-secondary);
+  --ui-bg-accented: var(--pe-border);
+  --ui-bg-inverted: var(--pe-text);
+  --ui-text: var(--pe-text);
+  --ui-text-toned: var(--pe-text);
+  --ui-text-highlighted: var(--pe-text);
+  --ui-text-dimmed: var(--pe-text-muted);
+  --ui-text-muted: var(--pe-text-muted);
+  --ui-text-inverted: var(--pe-on-fill);
+  --ui-border: var(--pe-border);
+  --ui-border-muted: var(--pe-border);
+  --ui-border-accented: var(--pe-line-strong);
+  --ui-border-inverted: var(--pe-text);
+  --ui-primary: var(--pe-primary-fg);
+  --ui-secondary: var(--pe-primary-fg);
+  --ui-info: var(--pe-primary-fg);
+  --ui-error: var(--pe-bad-fg);
+  --ui-success: var(--pe-ok-fg);
+  --ui-warning: var(--pe-warn-fg);
+  --ui-radius: var(--pe-radius);
+  --ui-chart-1: var(--pe-accent);
+  --ui-chart-2: var(--color-blue);
+  --ui-chart-3: var(--color-purple);
+  --ui-chart-4: var(--color-orange);
+  --ui-chart-5: var(--color-red);
+  --ui-chart-6: var(--color-cyan);
+  font-family: var(--pe-font);
+  color: var(--pe-text);
+}
+
+.pe\:text-inverted {
+  --ui-primary: var(--pe-primary-fill);
+  --ui-secondary: var(--pe-primary-fill);
+  --ui-info: var(--pe-primary-fill);
+  --ui-error: var(--pe-bad-fill);
+  --ui-success: var(--pe-ok-fill);
+  --ui-warning: var(--pe-warn-fill);
+}
+
+.product-engineering-portal {
+  position: relative;
+  z-index: var(--layer-modal, 50);
+}
+
+.product-engineering-root:where(:not(.pe-native-settings)),
+.product-engineering-root:where(:not(.pe-native-settings)) *,
+.product-engineering-root:where(:not(.pe-native-settings)) *::before,
+.product-engineering-root:where(:not(.pe-native-settings)) *::after {
+  box-sizing: border-box;
+  border: 0 solid var(--pe-border);
+}
+
+.product-engineering-root:where(:not(.pe-native-settings)) :is(button, input, select, textarea) {
+  font: inherit;
+}
+
+.product-engineering-root:where(:not(.pe-native-settings)) :focus-visible {
+  outline: 2px solid var(--pe-accent);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .product-engineering-root:where(:not(.pe-native-settings)) :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+.product-engineering-root:where(:not(.pe-native-settings))
+  :is(ol, ul, h1, h2, h3, h4, h5, h6, p, fieldset, legend):not(:where(.markdown-rendered *)) {
+  margin: 0;
+  padding: 0;
+}
+
+.product-engineering-root:where(:not(.pe-native-settings))
+  :is(ol, ul):not(:where(.markdown-rendered *)) {
+  list-style: none;
+}
+
+.product-engineering-root:where(:not(.pe-native-settings))
+  :is(h1, h2, h3, h4, h5, h6):not(:where(.markdown-rendered *)) {
+  font: inherit;
+}
+
+.product-engineering-root:where(:not(.pe-native-settings)) button:not(svg) {
+  appearance: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  color: inherit;
+  padding: 0;
+}

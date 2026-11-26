@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build
+    cooldown:
+      default-days: 7
+    ignore:
+      # Keep the TypeScript major supported by the Vue and mutation toolchain in ADR 0001.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      # Keep ESLint and its JS config on the major supported by the installed plugins.
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: "@eslint/js"
+        update-types: [version-update:semver-major]
+    groups:
+      wdio:
+        patterns: ["@wdio/*"]
+      dev-tooling:
+        dependency-type: development
+        update-types: [minor, patch]
+      runtime:
+        dependency-type: production
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: ci
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        update-types: [minor, patch]

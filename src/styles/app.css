@@ -1,0 +1,33 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(pe);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "../presentation";
+@import "@nuxt/ui";
+@source not "../../node_modules/.nuxt-ui/ui";
+@source not "../../node_modules/@nuxt/ui/dist/runtime/components";
+@source "../../node_modules/.nuxt-ui/ui/{app,alert,button,form-field,input,modal,popover,slideover,textarea}.ts";
+@source "../../node_modules/@nuxt/ui/dist/runtime/components/{App,Alert,Button,FormField,Icon,Input,LinkBase,Modal,OverlayProvider,Popover,Slideover,Textarea}.vue";
+
+@theme {
+  --color-old-neutral-*: initial;
+  --color-neutral-*: initial;
+}
+
+@import "./tokens.css";
+@import "./bridge.css";
+@import "./native-settings.css";
+@import "./project-frame.css";
+@import "./knowledge.css";
+@import "./git.css";
+@import "./domain-model.css";
+@import "./backlog.css";
+@import "./board.css";
+@import "./nfr.css";
+@import "./deliverables.css";
+@import "./story-maps.css";
+@import "./story-slice.css";
+@import "./prototypes.css";
+@import "./feature-requests.css";
+@import "./trace.css";
+@import "./project-overview.css";
+@import "./copilot.css";

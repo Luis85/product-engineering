@@ -1,0 +1,165 @@
+.pe-domain-panel {
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.65rem;
+  padding: 1rem;
+  background: var(--ui-bg);
+}
+
+.pe-domain-reading {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+@container (min-width: 1060px) {
+  .pe-domain-reading {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  }
+}
+
+.pe-domain-diagram {
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.65rem;
+  overflow: clip;
+}
+
+.pe-domain-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+}
+
+.pe-domain-zoom {
+  min-width: 3.15rem;
+  font-size: 0.8rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pe-domain-viewport {
+  position: relative;
+  min-width: 0;
+  height: clamp(16rem, 44vh, 30rem);
+  overflow: clip;
+  background-color: var(--ui-bg-muted);
+  background-image: radial-gradient(var(--ui-border-accented) 1px, transparent 1px);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.pe-domain-viewport:active {
+  cursor: grabbing;
+}
+
+.pe-domain-viewport:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: -2px;
+}
+
+.pe-domain-world,
+.pe-domain-wires {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.pe-domain-wire {
+  fill: none;
+  stroke: var(--ui-text-toned);
+  stroke-width: 1.6;
+}
+
+.pe-domain-wire-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.pe-domain-wire-label {
+  fill: var(--ui-text);
+  stroke: var(--ui-bg-muted);
+  stroke-width: 4;
+  paint-order: stroke;
+  text-anchor: middle;
+  font-size: 12px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pe-domain-selected .pe-domain-wire,
+[data-domain-edge-graphic]:hover .pe-domain-wire {
+  stroke: var(--ui-primary);
+  stroke-width: 2.5;
+}
+
+.pe-domain-node,
+.pe-domain-edge-row {
+  min-width: 0;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border-accented);
+  border-radius: 0.45rem;
+  overflow-wrap: anywhere;
+}
+
+.pe-domain-node {
+  position: absolute;
+  display: grid;
+  align-content: center;
+  gap: 0.2rem;
+  padding: 0.5rem;
+  text-align: center;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.pe-domain-node:active {
+  cursor: grabbing;
+}
+
+.pe-domain-edge-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem 0.65rem;
+  width: 100%;
+  height: auto;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  text-align: start;
+  white-space: normal;
+}
+
+.pe-domain-edge-row > span {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pe-domain-node small,
+.pe-domain-edge-row small {
+  color: var(--ui-text-muted);
+}
+
+.pe-domain-node[aria-pressed="true"],
+.pe-domain-edge-row[aria-pressed="true"] {
+  border-color: var(--ui-primary);
+  background: color-mix(in srgb, var(--ui-primary) 12%, var(--ui-bg));
+}

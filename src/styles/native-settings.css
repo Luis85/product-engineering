@@ -1,0 +1,39 @@
+.product-engineering-root.pe-native-settings {
+  container: pe-native-settings / inline-size;
+}
+
+@media (width < 43rem) {
+  .product-engineering-root.pe-native-settings.vertical-tab-content:not(.setting-page) {
+    padding-inline: var(--size-4-2);
+    padding-block-start: var(--size-4-4);
+  }
+}
+
+@container pe-native-settings (width < 25rem) {
+  .product-engineering-root.pe-native-settings .setting-item {
+    --setting-items-padding-x: var(--size-4-2);
+    padding-inline: var(--size-4-2);
+  }
+
+  .product-engineering-root.pe-native-settings .setting-item.mod-toggle {
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: var(--size-4-2);
+  }
+
+  .product-engineering-root.pe-native-settings .setting-item-info {
+    inline-size: 100%;
+    margin-inline-end: 0;
+  }
+
+  .product-engineering-root.pe-native-settings
+    :is(.setting-item-name, .setting-item-description, .setting-item-error) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+
+  .product-engineering-root.pe-native-settings .setting-item-error {
+    text-align: start;
+  }
+}

@@ -1,0 +1,22 @@
+:root {
+  --pe-bg: var(--background-primary);
+  --pe-bg-secondary: var(--background-secondary);
+  --pe-border: var(--background-modifier-border);
+  --pe-text: var(--text-normal);
+  --pe-text-muted: var(--text-muted);
+  --pe-accent: var(--interactive-accent);
+  --pe-on-fill: var(--text-on-accent);
+  --pe-font: var(--font-interface);
+  --pe-font-mono: var(--font-monospace);
+  --pe-radius: var(--radius-s);
+
+  --pe-line-strong: color-mix(in oklab, var(--pe-text-muted) 70%, var(--pe-bg));
+  --pe-primary-fg: color-mix(in oklab, var(--pe-accent) 55%, var(--pe-text));
+  --pe-primary-fill: color-mix(in oklab, var(--pe-accent) 60%, black);
+  --pe-warn-fg: color-mix(in oklab, var(--text-warning) 55%, var(--pe-text));
+  --pe-warn-fill: color-mix(in oklab, var(--text-warning) 60%, black);
+  --pe-bad-fg: color-mix(in oklab, var(--text-error) 55%, var(--pe-text));
+  --pe-bad-fill: color-mix(in oklab, var(--text-error) 60%, black);
+  --pe-ok-fg: color-mix(in oklab, var(--text-success) 55%, var(--pe-text));
+  --pe-ok-fill: color-mix(in oklab, var(--text-success) 60%, black);
+}

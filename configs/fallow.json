@@ -1,0 +1,322 @@
+{
+  "$schema": "../node_modules/fallow/schema.json",
+  "entry": ["harness/main.ts"],
+  "supportEntry": [
+    "scripts/*.mjs",
+    "tests/**/*.test.ts",
+    "tests/e2e/**/*.ts",
+    "tests/e2e/wdio.conf.mts",
+    "configs/*.ts",
+    "configs/*.mjs",
+    "*.config.mjs"
+  ],
+  "ignorePatterns": [
+    "docs/**",
+    "dist/**",
+    "release/**",
+    "reports/**",
+    ".stryker-tmp/**",
+    ".obsidian-cache/**",
+    ".obsidian/**",
+    ".claude/**",
+    ".fallow/**",
+    ".probe/**"
+  ],
+  "duplicates": { "minTokens": 50 },
+  "health": { "maxCyclomatic": 10 },
+  "boundaries": {
+    "zones": [
+      { "name": "domain", "autoDiscover": ["src/domain"], "publicFiles": ["index.ts"] },
+      {
+        "name": "application/notes-adapter",
+        "patterns": [
+          "src/application/notes/adapter.ts",
+          "src/application/notes/command.ts",
+          "src/application/notes/frontmatter.ts",
+          "src/application/notes/note-text.ts",
+          "src/application/notes/patch.ts",
+          "src/application/notes/paths.ts"
+        ],
+        "publicFiles": ["src/application/notes/adapter.ts"]
+      },
+      { "name": "application", "autoDiscover": ["src/application"], "publicFiles": ["index.ts"] },
+      { "name": "application-module", "patterns": ["src/application/module.ts"] },
+      { "name": "application-describe-error", "patterns": ["src/application/user-messages.ts"] },
+      {
+        "name": "application-composition",
+        "patterns": [
+          "src/application/modules.ts",
+          "src/application/errors.ts",
+          "src/application/events.ts",
+          "src/application/app-services.ts",
+          "src/application/app-services-layer.ts",
+          "src/application/messages.ts",
+          "src/application/routes.ts",
+          "src/application/note-types.ts",
+          "src/application/commands.ts"
+        ]
+      },
+      {
+        "name": "adapters",
+        "autoDiscover": ["src/infrastructure/obsidian"],
+        "publicFiles": ["index.ts"]
+      },
+      {
+        "name": "node-adapters/mcp",
+        "patterns": ["src/infrastructure/mcp/**"],
+        "publicFiles": ["src/infrastructure/mcp/index.ts"]
+      },
+      {
+        "name": "node-adapters/provider-cli",
+        "patterns": ["src/infrastructure/provider-cli/**"],
+        "publicFiles": ["src/infrastructure/provider-cli/index.ts"]
+      },
+      {
+        "name": "memory",
+        "autoDiscover": ["src/infrastructure/memory"],
+        "publicFiles": ["index.ts"]
+      },
+      { "name": "infrastructure", "patterns": ["src/infrastructure/**"] },
+      {
+        "name": "presentation/shell",
+        "patterns": ["src/presentation/shell/**"],
+        "publicFiles": [
+          "src/presentation/shell/index.ts",
+          "src/presentation/shell/host.ts",
+          "src/presentation/shell/screens.ts"
+        ]
+      },
+      {
+        "name": "presentation",
+        "autoDiscover": ["src/presentation"],
+        "publicFiles": ["index.ts", "screens.ts"]
+      },
+      { "name": "presentation-composition", "patterns": ["src/presentation/app-surface.ts"] },
+      { "name": "composition", "patterns": ["src/main.ts", "src/bootstrap.ts"] }
+    ],
+    "rules": [
+      {
+        "from": "domain",
+        "allow": [
+          "domain/shell",
+          "domain/notes",
+          "domain/items",
+          "domain/integrations",
+          "domain/projects",
+          "domain/knowledge",
+          "domain/backlog",
+          "domain/story-maps",
+          "domain/prototypes",
+          "domain/feature-requests"
+        ]
+      },
+      { "from": "domain/shell", "allow": [] },
+      {
+        "from": "application",
+        "allow": [
+          "domain",
+          "application/shell",
+          "application/notes",
+          "application/items",
+          "application/integrations",
+          "application/projects",
+          "application/knowledge",
+          "application/domain-model",
+          "application/git",
+          "application/backlog",
+          "application/story-maps",
+          "application/prototypes",
+          "application/feature-requests",
+          "application/trace",
+          "application-module",
+          "application-composition"
+        ]
+      },
+      {
+        "from": "application-module",
+        "allowTypeOnly": ["application/shell", "domain/notes", "application/notes"]
+      },
+      {
+        "from": "application-describe-error",
+        "allow": ["application", "application-module", "application-composition"]
+      },
+      {
+        "from": "application-composition",
+        "allow": ["domain", "application", "application-module"]
+      },
+      {
+        "from": "application/shell",
+        "allow": ["application-module", "domain/shell"],
+        "allowTypeOnly": ["application-composition"]
+      },
+      {
+        "from": "adapters",
+        "allow": [
+          "adapters/shell",
+          "adapters/notes",
+          "adapters/integrations",
+          "adapters/projects",
+          "adapters/git",
+          "infrastructure",
+          "application",
+          "application/notes-adapter",
+          "application-composition",
+          "domain",
+          "presentation/shell"
+        ]
+      },
+      {
+        "from": "infrastructure",
+        "allow": ["adapters", "application", "application-composition", "domain"]
+      },
+      { "from": "node-adapters/mcp", "allow": ["application/integrations"] },
+      { "from": "node-adapters/provider-cli", "allow": ["application/integrations"] },
+      {
+        "from": "memory",
+        "allow": ["application", "application/notes-adapter", "application-composition", "domain"]
+      },
+      { "from": "domain/notes", "allow": ["domain/shell"] },
+      {
+        "from": "application/notes",
+        "allow": ["domain/shell", "domain/notes", "application/shell", "application-module"],
+        "allowTypeOnly": ["application-composition"]
+      },
+      {
+        "from": "application/notes-adapter",
+        "allow": ["domain/shell", "domain/notes", "application/shell", "application/notes"]
+      },
+      {
+        "from": "adapters/notes",
+        "allow": [
+          "adapters/shell",
+          "infrastructure",
+          "application/shell",
+          "application/notes",
+          "application/notes-adapter",
+          "domain/shell",
+          "domain/notes",
+          "presentation/shell"
+        ],
+        "allowTypeOnly": ["application-composition"]
+      },
+      {
+        "from": "adapters/integrations",
+        "allow": [
+          "adapters/shell",
+          "application/integrations",
+          "application/shell",
+          "application-describe-error",
+          "application-composition",
+          "domain/shell"
+        ]
+      },
+      {
+        "from": "presentation",
+        "allow": [
+          "presentation/notes",
+          "presentation/items",
+          "presentation/integrations",
+          "presentation/projects",
+          "presentation/knowledge",
+          "presentation/domain-model",
+          "presentation/git",
+          "presentation/backlog",
+          "presentation/story-maps",
+          "presentation/prototypes",
+          "presentation/feature-requests",
+          "presentation/trace",
+          "presentation/shell",
+          "application",
+          "application-composition",
+          "application-describe-error",
+          "domain"
+        ]
+      },
+      {
+        "from": "presentation/shell",
+        "allow": ["application/shell", "application-describe-error", "domain/shell"],
+        "allowTypeOnly": ["application-composition"]
+      },
+      {
+        "from": "presentation/notes",
+        "allow": [
+          "presentation/shell",
+          "application/shell",
+          "application/notes",
+          "application-describe-error",
+          "domain/shell",
+          "domain/notes"
+        ],
+        "allowTypeOnly": ["application-composition"]
+      },
+      {
+        "from": "presentation-composition",
+        "allow": [
+          "presentation/shell",
+          "presentation/notes",
+          "presentation/items",
+          "presentation/integrations",
+          "presentation/projects",
+          "presentation/knowledge",
+          "presentation/domain-model",
+          "presentation/git",
+          "presentation/backlog",
+          "presentation/story-maps",
+          "presentation/prototypes",
+          "presentation/feature-requests",
+          "presentation/trace",
+          "application",
+          "application-composition",
+          "domain"
+        ]
+      },
+      {
+        "from": "composition",
+        "allow": [
+          "infrastructure",
+          "adapters",
+          "application",
+          "application-composition",
+          "domain",
+          "presentation/shell",
+          "presentation-composition",
+          "node-adapters/mcp",
+          "node-adapters/provider-cli"
+        ]
+      },
+      {
+        "from": "adapters/shell",
+        "allow": [
+          "infrastructure",
+          "application/shell",
+          "application-composition",
+          "domain/shell",
+          "presentation/shell"
+        ]
+      }
+    ],
+    "coverage": {
+      "requireAllFiles": true,
+      "allowUnmatched": [
+        "src/env.d.ts",
+        "src/styles/**",
+        "tests/**",
+        "scripts/**",
+        "harness/**",
+        "configs/**",
+        "*.mjs"
+      ]
+    }
+  },
+  "ignoreDependencies": [
+    "obsidian",
+    "@eslint/js",
+    "@iconify-json/lucide",
+    "wdio-obsidian-reporter",
+    "@wdio/local-runner",
+    "@wdio/mocha-framework"
+  ],
+  "overrides": [
+    { "files": ["tests/support/obsidian/**"], "rules": { "unused-class-members": "off" } }
+  ]
+}

@@ -1,0 +1,275 @@
+.product-engineering-root .pe-copilot-trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--pe-accent) 12%, var(--pe-bg));
+  color: var(--pe-primary-fg);
+}
+
+.product-engineering-root .pe-copilot-sheet {
+  --pe-copilot-line: color-mix(in srgb, var(--pe-accent) 12%, var(--pe-border));
+  --pe-copilot-field-line: color-mix(in srgb, var(--pe-copilot-line) 90%, var(--pe-text));
+  --pe-copilot-control-radius: 0.4375rem;
+  --ui-border: var(--pe-copilot-line);
+
+  max-width: min(calc(100% - 1rem), 25.25rem);
+}
+
+.product-engineering-root .pe-copilot-sheet:not([aria-modal="true"]) {
+  top: var(--pe-project-header-height, 3.875rem);
+  border-inline-start: 1px solid var(--pe-copilot-line);
+  box-shadow: none;
+}
+
+.product-engineering-root .pe-copilot-sheet[aria-modal="true"] {
+  right: 0.9375rem;
+  max-width: min(23.125rem, calc(100% - 3.0625rem));
+  overflow: hidden;
+  border-radius: 0.875rem 0 0 0.875rem;
+}
+
+.product-engineering-root:has(.pe-copilot-sheet[data-state="open"]:not([aria-modal="true"]))
+  [data-testid="project-content"] {
+  margin-inline-end: 25.25rem;
+}
+
+.product-engineering-root .pe-copilot-scrim {
+  background: rgb(33 25 48 / 40%);
+}
+
+.product-engineering-root .pe-copilot-sheet-header {
+  flex: none;
+  min-height: 3.875rem;
+  justify-content: space-between;
+  padding: 0.85rem 1rem 0.65rem;
+}
+
+.product-engineering-root .pe-copilot-sheet-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  font-size: 1rem;
+  font-weight: 690;
+  line-height: 1.25;
+}
+
+.product-engineering-root :is(.pe-copilot-sheet-title, .pe-copilot-trigger) > svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+.product-engineering-root .pe-copilot-sheet .pe-copilot-close {
+  position: static;
+  width: 2rem;
+  min-height: 2rem;
+  flex: none;
+}
+
+.product-engineering-root .pe-copilot-sheet :is(.pe-copilot-close, .pe-copilot-new-thread) {
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--pe-copilot-field-line);
+  border-radius: var(--pe-copilot-control-radius);
+  box-shadow: none;
+}
+
+.product-engineering-root .pe-copilot-sheet .pe-copilot-new-thread {
+  width: 2.125rem;
+  min-height: 2.125rem;
+  margin-block-end: 0.125rem;
+}
+
+.product-engineering-root .pe-copilot-sheet-body {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.product-engineering-root .pe-copilot-workspace,
+.product-engineering-root .pe-copilot-form {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.product-engineering-root .pe-copilot-project {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.product-engineering-root .pe-copilot-project h2 {
+  font-size: 0.925rem;
+  font-weight: 690;
+}
+
+.product-engineering-root .pe-copilot-project p,
+.product-engineering-root .pe-copilot-instructions summary {
+  color: var(--pe-text-muted);
+  font-size: 0.75rem;
+}
+
+.product-engineering-root :is(.pe-copilot-thread, .pe-copilot-task) {
+  display: grid;
+  align-items: end;
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.product-engineering-root .pe-copilot-thread {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.product-engineering-root .pe-copilot-task-pair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.product-engineering-root :is(.pe-copilot-thread, .pe-copilot-task) label {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.product-engineering-root
+  .pe-copilot-workspace
+  :is(.pe-copilot-thread label, .pe-copilot-task label, .pe-copilot-prompt-label) {
+  font-size: 0.8125rem;
+  font-weight: 630;
+}
+
+.product-engineering-root .pe-copilot-workspace :is(select, .pe-copilot-prompt textarea) {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--pe-copilot-field-line, var(--pe-border));
+  border-radius: var(--pe-copilot-control-radius, var(--pe-radius));
+  background: var(--pe-bg);
+  color: var(--pe-text);
+  box-shadow: none;
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.product-engineering-root .pe-copilot-workspace select {
+  min-height: 2.375rem;
+  padding-inline: 0.6rem 1.7rem;
+  appearance: none;
+}
+
+.product-engineering-root .pe-copilot-prompt textarea {
+  min-height: 5rem;
+  padding: 0.5rem 0.6rem;
+  line-height: 1.5;
+}
+
+.product-engineering-root .pe-copilot-select {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.product-engineering-root .pe-copilot-select-chevron {
+  position: absolute;
+  inset-inline-end: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--pe-text-muted);
+  pointer-events: none;
+}
+
+.product-engineering-root .pe-copilot-workspace .pe-copilot-log {
+  display: grid;
+  gap: 0.75rem;
+  min-height: 3rem;
+  max-height: min(25vh, 16rem);
+  align-content: start;
+  padding-block: 0.85rem;
+  overflow: auto;
+  border-block: 1px solid var(--pe-copilot-line, var(--pe-border));
+  font-size: 0.84375rem;
+}
+
+.product-engineering-root .pe-copilot-context {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.8125rem;
+}
+
+.product-engineering-root .pe-copilot-sources summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 0.5rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.product-engineering-root .pe-copilot-sources summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-inline-end: 0.15rem;
+  font-weight: 600;
+}
+
+.product-engineering-root .pe-copilot-sources summary > span > svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+}
+
+.product-engineering-root .pe-copilot-source-list {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 8rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 0.55rem;
+}
+
+.product-engineering-root .pe-copilot-form {
+  gap: 0.5rem;
+}
+
+.product-engineering-root .pe-copilot-prompt {
+  width: 100%;
+}
+
+.product-engineering-root .pe-copilot-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  background: var(--pe-bg);
+}
+
+.product-engineering-root .pe-copilot-actions button {
+  min-height: 2.25rem;
+  padding-inline: 0.67rem;
+  border-radius: var(--pe-copilot-control-radius, var(--pe-radius));
+  font-size: 0.8125rem;
+  font-weight: 660;
+}
+
+.product-engineering-root .pe-copilot-markdown {
+  display: grid;
+  gap: 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.product-engineering-root .pe-copilot-markdown h4 {
+  font-weight: 650;
+}
+
+.product-engineering-root .pe-copilot-markdown :is(pre, blockquote) {
+  min-width: 0;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  white-space: pre-wrap;
+  border-inline-start: 2px solid var(--pe-border);
+}

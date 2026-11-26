@@ -1,0 +1,108 @@
+import { expect, it } from "vitest";
+import {
+  decodeSettings,
+  DEFAULT_SETTINGS,
+  encodeSettings,
+  validatePatch,
+} from "../../../../src/domain/shell";
+
+const configured = {
+  logLevel: "info",
+  mcpPort: 8123,
+  claudeCodePath: "C:/Program Files/Claude/claude.exe",
+  codexPath: "/usr/local/bin/codex",
+  aiMode: "claude-code",
+} as const;
+
+it("preserves the existing version 1 shape when agent settings are absent", () => {
+  expect(DEFAULT_SETTINGS).toStrictEqual({ logLevel: "warn", rootFolder: "Product Engineering" });
+  const stored = { schemaVersion: 1, logLevel: "debug" };
+  const { settings, issues } = decodeSettings(stored);
+  expect(settings).toStrictEqual({ ...DEFAULT_SETTINGS, logLevel: "debug" });
+  expect(issues).toEqual([]);
+  expect(encodeSettings(settings)).toStrictEqual(stored);
+});
+
+it("persists an explicit port and tool paths after independent trimming", () => {
+  const stored = {
+    schemaVersion: 1,
+    ...configured,
+    claudeCodePath: "  C:/Program Files/Claude/claude.exe  ",
+    codexPath: " /usr/local/bin/codex ",
+  };
+  expect(decodeSettings(stored)).toStrictEqual({
+    settings: { ...DEFAULT_SETTINGS, ...configured },
+    issues: [],
+  });
+  expect(encodeSettings({ ...DEFAULT_SETTINGS, ...configured })).toStrictEqual({
+    schemaVersion: 1,
+    ...configured,
+  });
+  expect(encodeSettings({ ...DEFAULT_SETTINGS, ...configured, mcpPort: 0 })).toStrictEqual({
+    schemaVersion: 1,
+    ...configured,
+    mcpPort: 0,
+  });
+});
+
+it.each([
+  ["mcpPort", "8123", "mcpPort.invalid"],
+  ["claudeCodePath", "../claude", "claudeCodePath.invalid"],
+  ["codexPath", "~/bin/codex", "codexPath.invalid"],
+  ["aiMode", "unrecognized", "aiMode.invalid"],
+] as const)("falls back only for an invalid %s", (field, invalidValue, code) => {
+  const expected = Object.fromEntries(Object.entries(configured).filter(([key]) => key !== field));
+  expect(decodeSettings({ schemaVersion: 1, ...configured, [field]: invalidValue })).toStrictEqual({
+    settings: { ...DEFAULT_SETTINGS, ...expected },
+    issues: [{ code }],
+  });
+});
+
+it("validates provided fields independently", () => {
+  const { patch, issues } = validatePatch({
+    mcpPort: 65536,
+    claudeCodePath: "  /opt/claude  ",
+    codexPath: "codex",
+    aiEnabled: "true",
+  });
+  expect(patch).toStrictEqual({ claudeCodePath: "/opt/claude" });
+  expect(issues).toStrictEqual([
+    { code: "mcpPort.invalid" },
+    { code: "codexPath.invalid" },
+    { code: "aiEnabled.invalid" },
+  ]);
+  expect(validatePatch({})).toStrictEqual({ patch: {}, issues: [] });
+});
+
+it("clears settings with an explicit unset port and blank executable fields", () => {
+  const { settings } = decodeSettings({ schemaVersion: 1, ...configured });
+  const { patch, issues } = validatePatch({
+    mcpPort: undefined,
+    claudeCodePath: " ",
+    codexPath: "",
+    aiMode: undefined,
+  });
+  expect(issues).toEqual([]);
+  expect(patch).toStrictEqual({
+    mcpPort: undefined,
+    claudeCodePath: undefined,
+    codexPath: undefined,
+    aiMode: undefined,
+  });
+  const stored = encodeSettings({ ...settings, ...patch });
+  expect(stored).toStrictEqual({ schemaVersion: 1, logLevel: "info" });
+  expect(decodeSettings(stored).settings).toStrictEqual({ ...DEFAULT_SETTINGS, logLevel: "info" });
+});
+
+it("represents persisted blank paths as absent auto-discovery settings", () => {
+  const decoded = decodeSettings({
+    schemaVersion: 1,
+    logLevel: "debug",
+    claudeCodePath: "",
+    codexPath: " ",
+  });
+  expect(decoded).toStrictEqual({
+    settings: { ...DEFAULT_SETTINGS, logLevel: "debug" },
+    issues: [],
+  });
+});

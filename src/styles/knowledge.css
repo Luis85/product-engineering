@@ -1,0 +1,55 @@
+.pe-note-menu {
+  @apply pe:absolute pe:end-0 pe:z-10 pe:mt-1 pe:grid pe:w-max pe:max-w-[min(18rem,75cqi)] pe:gap-1 pe:rounded-md pe:border pe:border-default pe:bg-default pe:p-1 pe:shadow-lg;
+}
+
+.pe-note-actions {
+  @apply pe:flex pe:flex-wrap pe:gap-2;
+}
+
+.pe-note-editor {
+  @apply pe:field-sizing-fixed pe:min-h-64 pe:w-full pe:resize-y pe:rounded-md pe:border pe:border-default pe:bg-default pe:p-3 pe:font-mono;
+}
+
+.pe-note-heading {
+  @apply pe:flex pe:flex-wrap pe:items-start pe:justify-between pe:gap-x-4 pe:gap-y-2;
+}
+
+.pe-note-title {
+  @apply pe:min-w-0 pe:flex-[1_1_20rem] pe:wrap-anywhere pe:text-2xl pe:font-semibold;
+}
+
+.pe-note-heading-actions {
+  @apply pe:flex pe:min-w-0 pe:flex-wrap pe:items-start pe:gap-2;
+}
+
+.pe-note-meta {
+  @apply pe:flex pe:flex-wrap pe:items-baseline pe:gap-x-4 pe:gap-y-1 pe:text-sm pe:text-muted;
+}
+
+.pe-note-fields {
+  @apply pe:grid pe:min-w-0 pe:gap-3 pe:@min-[650px]:grid-cols-[2fr_1fr_1fr];
+}
+
+.pe-note-section-head {
+  @apply pe:flex pe:flex-wrap pe:items-baseline pe:justify-between pe:gap-2;
+}
+
+.pe-note-ref-row {
+  @apply pe:flex pe:flex-wrap pe:items-center pe:gap-2 pe:wrap-anywhere;
+}
+
+.pe-note-vault-list {
+  @apply pe:max-h-52 pe:overflow-auto pe:space-y-1;
+}
+
+.pe-note-vault-path {
+  @apply pe:w-full pe:wrap-anywhere pe:text-start;
+}
+
+.pe-note-conflict {
+  @apply pe:grid pe:justify-items-start pe:gap-2;
+}
+
+.pe-note-body {
+  @apply pe:min-w-0 pe:overflow-x-auto pe:wrap-anywhere;
+}

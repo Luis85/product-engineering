@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Product Engineering harness</title>
+  </head>
+  <body class="theme-light">
+    <header class="harness-toolbar">
+      <h1>Product Engineering</h1>
+      <button type="button" id="harness-theme" aria-pressed="false">Dark theme</button>
+    </header>
+    <main class="harness-workspace">
+      <section id="preview-wide" class="harness-pane" aria-label="Wide preview"></section>
+      <section
+        id="preview-narrow"
+        class="harness-pane harness-narrow"
+        aria-label="Narrow preview"
+      ></section>
+    </main>
+    <ul id="harness-notices" class="harness-notices" aria-label="Notices" aria-live="polite"></ul>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

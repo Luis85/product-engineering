@@ -1,0 +1,12 @@
+node_modules/
+dist/
+release/
+reports/
+.stryker-tmp/
+.env.local
+.obsidian-cache
+tests/e2e/vaults/reference/
+.claude/worktrees/
+.fallow/
+.obsidian
+.probe/

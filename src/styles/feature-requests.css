@@ -1,0 +1,213 @@
+.product-engineering-root .pe-feature-requests {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  container: pe-feature-requests / inline-size;
+}
+
+.product-engineering-root .pe-request-header,
+.product-engineering-root .pe-request-filter,
+.product-engineering-root .pe-request-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+.product-engineering-root .pe-request-header {
+  justify-content: space-between;
+}
+
+.product-engineering-root .pe-request-row-meta,
+.product-engineering-root .pe-request-filter {
+  color: var(--pe-text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.product-engineering-root .pe-request-register {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--font-ui-small);
+}
+
+.product-engineering-root .pe-request-register th,
+.product-engineering-root .pe-request-register td {
+  border-bottom: 1px solid var(--pe-border);
+  padding: 0.7rem 0.65rem;
+  background: var(--pe-bg);
+  text-align: start;
+  vertical-align: top;
+}
+
+.product-engineering-root .pe-request-register th {
+  color: var(--pe-text-muted);
+  background: var(--pe-bg-secondary);
+}
+
+.product-engineering-root .pe-request-register th:first-child {
+  width: 50%;
+}
+
+.product-engineering-root .pe-request-identity,
+.product-engineering-root .pe-request-column,
+.product-engineering-root .pe-request-gates,
+.product-engineering-root .pe-request-gate-phase {
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  gap: 0.3rem;
+}
+
+.product-engineering-root .pe-request-field-label {
+  display: none;
+  color: var(--pe-text-muted);
+  font-weight: 600;
+}
+
+.product-engineering-root .pe-request-empty,
+.product-engineering-root .pe-request-gate-phase {
+  width: 100%;
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius);
+  padding: 0.8rem;
+}
+
+.product-engineering-root .pe-request-gate-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.6rem;
+}
+
+.product-engineering-root .pe-request-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.product-engineering-root .pe-request-state {
+  border-radius: 0.375rem;
+  background: var(--pe-bg-secondary);
+  color: var(--pe-text);
+  padding: 0.125rem 0.45rem;
+  font-size: var(--font-ui-small);
+}
+
+.product-engineering-root .pe-review-stale {
+  color: var(--pe-warn-fg);
+}
+
+.product-engineering-root .pe-review-proof-and-criteria {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.product-engineering-root .pe-review-work-items {
+  flex-basis: 100%;
+  padding-inline-start: 1rem;
+}
+
+.product-engineering-root .pe-request-links,
+.product-engineering-root .pe-request-link {
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  gap: 0.25rem;
+}
+
+.product-engineering-root .pe-request-link {
+  padding-block: 0.2rem;
+}
+
+.product-engineering-root .pe-request-detail-fields {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.product-engineering-root .pe-request-detail-fields dt {
+  color: var(--pe-text-muted);
+}
+
+.product-engineering-root .pe-request-detail-fields dd {
+  margin: 0;
+}
+
+.product-engineering-root .pe-request-package,
+.product-engineering-root .pe-request-panel {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  align-content: start;
+}
+
+.product-engineering-root .pe-request-panel {
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius);
+  padding: 0.85rem;
+}
+
+.product-engineering-root .pe-request-panel h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.product-engineering-root .pe-request-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.product-engineering-root .pe-request-disclosure {
+  min-width: 0;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--pe-radius);
+  background: var(--pe-bg-secondary);
+}
+
+.product-engineering-root .pe-request-disclosure > summary {
+  cursor: pointer;
+}
+
+.product-engineering-root .pe-request-markdown {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--font-ui-small);
+}
+
+@container pe-feature-requests (width < 35rem) {
+  .product-engineering-root .pe-review-proof-and-criteria {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .product-engineering-root .pe-request-register,
+  .product-engineering-root .pe-request-register tbody,
+  .product-engineering-root .pe-request-register tr,
+  .product-engineering-root .pe-request-register td {
+    display: block;
+  }
+
+  .product-engineering-root .pe-request-register thead {
+    display: none;
+  }
+
+  .product-engineering-root .pe-request-register tr {
+    min-width: 0;
+    border-bottom: 1px solid var(--pe-border);
+    padding-block: 0.5rem;
+  }
+
+  .product-engineering-root .pe-request-register td {
+    border: 0;
+    padding-block: 0.3rem;
+  }
+
+  .product-engineering-root .pe-request-field-label {
+    display: block;
+  }
+}
