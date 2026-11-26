@@ -14,7 +14,7 @@ const modalOpen = provideModalRegistry();
 
 <template>
   <UApp :portal="portal" :toaster="null" :locale="locale">
-    <div :inert="modalOpen">
+    <div class="pe-surface-content" :inert="modalOpen">
       <component :is="content" v-if="content" />
       <AppFrame v-else />
     </div>

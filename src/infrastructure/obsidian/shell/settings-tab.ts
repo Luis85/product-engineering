@@ -52,7 +52,7 @@ export class ShellSettingTab extends PluginSettingTab {
     const { readOnlyReason } = this.mirror.status;
     if (readOnlyReason) {
       const { title, detail } = this.messages.errors.readOnly;
-      const desc = activeDocument.createDocumentFragment();
+      const desc = createFragment();
       desc.append(detail[readOnlyReason], " ");
       desc.createEl("a", {
         text: issuesLink,

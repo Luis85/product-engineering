@@ -25,8 +25,7 @@
   border-radius: 0.875rem 0 0 0.875rem;
 }
 
-.product-engineering-root:has(.pe-copilot-sheet[data-state="open"]:not([aria-modal="true"]))
-  [data-testid="project-content"] {
+.product-engineering-root .pe-project-content[data-copilot-wide="true"] {
   margin-inline-end: 25.25rem;
 }
 
@@ -201,7 +200,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  column-gap: 0.5rem;
+  gap: 0 0.5rem;
   list-style: none;
   cursor: pointer;
 }

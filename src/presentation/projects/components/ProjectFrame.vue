@@ -122,6 +122,7 @@ const content = ref<HTMLElement>();
 const searchButton = ref<{ $el: HTMLElement }>();
 const position = useWorkspacePosition(frame, content);
 const copilotEntry = ref<CopilotEntry>();
+const wideCopilot = ref(false);
 provideCopilotEntry({
   open: (entry) => {
     copilotEntry.value = entry;
@@ -307,6 +308,7 @@ function switchProject(project: Project) {
         :focus-workspace="position.focusHeading"
         :hold-scroll="position.holdScroll"
         :follow-citation="position.followCitation"
+        @wide-open="wideCopilot = $event"
       />
     </header>
     <div class="pe-project-frame-grid" :data-collapsed="collapsed">
@@ -339,6 +341,7 @@ function switchProject(project: Project) {
         tabindex="-1"
         class="pe-project-content"
         data-testid="project-content"
+        :data-copilot-wide="wideCopilot"
       >
         <RouteOutlet />
       </section>

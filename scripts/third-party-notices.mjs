@@ -9,6 +9,12 @@ import { noticeOverrides } from "./notice-overrides.mjs";
 export { PACKAGES_FILE };
 export const NOTICES_FILE = "THIRD-PARTY-NOTICES.txt";
 
+/** @param {string} notices */
+export function renderNoticeBanner(notices) {
+  const safe = notices.replaceAll("\r\n", "\n").replaceAll("*/", "* /").trimEnd();
+  return `/*!\n${safe}\n*/`;
+}
+
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const BUILD_REQUIRED = 'To refresh the bundled package report, run "npm run build" first.';
 const licenseFile = /^(?:LICEN[CS]E|COPYING)(?:[._-][\w.-]+)?$/iu;

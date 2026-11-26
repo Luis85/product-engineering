@@ -249,7 +249,7 @@
 
   .pe-prototype-table thead {
     position: absolute;
-    clip-path: inset(50%);
+    clip: rect(0, 0, 0, 0);
   }
 
   .pe-prototype-table tr {

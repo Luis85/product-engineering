@@ -8,7 +8,7 @@ The plugin ID is `product-engineering`. The interface supports English and Germa
 
 Use the three files from a published release, or run `npm run build && npm run release:package` to stage them under `release/product-engineering`. Copy `main.js`, `manifest.json`, and `styles.css` into the plugin directory in your vault and enable **Product Engineering** in Community plugins.
 
-The usual plugin directory is `<vault>/.obsidian/plugins/product-engineering`. [Third-party notices](THIRD-PARTY-NOTICES.txt) ship beside the plugin folder. To install a published beta, use BRAT’s **Add beta plugin** action with the repository URL. [Installation and releases](docs/engineering/releasing.md)
+The usual plugin directory is `<vault>/.obsidian/plugins/product-engineering`. The production JavaScript bundle includes the [third-party notices](THIRD-PARTY-NOTICES.txt). The local package also provides a readable copy beside the plugin folder. To install a published beta, use BRAT’s **Add beta plugin** action with the repository URL. [Installation and releases](docs/engineering/releasing.md)
 
 ## Use
 
@@ -35,12 +35,16 @@ Open **Settings → Product Engineering**.
 - Project records, Copilot conversations, and generated or imported artifacts live in the Vault. Plugin settings live in Obsidian's plugin data file.
 - The workspace and Local Demo run locally. AI use is opt-in. An explicit Copilot or prototype request can send your prompt, selected note excerpts, and relevant context to the selected service through its installed Codex or Claude Code CLI. Those external services can require an account or paid subscription.
 - The optional MCP listener binds to loopback and requires its session credential. It exposes the items you explicitly share with local clients.
-- The plugin writes to the clipboard when you request a diagnostics report or an MCP connection. Git actions use the local Git executable and the project's working copy. CLI discovery and configured executable paths can access tools outside the Vault. File imports read the files you select.
+- Vault indexing and the link picker enumerate file paths through Obsidian's Vault API. They use that metadata to find records and links.
+- The plugin writes to the clipboard when you request a diagnostics report or an MCP connection. File imports read the files you select.
+- Git integration uses Node filesystem APIs to inspect the project's local working copy and stage the selected note for a commit you request. Git, Codex, and Claude Code are launched as local subprocesses with argument lists. Executable discovery and the provider's temporary working directory can touch files outside the Vault. The desktop host grants these integrations the OS permissions of the Obsidian process.
 - The plugin collects zero telemetry.
 
 ## Development
 
 Use Node 24.22.1 or a newer Node 24 patch with npm 11. Install the locked dependencies with `npm ci`.
+
+Hosted verification, mutation, and release jobs enforce dependency engine requirements at install time. The default source install can report engine warnings so source reviewers on an older Node patch can resolve the dependencies.
 
 Copy [.env.local.example](.env.local.example) to `.env.local` and set `OBSIDIAN_PLUGIN_DIR` for watch builds that install into a development vault. Run `npm run dev`. With the directory unset the command builds the development bundle locally.
 

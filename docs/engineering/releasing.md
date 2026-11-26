@@ -56,7 +56,7 @@ Where direct updates to `main` are allowed, `npm version 0.2.0` creates the bump
 
 The **build** job checks the version, confirms the source commit is on `main`, and runs the regular verification and Obsidian end-to-end suites. It uses a read-only repository token and uploads the staged release as one artifact. Mutation testing has its own workflow.
 
-The **release** job runs on publication requests. It downloads the verified artifact and attests the same four files it publishes. A manual publication checks again that the tag is available and targets the dispatch commit. A tag-started run requires the existing tag. GitHub suppresses a second tag-push workflow when the release job's token creates the tag. [GitHub token event behavior](https://docs.github.com/en/actions/concepts/security/github_token)
+The **release** job runs on publication requests. It downloads the verified artifact, attests `main.js`, `manifest.json`, and `styles.css`, and publishes those three assets. A manual publication checks again that the tag is available and targets the dispatch commit. A tag-started run requires the existing tag. GitHub suppresses a second tag-push workflow when the release job's token creates the tag. [GitHub token event behavior](https://docs.github.com/en/actions/concepts/security/github_token)
 
 The first live release also verifies the hosted runner’s credentials, artifact flow, and attestations. Follow that run from the Actions page. [Workflow and repository setup](github-setup.md)
 
@@ -75,7 +75,7 @@ npm run build && npm run release:package
 
 The package is staged in `release/product-engineering/` as `main.js`, `manifest.json`, and `styles.css`. To install by hand, copy those files from a published release or the local package into `<vault>/.obsidian/plugins/product-engineering/`. Enable **Product Engineering** under **Community plugins** in Obsidian.
 
-`THIRD-PARTY-NOTICES.txt` is the fourth published asset. The local staging script leaves it beside the plugin folder. It records licenses for the packages in the bundle. [Third-party notices](../../THIRD-PARTY-NOTICES.txt)
+The production build embeds the third-party notices in `main.js`, so they travel with the asset Obsidian installs. Local staging also provides the readable `THIRD-PARTY-NOTICES.txt` beside the plugin folder. [Third-party notices](../../THIRD-PARTY-NOTICES.txt)
 
 Verify a downloaded asset by passing its local filename to `gh attestation verify`. This command checks `main.js` from the Product Engineering repository.
 
@@ -97,3 +97,5 @@ In Obsidian, install and enable BRAT, choose **Add beta plugin**, and enter the 
 4. Check the listing's automated review. Correct errors in the repository and publish a higher version when a new build is required. Use **Review branch** to preview the review of an existing listing before a release. [Obsidian review and release management](https://docs.obsidian.md/community-directory/manage-entry)
 
 The local `npm run lint:scanner` command gives an advisory preview. The directory reports the official submission result. [Obsidian Community directory FAQ](https://docs.obsidian.md/community-directory/faq)
+
+For an installation failure during source review, compare the reviewer's Node and npm versions with a clean `npm ci` and `npm run build` from the release source. Tailwind's `@source` and `@theme` directives are build inputs. Review the shipped `styles.css` for the generated CSS alongside any source warnings.

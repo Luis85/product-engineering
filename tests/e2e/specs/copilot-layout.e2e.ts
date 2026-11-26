@@ -178,6 +178,20 @@ function expectSheetInsideLeaf({ sheet: panel, leaf }: Awaited<ReturnType<typeof
   expect(panel.bottom).toBeLessThanOrEqual(leaf.bottom);
 }
 
+async function workspaceMargin() {
+  return browser.execute(
+    (content: HTMLElement) => {
+      const win = content.ownerDocument.defaultView;
+      return Number.parseFloat(win?.getComputedStyle(content).marginInlineEnd ?? "");
+    },
+    await control("project-content"),
+  );
+}
+
+async function expectWorkspaceReservation(isNarrow: boolean, sheetWidth: number) {
+  expect(await workspaceMargin()).toBeCloseTo(isNarrow ? 0 : sheetWidth);
+}
+
 it("matches the German light contextual review at 1440 and 390 with keyboard focus return", async () => {
   const capture = process.env.PE_COPILOT_CAPTURE_DIR;
   if (capture) await mkdir(capture, { recursive: true });
@@ -218,6 +232,7 @@ it("matches the German light contextual review at 1440 and 390 with keyboard foc
       expect(observed.sheet.width).toBeGreaterThanOrEqual(width === 390 ? 330 : 380);
       expect(observed.sheet.width).toBeLessThanOrEqual(width === 390 ? 352 : 420);
       expectSheetInsideLeaf(observed);
+      await expectWorkspaceReservation(width === 390, observed.sheet.width);
       expect(observed.scrollWidth).toBeLessThanOrEqual(observed.clientWidth);
       expect(observed.chevrons).toEqual(
         Array.from({ length: 3 }, () => ({
@@ -258,6 +273,7 @@ it("matches the German light contextual review at 1440 and 390 with keyboard foc
       }
       await browser.keys("Escape");
       await expect(control("copilot-workspace")).not.toExist();
+      expect(await workspaceMargin()).toBe(0);
       await expect(actions).toBeFocused();
     }
   } finally {

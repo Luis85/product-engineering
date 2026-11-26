@@ -13,7 +13,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { checkDist, CSS_PREFIX } from "./check-dist.mjs";
-import { NOTICES_FILE } from "./third-party-notices.mjs";
+import { NOTICES_FILE, renderNoticeBanner } from "./third-party-notices.mjs";
 import { isReleaseVersion } from "./version-bump.mjs";
 
 export const RELEASE_FILES = ["main.js", "manifest.json", "styles.css"];
@@ -126,6 +126,10 @@ export function packageRelease({ distDir, outDir, rootDir, tag }) {
     mkdirSync(stagedPlugin);
     for (const file of RELEASE_FILES) copyFileSync(join(distDir, file), join(stagedPlugin, file));
     assertDistribution(stagedPlugin, manifest, id);
+    const bundle = readFileSync(join(stagedPlugin, "main.js"), "utf8");
+    if (!bundle.includes(renderNoticeBanner(notices.toString("utf8")))) {
+      throw new Error("Released main.js must embed the third-party notices");
+    }
     writeFileSync(join(staging, NOTICES_FILE), notices);
     publish(staging, output, [id, NOTICES_FILE]);
   } catch (error) {

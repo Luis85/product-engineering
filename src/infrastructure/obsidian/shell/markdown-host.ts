@@ -60,7 +60,8 @@ export function markdownHost(app: App): MarkdownHost {
     async render(source, path, container, signal) {
       const lifecycle = new Component();
       lifecycle.load();
-      const rendered = container.ownerDocument.createElement("div");
+      const staging = container.ownerDocument.adoptNode(createFragment());
+      const rendered = staging.createDiv();
       const release = () => {
         lifecycle.unload();
         rendered.remove();

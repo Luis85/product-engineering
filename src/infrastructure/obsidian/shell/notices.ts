@@ -2,7 +2,7 @@ import { Notice } from "obsidian";
 import type { UserMessage } from "../../../application/shell";
 
 export function showNotice(message: UserMessage): Notice {
-  const content = activeDocument.createDocumentFragment();
+  const content = createFragment();
   content.createEl("strong", { text: message.title });
   content.createDiv({ text: message.detail });
   if (message.link) {

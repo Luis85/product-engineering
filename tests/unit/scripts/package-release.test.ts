@@ -20,12 +20,12 @@ const manifest = {
   version: "0.1.0",
   minAppVersion: "1.15.1",
 };
+const notices = "Example dependency notices\n";
 const files = {
-  "main.js": "module.exports = class Plugin {};\n",
+  "main.js": "/*!\nExample dependency notices\n*/\nmodule.exports = class Plugin {};\n",
   "manifest.json": JSON.stringify(manifest) + "\n",
   "styles.css": ".product-engineering-root { color: red }\n",
 };
-const notices = "Example dependency notices\n";
 const noticeName = "THIRD-PARTY-NOTICES.txt";
 const temporary = new Set<string>();
 
@@ -61,6 +61,13 @@ it("stages exactly the three loadable files and keeps notices beside them", () =
     expect(readFileSync(join(plugin, name), "utf8")).toBe(text);
   }
   expect(readFileSync(packaged.noticesFile, "utf8")).toBe(notices);
+});
+
+it("refuses to package a bundle that omits the third-party notice header", () => {
+  const input = fixture();
+  writeFileSync(join(input.distDir, "main.js"), "module.exports = class Plugin {};\n");
+  expect(() => packageRelease(input)).toThrow(/embed.*third-party notices/i);
+  expect(existsSync(join(input.outDir, manifest.id))).toBe(false);
 });
 
 it("replaces an existing staged build when both input and output are valid", () => {
