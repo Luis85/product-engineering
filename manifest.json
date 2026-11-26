@@ -1,7 +1,7 @@
 {
   "id": "product-engineering",
   "name": "Product Engineering",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.15.1",
   "description": "Manage product engineering records in your vault.",
   "author": "Luis Mendez",
