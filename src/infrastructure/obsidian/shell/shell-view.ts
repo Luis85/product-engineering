@@ -73,6 +73,8 @@ export class ShellView<R extends RouteLike> extends ItemView {
   protected override async onOpen(): Promise<void> {
     if (this.#close) return;
 
+    this.containerEl.querySelector<HTMLElement>(":scope > .view-header")?.hide();
+
     let previousRoute = this.#viewNavigation.current();
     const releases = [
       this.#viewNavigation.onRailChange(() => this.app.workspace.requestSaveLayout()),

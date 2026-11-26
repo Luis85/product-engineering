@@ -1,7 +1,3 @@
-.product-engineering-root:is(.show-view-header .workspace-split.mod-root *) {
-  --pe-copilot-host-header: var(--header-height, 0px);
-}
-
 .product-engineering-root .pe-copilot-trigger[aria-expanded="true"] {
   background: color-mix(in srgb, var(--pe-accent) 12%, var(--pe-bg));
   color: var(--pe-primary-fg);
@@ -17,7 +13,7 @@
 }
 
 .product-engineering-root .pe-copilot-sheet:not([aria-modal="true"]) {
-  top: calc(var(--pe-project-header-height, 3.875rem) + var(--pe-copilot-host-header, 0px));
+  top: var(--pe-project-header-height, 3.875rem);
   border-inline-start: 1px solid var(--pe-copilot-line);
   box-shadow: none;
 }

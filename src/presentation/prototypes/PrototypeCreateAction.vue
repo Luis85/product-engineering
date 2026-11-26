@@ -55,7 +55,6 @@ async function dismiss(id?: PrototypeId) {
     type="button"
     v-bind="appearance"
     :aria-label="compactLabel"
-    :title="compactLabel"
     :data-pe-focus-key="focusKey"
     :data-testid="testId"
     @click="start"

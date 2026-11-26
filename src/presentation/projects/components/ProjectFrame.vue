@@ -264,7 +264,6 @@ function switchProject(project: Project) {
         v-if="activeProject"
         ref="searchButton"
         :aria-label="text.search.open"
-        :title="text.search.open"
         icon="i-lucide-search"
         variant="outline"
         color="neutral"
@@ -323,7 +322,6 @@ function switchProject(project: Project) {
           <template #rail-toggle>
             <UButton
               :aria-label="rail.name"
-              :title="rail.name"
               :aria-expanded="!collapsed"
               :icon="rail.icon"
               type="button"

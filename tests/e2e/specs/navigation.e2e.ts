@@ -120,6 +120,37 @@ describe("routed view", () => {
     expect(await pluginProblems()).toEqual([]);
   });
 
+  it("hides the Obsidian view header only in the Product Engineering leaf", async () => {
+    await openView();
+    await expect(browser.$(workspaceScreen)).toBeDisplayed();
+    const headers = await browser.executeObsidian(async ({ app }, type) => {
+      const pluginLeaf = app.workspace.getLeavesOfType(type)[0];
+      const note = app.vault.getFileByPath("Welcome.md");
+      if (!pluginLeaf || !note) throw new Error("Expected a plugin leaf and a fixture note");
+      const noteLeaf = app.workspace.getLeaf("split");
+      try {
+        await noteLeaf.openFile(note);
+        const display = (leaf: typeof pluginLeaf) => {
+          const header = leaf.view.containerEl.querySelector(":scope > .view-header");
+          return header && header.ownerDocument.defaultView?.getComputedStyle(header).display;
+        };
+        return { plugin: display(pluginLeaf), note: display(noteLeaf) };
+      } finally {
+        noteLeaf.detach();
+      }
+    }, VIEW_TYPE);
+    expect(headers.plugin).toBe("none");
+    expect(headers.note).toBe("flex");
+  });
+
+  it("keeps accessible project controls without repetitive hover titles", async () => {
+    await openView();
+    const picker = browser.$(`${ROOT} [data-pe-focus-key=project-picker]`);
+    await picker.waitForExist();
+    await expect(picker).toHaveAttribute("aria-label", texts.projects.picker);
+    await expect(picker).not.toHaveAttribute("title");
+  });
+
   it("persists the chat route and resets the history on restart", async () => {
     await writeDataFile({
       schemaVersion: 1,

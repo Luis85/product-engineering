@@ -34,7 +34,6 @@ function invoke(action: (control: HTMLElement | undefined) => void) {
       class="pe-story-tools-trigger"
       :aria-label="label"
       :icon="title ? undefined : 'i-lucide-chevron-down'"
-      :title="label"
       :data-story-node="node"
     >
       <template v-if="title">

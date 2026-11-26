@@ -101,6 +101,34 @@ async function withCard(
   });
 }
 
+it("keeps secondary card actions closed until requested and leaves changing lanes available", async () => {
+  await withCard(async ({ root, host }, path) => {
+    await host.runtime.runPromise(
+      host.notes.seed(path.replace("Export service cases.md", "Check export.md"), {
+        project_id: first,
+        "pe-id": "T-01",
+        type: "Task",
+        parent: "[[Export service cases]]",
+        status: "Open",
+      }),
+    );
+    await eventually(() => expect(root.querySelector(card)).toBeTruthy());
+    const entry = find(root, card);
+    expect(find(entry, "[data-testid=board-card-open]").textContent).toBe("Export service cases");
+    expect(find(entry, "[data-testid=board-move]").closest("details")).toBeNull();
+    const companion = find(entry, "[data-testid=board-add-companion]");
+    const actions = companion.closest("details");
+    expect(actions?.open).toBe(false);
+    await eventually(() =>
+      expect(
+        actions?.querySelector("summary [data-testid=board-companion-count]")?.textContent,
+      ).toContain("1 open"),
+    );
+    actions?.querySelector("summary")?.click();
+    expect(actions?.open).toBe(true);
+  });
+});
+
 it("writes the mapped status and manual choice via the labelled control and drag into a folded lane", async () => {
   await withCard(async ({ root, host }, path) => {
     const run = host.runtime.runPromise.bind(host.runtime);

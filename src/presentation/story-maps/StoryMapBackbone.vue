@@ -46,7 +46,6 @@ function move(kind: StoryMapNodeEdit["kind"], id: string, offset: -1 | 1, origin
             icon="i-lucide-plus"
             data-testid="story-map-add-step"
             :aria-label="text.journey.addStep(activity.title)"
-            :title="text.journey.addStep(activity.title)"
             @click="
               edit(
                 { kind: 'step', node: { id: '', title: '', activityId: activity.id } },

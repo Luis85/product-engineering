@@ -126,7 +126,6 @@ async function openCitation(destination: Route) {
     <UButton
       v-if="capability.enabled"
       :aria-label="text.copilot"
-      :title="text.copilot"
       :aria-expanded="open"
       icon="i-lucide-sparkles"
       color="neutral"

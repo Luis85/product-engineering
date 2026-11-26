@@ -112,6 +112,9 @@ async function quickAdd() {
 const expectFeature = "Servicefälle verwalten";
 
 async function companions(id: string) {
+  const actions = card(id).$("details.pe-board-actions");
+  expect(await actions.getProperty("open")).toBe(false);
+  await press(await actions.$("summary"));
   const trigger = card(id).$("[data-testid=board-add-companion]");
   const original = await backlogFiles();
   for (const [kind, storageType] of [
@@ -132,9 +135,11 @@ async function companions(id: string) {
     await press(await el("backlog-save"));
     await expect(trigger).toBeFocused();
   }
-  await expect(card(id).$("[data-testid=board-companion-count]")).toHaveText(
-    "4 offen · 4 insgesamt",
-  );
+  await press(await actions.$("summary"));
+  expect(await actions.getProperty("open")).toBe(false);
+  const count = actions.$("summary [data-testid=board-companion-count]");
+  await expect(count).toBeDisplayed();
+  await expect(count).toHaveText("4 offen · 4 insgesamt");
   const added = (await backlogFiles()).filter((path) => !original.includes(path));
   expect(added).toHaveLength(4);
   for (const [kind, storageType] of [

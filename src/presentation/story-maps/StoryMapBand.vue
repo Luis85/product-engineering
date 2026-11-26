@@ -92,7 +92,6 @@ function addCard(stepId: string, event: MouseEvent) {
         icon="i-lucide-plus"
         class="pe:justify-self-start pe:self-start"
         :aria-label="column.add"
-        :title="column.add"
         @click="addCard(column.id, $event)"
       />
     </div>

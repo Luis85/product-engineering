@@ -41,7 +41,9 @@ const stageIcons = {
     @drop="emit('drop', $event)"
   >
     <header class="pe-board-lane-head">
-      <UIcon :name="stageIcons[stage]" aria-hidden="true" class="pe:size-4 pe:shrink-0" />
+      <span class="pe-board-stage-mark" aria-hidden="true">
+        <UIcon :name="stageIcons[stage]" class="pe:size-4" />
+      </span>
       <h3>{{ text.stages[stage] }}</h3>
       <span data-testid="board-lane-count" :aria-label="text.count(count)">{{ count }}</span>
       <UButton
@@ -53,7 +55,6 @@ const stageIcons = {
         :aria-controls="bodyId"
         :aria-expanded="!folded"
         :aria-label="text.fold(text.stages[stage], folded)"
-        :title="text.fold(text.stages[stage], folded)"
         :data-pe-focus-key="'board-fold-' + stage"
         @click="emit('fold')"
       />
@@ -71,7 +72,6 @@ const stageIcons = {
       class="pe-board-add"
       data-testid="board-new"
       :aria-label="text.create"
-      :title="text.create"
       @click="emit('create', $event.currentTarget as HTMLElement)"
       ><span class="pe-board-add-label">{{ text.create }}</span></UButton
     >

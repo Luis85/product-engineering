@@ -83,25 +83,18 @@ function dismiss(reason?: "native-note") {
 </script>
 
 <template>
-  <div v-if="compact" class="pe-board-companions">
-    <UButton
-      type="button"
-      variant="ghost"
-      color="neutral"
-      size="sm"
-      icon="i-lucide-plus"
-      data-testid="board-add-companion"
-      :label="text.companions.add"
-      @click="choose"
-    />
-    <span
-      v-if="children.total"
-      class="pe:text-xs pe:text-muted"
-      data-testid="board-companion-count"
-    >
-      {{ text.companions.count(children.open, children.total) }}
-    </span>
-  </div>
+  <UButton
+    v-if="compact"
+    type="button"
+    variant="ghost"
+    color="neutral"
+    size="sm"
+    icon="i-lucide-plus"
+    class="pe-board-companion-action"
+    data-testid="board-add-companion"
+    :label="text.companions.add"
+    @click="choose"
+  />
   <section v-else class="pe:grid pe:min-w-0 pe:gap-3" :aria-label="text.pbiTabs.companions">
     <div class="pe-backlog-actions pe:justify-between">
       <h2 class="pe:font-semibold">{{ text.pbiTabs.companions }}</h2>

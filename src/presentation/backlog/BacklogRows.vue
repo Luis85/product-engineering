@@ -134,7 +134,11 @@ const hasRequestLinks = ({ kind, adopted, conflict, id }: BacklogItem) =>
       >
         <template v-if="value">
           <span class="pe-backlog-narrow-label">{{ label }}</span>
-          <span>{{ value }}</span>
+          <span
+            :class="{ 'pe-backlog-priority': id === 'priority' }"
+            :data-priority="id === 'priority' ? value : undefined"
+            >{{ value }}</span
+          >
         </template>
       </div>
     </div>

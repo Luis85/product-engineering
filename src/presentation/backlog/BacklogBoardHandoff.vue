@@ -80,7 +80,6 @@ watch(gap, () => restorePosition(), { flush: "post" });
 
 <template>
   <div class="pe-board-handoff" :aria-busy="query.pending.value">
-    <strong>{{ text.board.request }}</strong>
     <FeatureRequestLinks
       :project="project"
       :handoff="handoff"

@@ -186,7 +186,6 @@ function choose(id: string, event: MouseEvent) {
           color="neutral"
           variant="soft"
           :aria-label="text.zoomOut"
-          :title="text.zoomOut"
           :disabled="camera.zoom <= minimumZoom"
           @click="scale(1 / 1.25)"
           >−</UButton
@@ -198,7 +197,6 @@ function choose(id: string, event: MouseEvent) {
           color="neutral"
           variant="soft"
           :aria-label="text.zoomIn"
-          :title="text.zoomIn"
           :disabled="camera.zoom >= maximumZoom"
           @click="scale(1.25)"
           >+</UButton
@@ -237,7 +235,6 @@ function choose(id: string, event: MouseEvent) {
           color="neutral"
           variant="soft"
           :aria-label="direction.label"
-          :title="direction.label"
           :data-domain-move="direction.key"
           @click="move(selectedNode, direction)"
           >{{ direction.symbol }}</UButton
@@ -307,7 +304,6 @@ function choose(id: string, event: MouseEvent) {
           }"
           :data-domain-node="node.id"
           :data-pe-focus-key="'entity-' + node.id"
-          :title="node.title"
           :aria-pressed="selected === node.id"
           @click="choose(node.id, $event)"
           @keydown="moveByKey(node, $event)"

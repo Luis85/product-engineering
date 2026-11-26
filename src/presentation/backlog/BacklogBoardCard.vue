@@ -13,13 +13,11 @@ import type {
 import type { FeatureRequest } from "../../application/feature-requests";
 import type { KnowledgeRecord } from "../../application/knowledge";
 import type { ProjectId } from "../../application/projects";
-import { backlogPrototypeSource } from "../../application/prototypes";
 import { boardStages } from "../../domain/backlog";
 import type { BoardStage } from "../../domain/backlog";
-import { PrototypeCreateAction } from "../prototypes";
 import { useMessages } from "../shell";
+import BacklogBoardActions from "./BacklogBoardActions.vue";
 import BacklogBoardHandoff from "./BacklogBoardHandoff.vue";
-import PbiCompanions from "./PbiCompanions.vue";
 
 const {
   item,
@@ -54,7 +52,7 @@ const emit = defineEmits<{
 }>();
 const text = useMessages().backlog;
 const identity = computed(() => item.id ?? String(item.fields["pbl-id"] ?? text.board.legacy));
-const source = computed(() => backlogPrototypeSource(project, item));
+const owner = computed(() => ownerName(item.owner));
 
 function change(event: Event) {
   const control = event.currentTarget as HTMLSelectElement;
@@ -74,17 +72,10 @@ function change(event: Event) {
     @dragend="emit('dragEnd')"
   >
     <div class="pe-board-card-meta">
-      <span><UIcon name="i-lucide-book-open" aria-hidden="true" /> {{ identity }}</span>
-      <span v-if="item.priority"
-        ><UIcon name="i-lucide-flag" aria-hidden="true" /> {{ item.priority }}</span
-      >
-      <PrototypeCreateAction
-        v-if="source"
-        :project-id="project"
-        :source="source"
-        :display-id="identity"
-        compact
-      />
+      <span>{{ identity }}</span>
+      <span v-if="item.priority" class="pe-backlog-priority" :data-priority="item.priority">
+        {{ item.priority }}
+      </span>
     </div>
     <UButton
       type="button"
@@ -97,18 +88,8 @@ function change(event: Event) {
       ><span>{{ item.title }}</span></UButton
     >
     <p v-if="feature" class="pe-board-feature">{{ feature }}</p>
-    <PbiCompanions
-      v-if="item.adopted"
-      :project="project"
-      :item="item"
-      :snapshot="snapshot"
-      compact
-    />
-    <div class="pe-board-card-meta">
-      <span
-        ><UIcon name="i-lucide-user" aria-hidden="true" />
-        {{ ownerName(item.owner) || text.unassigned }}</span
-      >
+    <div v-if="owner || item.adopted" class="pe-board-card-meta pe-board-card-footer">
+      <span v-if="owner"><UIcon name="i-lucide-user" aria-hidden="true" /> {{ owner }}</span>
       <select
         v-if="item.adopted"
         :value="stage"
@@ -135,5 +116,6 @@ function change(event: Event) {
       @prepare="(control, gap) => emit('prepare', control, gap)"
       @git="(control, record) => emit('git', control, record)"
     />
+    <BacklogBoardActions :project="project" :item="item" :snapshot="snapshot" />
   </article>
 </template>

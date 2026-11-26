@@ -156,6 +156,8 @@ export function useWorkspacePosition(
     const focused = positionControl(workspace, target);
     if (!focused && !fallback) return;
     if (!focused) fallbackControl = heading();
+    const disclosure = focused?.closest<HTMLDetailsElement>("details[data-pe-restore-disclosure]");
+    if (disclosure) disclosure.open = true;
     (focused ?? fallbackControl)?.focus({ preventScroll: true });
     restoreScroll(workspace, target);
     restoredControl = focused;

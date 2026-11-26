@@ -22,7 +22,6 @@ const title = computed(() => project?.name ?? text.title);
   <div class="pe-project-navigation" :data-collapsed="collapsed">
     <UButton
       :aria-label="text.picker"
-      :title="text.picker"
       variant="ghost"
       color="neutral"
       type="button"
@@ -50,7 +49,6 @@ const title = computed(() => project?.name ?? text.title);
           v-for="entry in group.items"
           :key="entry.route.name"
           :aria-label="entry.label"
-          :title="entry.label"
           :aria-current="section === entry.route.name ? 'page' : undefined"
           :icon="entry.icon"
           :data-pe-focus-key="entry.route.name"

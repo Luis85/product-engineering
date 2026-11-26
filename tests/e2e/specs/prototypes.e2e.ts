@@ -338,10 +338,13 @@ it("keeps a dirty 390px Task editor, uses the grouped keyboard picker and cancel
 it("offers native NFR and Board scope actions and preserves a draft when its NFR disappears", async () => {
   await setViewRoute(backlogBoardRoute(customerProject));
   const card = browser.$(`${ROOT} [data-board-card=UC-09]`);
-  await card.$("[data-testid=prototype-create-compact]").click();
+  const actions = card.$("details.pe-board-actions");
+  await actions.$("summary").click();
+  const createFromBoard = card.$("[data-testid=prototype-create]");
+  await createFromBoard.click();
   await expect(scope()).toHaveValue("UC:UC-09");
   await el("prototype-cancel").click();
-  await expect(card.$("[data-testid=prototype-create-compact]")).toBeFocused();
+  await expect(createFromBoard).toBeFocused();
   await setViewRoute(nfrCatalogRoute(customerProject));
   const nfrRow = browser.$(
     `${ROOT} li.pe-nfr-row:has([data-pe-focus-key='nfr-${prototypeNfrId}'])`,

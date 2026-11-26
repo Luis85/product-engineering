@@ -51,7 +51,6 @@ const buttons = computed(() =>
       size="xs"
       :disabled="button.disabled"
       :aria-label="button.label"
-      :title="button.label"
       :icon="button.icon"
       @click="emit('move', button.offset)"
       >{{ button.caption }}</UButton

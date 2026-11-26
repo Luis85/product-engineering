@@ -51,7 +51,34 @@
 }
 
 .pe-backlog-filters input {
-  flex: 1 1 12rem;
+  flex: 1 1 15rem;
+  max-inline-size: 28rem;
+}
+
+.pe-backlog .pe-backlog-priority {
+  --pe-backlog-priority-accent: var(--pe-text-muted);
+  --pe-backlog-priority-ink: color-mix(
+    in oklab,
+    var(--pe-backlog-priority-accent) 38%,
+    var(--pe-text)
+  );
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  padding: 0.125rem 0.425rem;
+  border-radius: 0.35rem;
+  color: var(--pe-backlog-priority-ink);
+  background: color-mix(in oklab, var(--pe-backlog-priority-accent) 15%, var(--pe-project-paper));
+  font-weight: 650;
+}
+
+.pe-backlog .pe-backlog-priority[data-priority="P0"],
+.pe-backlog .pe-backlog-priority[data-priority="P1"] {
+  --pe-backlog-priority-accent: var(--color-orange);
+}
+
+.pe-backlog .pe-backlog-priority[data-priority="P2"] {
+  --pe-backlog-priority-accent: var(--color-blue);
 }
 
 .pe-backlog-table {
