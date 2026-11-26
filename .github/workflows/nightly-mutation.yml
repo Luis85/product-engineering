@@ -30,7 +30,7 @@ jobs:
           node-version-file: .nvmrc
           check-latest: true
           cache: npm
-      - run: npm ci
+      - run: npm ci --engine-strict
       - name: Restore inner mutation results
         id: mutation-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -68,7 +68,7 @@ jobs:
           node-version-file: .nvmrc
           check-latest: true
           cache: npm
-      - run: npm ci
+      - run: npm ci --engine-strict
       - name: Restore edge mutation results
         id: mutation-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

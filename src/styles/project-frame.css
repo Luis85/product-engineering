@@ -1,4 +1,4 @@
-.product-engineering-root:has(.pe-project-frame) {
+.product-engineering-root.pe-project-shell {
   --pe-project-header-height: 3.875rem;
   --pe-project-rail-width: clamp(12.8125rem, 16cqi, 14.875rem);
   --pe-project-rail-compact-width: 3.75rem;
@@ -21,7 +21,7 @@
   padding: 0;
 }
 
-.product-engineering-root.dark:has(.pe-project-frame) {
+.product-engineering-root.pe-project-shell.dark {
   --pe-project-canvas: color-mix(in oklab, var(--pe-bg-secondary) 85%, #292636);
   --pe-project-line: var(--pe-border);
   --pe-project-muted: var(--pe-text-muted);
@@ -29,7 +29,7 @@
   --pe-project-rail: #231f30;
 }
 
-.product-engineering-root div:has(.pe-project-frame) {
+.product-engineering-root.pe-project-shell :is(.pe-surface-mount, .pe-surface-content) {
   display: flex;
   flex: 1 0 auto;
   flex-direction: column;

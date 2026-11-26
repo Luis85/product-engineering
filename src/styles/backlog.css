@@ -247,7 +247,7 @@ button.pe-pbi-companion-choice {
 @container (max-width: 34rem) {
   .pe-backlog-head {
     position: absolute;
-    clip-path: inset(50%);
+    clip: rect(0, 0, 0, 0);
     overflow: hidden;
     width: 1px;
     height: 1px;

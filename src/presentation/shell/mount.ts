@@ -30,9 +30,10 @@ export async function mountSurface<R extends RouteLike>(
 ): Promise<() => void> {
   await runtime.context();
 
-  const alreadyScoped = root.classList.contains(SCOPE_CLASS);
-  root.classList.add(SCOPE_CLASS);
-  const releases: (() => void)[] = [() => root.classList.toggle(SCOPE_CLASS, alreadyScoped)];
+  const scopes = surface?.frame ? [SCOPE_CLASS, "pe-project-shell"] : [SCOPE_CLASS];
+  const addedScopes = scopes.filter((scope) => !root.classList.contains(scope));
+  root.classList.add(...addedScopes);
+  const releases: (() => void)[] = [() => root.classList.remove(...addedScopes)];
   const close = () => releaseAll(releases.splice(0));
 
   try {
@@ -40,6 +41,7 @@ export async function mountSurface<R extends RouteLike>(
     const owner = root.ownerDocument;
     const mountPoint = owner.createElement("div");
     const portal = owner.createElement("div");
+    mountPoint.classList.add("pe-surface-mount");
     portal.classList.add(PORTAL_CLASS);
     releases.push(
       () => mountPoint.remove(),

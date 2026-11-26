@@ -5,11 +5,13 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, normalizePath } from "vite";
 import type { Plugin } from "vite";
 import { bundledPackages } from "../scripts/bundled-packages.mjs";
+import { renderNoticeBanner } from "../scripts/third-party-notices.mjs";
 import { sharedConfig, SHELL_ICONS } from "./vite.shared.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const entry = fileURLToPath(new URL("../src/main.ts", import.meta.url));
 const manifest = new URL("../manifest.json", import.meta.url);
+const notices = new URL("../THIRD-PARTY-NOTICES.txt", import.meta.url);
 const viewRoot =
   normalizePath(fileURLToPath(new URL("../src/presentation", import.meta.url))) + "/";
 
@@ -50,6 +52,14 @@ function omitInferredViewNames(): Plugin {
   };
 }
 
+function bundleOutput(mode: string) {
+  return {
+    exports: "default" as const,
+    codeSplitting: false,
+    ...(mode === "production" && { postBanner: renderNoticeBanner(readFileSync(notices, "utf8")) }),
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const shared = sharedConfig({ mode });
   const development = mode === "development";
@@ -80,7 +90,7 @@ export default defineConfig(({ mode }) => {
       cssCodeSplit: false,
       rolldownOptions: {
         external: isHostExternal,
-        output: { exports: "default", codeSplitting: false },
+        output: bundleOutput(mode),
       },
     },
   };

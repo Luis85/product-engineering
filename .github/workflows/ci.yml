@@ -29,7 +29,7 @@ jobs:
           node-version-file: .nvmrc
           check-latest: true
           cache: npm
-      - run: npm ci
+      - run: npm ci --engine-strict
       - run: npm run verify
       - name: Upload verification reports
         if: ${{ !cancelled() }}
@@ -58,7 +58,7 @@ jobs:
           node-version-file: .nvmrc
           check-latest: true
           cache: npm
-      - run: npm ci
+      - run: npm ci --engine-strict
       - name: Resolve Obsidian versions
         run: |
           node --import tsx tests/e2e/wdio.conf.mts | grep '^obsidian-cache-key:' > obsidian-versions-lock.txt
@@ -106,7 +106,7 @@ jobs:
           node-version-file: .nvmrc
           check-latest: true
           cache: npm
-      - run: npm ci
+      - run: npm ci --engine-strict
       - name: Preview the community scanner
         id: scanner
         continue-on-error: true

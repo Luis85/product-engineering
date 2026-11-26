@@ -2,7 +2,7 @@
 import UButton from "@nuxt/ui/components/Button.vue";
 import UIcon from "@nuxt/ui/components/Icon.vue";
 import USlideover from "@nuxt/ui/components/Slideover.vue";
-import { computed, defineAsyncComponent, nextTick, ref, watch } from "vue";
+import { computed, defineAsyncComponent, nextTick, onScopeDispose, ref, watch } from "vue";
 import { aiCapability } from "../../../application/integrations";
 import type { Project } from "../../../application/projects";
 import type { Route } from "../../../application/routes";
@@ -23,6 +23,7 @@ const {
   readonly project: Project;
   readonly entry?: CopilotEntry | undefined;
 }>();
+const emit = defineEmits<{ wideOpen: [open: boolean] }>();
 const catalog = useMessages();
 const text = catalog.projects;
 const { definition } = useRouting();
@@ -34,6 +35,12 @@ const assistant = definition.context ? defineAsyncComponent(definition.context) 
 const capability = computed(() => aiCapability(settings.value));
 const open = ref(false);
 const narrow = ref(false);
+watch(
+  () => open.value && !narrow.value,
+  (wideOpen) => emit("wideOpen", wideOpen),
+  { flush: "sync" },
+);
+onScopeDispose(() => emit("wideOpen", false));
 const review = ref(false);
 const workspaceKey = ref(0);
 const heading = ref<HTMLElement>();

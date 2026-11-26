@@ -75,7 +75,7 @@ jobs:
             exit 1
           fi
 
-      - run: npm ci
+      - run: npm ci --engine-strict
       - run: npm run verify
 
       - name: Resolve Obsidian versions
@@ -157,7 +157,6 @@ jobs:
             release/product-engineering/main.js
             release/product-engineering/manifest.json
             release/product-engineering/styles.css
-            release/THIRD-PARTY-NOTICES.txt
 
       - name: Publish release
         env:
@@ -187,5 +186,4 @@ jobs:
             release/product-engineering/main.js \
             release/product-engineering/manifest.json \
             release/product-engineering/styles.css \
-            release/THIRD-PARTY-NOTICES.txt \
             --title "$TAG" --generate-notes "${flags[@]}"
