@@ -31,6 +31,7 @@
     "notices": "npm run build && node scripts/third-party-notices.mjs",
     "check:notices": "node scripts/third-party-notices.mjs --check",
     "version": "node scripts/version-bump.mjs && git add manifest.json versions.json",
+    "release:plan": "node scripts/release-plan.mjs",
     "release:package": "node scripts/package-release.mjs",
     "dev": "node scripts/dev-install.mjs",
     "dev:ui": "vite --config configs/vite.harness.config.ts",

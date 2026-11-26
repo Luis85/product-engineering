@@ -11,7 +11,7 @@ export function isReleaseVersion(value) {
 }
 
 /** @param {string} next @param {string} current */
-function isGreaterVersion(next, current) {
+export function isGreaterVersion(next, current) {
   const currentParts = current.split(".");
   for (const [index, component] of next.split(".").entries()) {
     const nextNumber = BigInt(component);

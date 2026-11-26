@@ -1,6 +1,6 @@
 # Product Engineering
 
-Product Engineering is an Obsidian desktop plugin for managing Markdown-backed items. Create items with a title, status, and optional due date. The Items view follows outside vault edits, preserves the note body and unknown frontmatter, and lets you resolve conflicting field changes before saving.
+Product Engineering is an Obsidian desktop plugin for managing product work in Markdown. Organize project knowledge, requirements, backlogs and story maps, prepare prototypes and feature requests, and trace delivery decisions back to the source notes.
 
 The plugin ID is `product-engineering`. The interface supports English and German. Use Obsidian desktop 1.15.1 or newer.
 
@@ -12,7 +12,7 @@ The usual plugin directory is `<vault>/.obsidian/plugins/product-engineering`. [
 
 ## Use
 
-Open the **Product Engineering** ribbon button or run the open-view command. The workspace opens to **Items**. Add, edit, or delete items from that view. Choose **Open in Obsidian** to inspect a read-only item or a note listed under **Data issues**.
+Open the **Product Engineering** ribbon button or run the open-view command. Select or create a project, then use its rail to open the overview, knowledge, planning, or delivery views. Project records are backed by Vault notes, so the plugin can follow outside edits and surface conflicts before saving.
 
 New items go in **Product Engineering/Items** by default. The schema marker identifies items throughout the vault, including moved files. [Item contract](docs/contracts/item-v1.md)
 
@@ -28,7 +28,15 @@ The commands have no default hotkeys.
 Open **Settings → Product Engineering**.
 
 - **Local MCP server** controls the port, shared items, and listener. Leave the port blank for automatic assignment, select the items clients may read, start the server, and use **Copy MCP connection** for your client’s Streamable HTTP configuration. Each start issues a new credential for the loopback endpoint. New selections apply at the next start. Removing a selection revokes access immediately. Clients can list and retrieve the explicitly shared item IDs, titles, statuses, and optional due dates.
-- **AI adapters** controls the Claude Code and Codex executable paths. Leave the paths blank for discovery or enter absolute paths. Open **AI chat** in the plugin view and choose a provider. The TanStack AI adapters invoke the installed CLI with its active authentication. Path changes apply at the next chat request.
+- **AI adapters** controls AI opt-in and the provider mode. Use Local Demo for an offline preview, or select Codex or Claude Code and configure the executable. Open Copilot from the project header or a note's review action. The selected provider runs through its installed CLI and active authentication.
+
+## Privacy and data
+
+- Project records, Copilot conversations, and generated or imported artifacts live in the Vault. Plugin settings live in Obsidian's plugin data file.
+- The workspace and Local Demo run locally. AI use is opt-in. An explicit Copilot or prototype request can send your prompt, selected note excerpts, and relevant context to the selected service through its installed Codex or Claude Code CLI. Those external services can require an account or paid subscription.
+- The optional MCP listener binds to loopback and requires its session credential. It exposes the items you explicitly share with local clients.
+- The plugin writes to the clipboard when you request a diagnostics report or an MCP connection. Git actions use the local Git executable and the project's working copy. CLI discovery and configured executable paths can access tools outside the Vault. File imports read the files you select.
+- The plugin collects zero telemetry.
 
 ## Development
 
@@ -58,6 +66,7 @@ Run `npm run test:e2e` on a Windows or macOS desktop. Use `xvfb-run -a npm run t
 | `npm run build:probe` / `npm run vault:reference` | Build the test probe and generate the reference fixture vault |
 | `npm run dev:ui` / `npm run build:ui` | Run or build the browser harness |
 | `npm run notices` / `npm run check:notices` | Generate or validate third-party notices |
+| `npm run release:plan -- current` | Read the release version plan as JSON |
 | `npm run release:package` | Stage the built plugin and its notices |
 
 ## Repository map

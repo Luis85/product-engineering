@@ -4,9 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Bare release version in x.y.z format
+        description: Current manifest version or its exact bare x.y.z value
         required: true
+        default: current
         type: string
+      prerelease:
+        description: Mark this release as a prerelease for beta testing
+        type: boolean
+        default: false
+      dry_run:
+        description: Verify and package the release without creating a tag or release
+        type: boolean
+        default: false
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
@@ -28,6 +37,8 @@ jobs:
     timeout-minutes: 45
     outputs:
       tag: ${{ steps.version.outputs.tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
       - name: Checkout release source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,46 +46,34 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Resolve and validate release version
-        id: version
-        env:
-          REQUESTED_VERSION: ${{ inputs.version }}
-        run: |
-          case "$GITHUB_EVENT_NAME" in
-            workflow_dispatch)
-              if [[ "$GITHUB_REF" != refs/heads/main ]]; then
-                printf '::error::Start a manual release on main.\n'
-                exit 1
-              fi
-              tag="$REQUESTED_VERSION"
-              ;;
-            push)
-              tag="$GITHUB_REF_NAME"
-              ;;
-            *)
-              printf '::error::Unsupported release trigger.\n'
-              exit 1
-              ;;
-          esac
-          if [[ ! "$tag" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-            printf '::error::Use a bare release version in x.y.z format.\n'
-            exit 1
-          fi
-          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]] && git rev-parse -q --verify "refs/tags/$tag" > /dev/null; then
-            printf '::error::Tag %s already exists.\n' "$tag"
-            exit 1
-          fi
-          if ! git merge-base --is-ancestor HEAD origin/main; then
-            printf '::error::Release %s must build a commit on main.\n' "$tag"
-            exit 1
-          fi
-          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
-
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           check-latest: true
           cache: npm
+
+      - name: Resolve and validate the release plan
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          node scripts/release-plan.mjs --workflow
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            printf '::error::Release must build a commit on main.\n'
+            exit 1
+          fi
+
+      - name: Check manual publication tag
+        if: github.event_name == 'workflow_dispatch' && steps.version.outputs.publish == 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
+            printf '::error::Tag %s already exists.\n' "$TAG"
+            exit 1
+          fi
 
       - run: npm ci
       - run: npm run verify
@@ -113,7 +112,12 @@ jobs:
       - name: Package the verified release
         env:
           TAG: ${{ steps.version.outputs.tag }}
-        run: npm run release:package -- --tag "$TAG"
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          PUBLISH: ${{ steps.version.outputs.publish }}
+        run: |
+          npm run release:package -- --tag "$TAG"
+          printf 'Packaged **%s** from `%s`. Prerelease `%s`. Publish `%s`.\n' \
+            "$TAG" "$GITHUB_SHA" "$PRERELEASE" "$PUBLISH" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload release files
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -133,6 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build
+    if: needs.build.outputs.publish == 'true'
     permissions:
       contents: write
       id-token: write
@@ -158,6 +163,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ needs.build.outputs.tag }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
           SHA: ${{ github.sha }}
         run: |
           flags=(--verify-tag)
@@ -173,7 +179,7 @@ jobs:
             fi
             flags=(--target "$SHA")
           fi
-          if [[ "${TAG%%.*}" == 0 ]]; then
+          if [[ "$PRERELEASE" == true ]]; then
             flags+=(--prerelease)
           fi
           gh release create "$TAG" \
